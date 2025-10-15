@@ -13,3 +13,5 @@ export function Latest() {
     </section>
   )
 }
+
+export default Latest

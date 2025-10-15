@@ -6,6 +6,7 @@ import { Instrument_Sans, Instrument_Serif } from "next/font/google"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import Providers from "@/components/Providers"
+import Navbar from "@/components/Navbar"
 // import { InitialLoading } from "@/components/initial-loading"
 // import { Suspense } from "react"
 

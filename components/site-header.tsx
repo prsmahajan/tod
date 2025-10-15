@@ -1,9 +1,21 @@
+"use client"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
+import { useSession, signOut } from "next-auth/react";
+import { useState } from "react";
 
 export function SiteHeader() {
+    const { data: session, status } = useSession();
+    const [open, setOpen] = useState(false);
+
+    function getFirstName(name?: string) {
+  if (!name) return "";
+  const first = name.trim().split(" ")[0];
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+    
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
       <div className="container mx-auto flex items-center justify-between px-4 py-3">
@@ -30,14 +42,47 @@ export function SiteHeader() {
         </div>
 
         <nav className="flex items-center gap-2">
-          <Link href="/login" className="rounded-md px-3 py-2 text-sm hover:bg-accent" aria-label="Login">
+          {/* <Link href="/login" className="rounded-md px-3 py-2 text-sm hover:bg-accent" aria-label="Login">
             Login
           </Link>
           <Button asChild className="rounded-full px-4 py-2" aria-label="Sign Up">
             <Link href="/signup">Sign Up</Link>
-          </Button>
+          </Button> */}
+          {status === "authenticated" ? (
+        <div className="relative">
+          <button onClick={() => setOpen((x) => !x)} className="flex items-center gap-3">
+            <span className="hidden sm:inline">Hi, {getFirstName(session?.user?.name ?? "User")}</span>
+            <div className="w-8 h-8 rounded-md border grid place-items-center">
+              {/* simple hamburger icon */}
+              <div className="space-y-1">
+                <span className="block w-4 h-0.5 bg-black"></span>
+                <span className="block w-4 h-0.5 bg-black"></span>
+                <span className="block w-4 h-0.5 bg-black"></span>
+              </div>
+            </div>
+          </button>
+
+          {open && (
+            <div className="absolute right-0 mt-2 w-40 rounded-md border bg-white shadow">
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
+                Log out
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex gap-3">
+          <Link href="/login" className="border px-3 py-1.5 rounded hover:bg-gray-50">Log in</Link>
+          <Link href="/signup" className="border px-3 py-1.5 rounded bg-black text-white hover:bg-gray-900">Sign up</Link>
+        </div>
+      )}
         </nav>
       </div>
     </header>
   )
 }
+
+export default SiteHeader
