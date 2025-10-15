@@ -30,11 +30,11 @@ export function SiteHeader() {
         </div>
 
         <nav className="flex items-center gap-2">
-          <Link href="#" className="rounded-md px-3 py-2 text-sm hover:bg-accent" aria-label="Login">
+          <Link href="/login" className="rounded-md px-3 py-2 text-sm hover:bg-accent" aria-label="Login">
             Login
           </Link>
           <Button asChild className="rounded-full px-4 py-2" aria-label="Sign Up">
-            <Link href="#">Sign Up</Link>
+            <Link href="/signup">Sign Up</Link>
           </Button>
         </nav>
       </div>

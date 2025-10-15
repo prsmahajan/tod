@@ -4,8 +4,11 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Instrument_Sans, Instrument_Serif } from "next/font/google"
 import "./globals.css"
-import { InitialLoading } from "@/components/initial-loading"
-import { Suspense } from "react"
+import { SessionProvider } from "next-auth/react"
+import Providers from "@/components/Providers"
+// import { InitialLoading } from "@/components/initial-loading"
+// import { Suspense } from "react"
+
 
 export const metadata: Metadata = {
   title: "The Open Draft",
@@ -32,12 +35,14 @@ export default function RootLayout({
       lang="en"
       className={`${instrumentSans.variable} ${instrumentSerif.variable} ${GeistMono.variable} antialiased`}
     >
-      <body className="font-sans">
-        <Suspense fallback={<div>Loading...</div>}>
-          <InitialLoading />
+      <body className="font-sans" style={{ isolation: "isolate" }}>
+        {/* <Suspense fallback={<div>Loading...</div>}> */}
+          {/* <InitialLoading /> */}
+          <Providers>
           {children}
-        </Suspense>
+        {/* </Suspense> */}
         <Analytics />
+          </Providers>
       </body>
     </html>
   )
