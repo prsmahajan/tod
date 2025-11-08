@@ -54,7 +54,7 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-sm text-gray-600">No account? Try signing up:{" "}
-          <a href="/signup" className="text-blue-600 underline font-bold">Sign up</a>
+           <Link href="/signup" className={`underline text-blue-600 font-semibold`}>Sign up</Link>
         </p>
       </div>
     </main>

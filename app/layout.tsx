@@ -7,6 +7,7 @@ import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import Providers from "@/components/Providers"
 import Navbar from "@/components/Navbar"
+import GoogleAnalytics from "@/components/GoogleAnalytics"
 // import { InitialLoading } from "@/components/initial-loading"
 // import { Suspense } from "react"
 
@@ -36,10 +37,14 @@ export default function RootLayout({
       lang="en"
       className={`${instrumentSans.variable} ${instrumentSerif.variable} ${GeistMono.variable} antialiased`}
     >
+      <head>
+        <GoogleAnalytics />
+      </head>
       <body className="font-sans" style={{ isolation: "isolate" }}>
         {/* <Suspense fallback={<div>Loading...</div>}> */}
           {/* <InitialLoading /> */}
           <Providers>
+            {/* <Navbar /> */}
           {children}
         {/* </Suspense> */}
         <Analytics />

@@ -31,24 +31,33 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: { strategy: "jwt" },
-  callbacks: {
+callbacks: {
     async jwt({ token, user }) {
+      // On sign-in, stash emailVerified on the token
       if (user) {
         token.uid = (user as any).id;
         token.name = user.name;
+
+        // Fetch once at login (or join in authorize)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: (user as any).id },
+          select: { emailVerified: true },
+        });
+        (token as any).emailVerified = dbUser?.emailVerified ?? null;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.name = token.name as string | undefined;
-        // session.user.email is already there
+        // Expose verified flag to the client
+        (session as any).emailVerified = (token as any).emailVerified ?? null;
       }
       return session;
     },
   },
-  pages: { signIn: "/login" }, // optional
+  pages: { signIn: "/login" },
 };
 
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST }
