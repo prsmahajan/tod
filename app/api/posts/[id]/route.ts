@@ -111,15 +111,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       },
     });
 
-    // Email sending disabled temporarily
-    // if (status === "PUBLISHED" && existingPost.status !== "PUBLISHED" && !existingPost.emailSent) {
-    //   try {
-    //     const { sendNewsletterEmail } = await import("@/lib/newsletter");
-    //     await sendNewsletterEmail(post as any);
-    //   } catch (emailError) {
-    //     console.error("Failed to send newsletter email:", emailError);
-    //   }
-    // }
+    // Send newsletter email when changing to published
+    if (status === "PUBLISHED" && existingPost.status !== "PUBLISHED" && !existingPost.emailSent) {
+      try {
+        const { sendNewsletterEmail } = await import("@/lib/newsletter");
+        await sendNewsletterEmail(post as any);
+      } catch (emailError) {
+        console.error("Failed to send newsletter email:", emailError);
+        // Don't fail the update if email fails
+      }
+    }
 
     return NextResponse.json(post);
   } catch (error: any) {

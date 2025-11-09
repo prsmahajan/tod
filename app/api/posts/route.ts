@@ -92,15 +92,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // Email sending disabled temporarily
-    // if (status === "PUBLISHED") {
-    //   try {
-    //     const { sendNewsletterEmail } = await import("@/lib/newsletter");
-    //     await sendNewsletterEmail(post as any);
-    //   } catch (emailError) {
-    //     console.error("Failed to send newsletter email:", emailError);
-    //   }
-    // }
+    // Send newsletter email when publishing
+    if (status === "PUBLISHED" && !post.emailSent) {
+      try {
+        const { sendNewsletterEmail } = await import("@/lib/newsletter");
+        await sendNewsletterEmail(post as any);
+      } catch (emailError) {
+        console.error("Failed to send newsletter email:", emailError);
+        // Don't fail the post creation if email fails
+      }
+    }
 
     return NextResponse.json(post);
   } catch (error: any) {

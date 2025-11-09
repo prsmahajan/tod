@@ -51,17 +51,17 @@ export async function GET(req: Request) {
     await Promise.all(updatePromises);
 
     // Send newsletter emails for newly published posts
-    // (Optional: You can enable this once you're ready to send newsletters)
-    // const { sendNewsletterEmail } = await import("@/lib/newsletter");
-    // for (const post of scheduledPosts) {
-    //   try {
-    //     if (!post.emailSent) {
-    //       await sendNewsletterEmail(post as any);
-    //     }
-    //   } catch (emailError) {
-    //     console.error(`Failed to send newsletter for post ${post.id}:`, emailError);
-    //   }
-    // }
+    const { sendNewsletterEmail } = await import("@/lib/newsletter");
+    for (const post of scheduledPosts) {
+      try {
+        if (!post.emailSent) {
+          await sendNewsletterEmail(post as any);
+        }
+      } catch (emailError) {
+        console.error(`Failed to send newsletter for post ${post.id}:`, emailError);
+        // Continue with other posts even if one fails
+      }
+    }
 
     console.log(`Published ${scheduledPosts.length} scheduled posts:`, scheduledPosts.map(p => p.title));
 
