@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SavePostButton } from "@/components/SavePostButton";
+import { SocialShare } from "@/components/SocialShare";
+import { generateSEO } from "@/components/SEOHead";
 
 export async function generateStaticParams() {
   const posts = await prisma.post.findMany({
@@ -12,6 +14,33 @@ export async function generateStaticParams() {
   return posts.map((post) => ({
     slug: post.slug,
   }));
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const post = await prisma.post.findUnique({
+    where: { slug: params.slug },
+    select: {
+      title: true,
+      excerpt: true,
+      coverImage: true,
+      publishedAt: true,
+      author: { select: { name: true } },
+    },
+  });
+
+  if (!post) {
+    return {};
+  }
+
+  return generateSEO({
+    title: post.title,
+    description: post.excerpt || `Read ${post.title} on The Open Draft - Technology explained simply while feeding stray animals in India.`,
+    image: post.coverImage || undefined,
+    url: `/newsletter/${params.slug}`,
+    type: 'article',
+    publishedTime: post.publishedAt?.toISOString(),
+    author: post.author.name,
+  });
 }
 
 export default async function NewsletterPostPage({ params }: { params: { slug: string } }) {
@@ -93,7 +122,7 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
             </div>
           )}
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap items-center gap-4">
             <SavePostButton postId={post.id} showText />
           </div>
         </header>
@@ -102,6 +131,15 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
           className="prose prose-lg max-w-none bg-white p-8 rounded-lg shadow-sm"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
+
+        {/* Social Sharing */}
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+          <SocialShare
+            url={`/newsletter/${post.slug}`}
+            title={post.title}
+            description={post.excerpt || undefined}
+          />
+        </div>
 
         {post.author.bio && (
           <div className="mt-12 p-6 bg-white rounded-lg shadow-sm">
