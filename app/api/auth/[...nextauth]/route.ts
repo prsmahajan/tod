@@ -31,9 +31,21 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: { strategy: "jwt" },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.theopendraft.com' : undefined,
+      },
+    },
+  },
 callbacks: {
     async jwt({ token, user }) {
-      // On sign-in, stash emailVerified on the token
+      // On sign-in, stash emailVerified and role on the token
       if (user) {
         token.uid = (user as any).id;
         token.name = user.name;
@@ -41,17 +53,22 @@ callbacks: {
         // Fetch once at login (or join in authorize)
         const dbUser = await prisma.user.findUnique({
           where: { id: (user as any).id },
-          select: { emailVerified: true },
+          select: { emailVerified: true, role: true },
         });
         (token as any).emailVerified = dbUser?.emailVerified ?? null;
+        (token as any).role = dbUser?.role ?? 'USER';
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.name = token.name as string | undefined;
-        // Expose verified flag to the client
+        // Expose verified flag and role to the client
         (session as any).emailVerified = (token as any).emailVerified ?? null;
+        (session as any).user = {
+          ...session.user,
+          role: (token as any).role ?? 'USER',
+        };
       }
       return session;
     },

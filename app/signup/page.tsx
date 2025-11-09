@@ -40,18 +40,25 @@ export default function SignupPage() {
       return;
     }
 
-    // Auto-login with credentials, land on home
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: true,
-      callbackUrl: "/",
-    });
+    // Auto-login with credentials
+    const result = await signIn("credentials", { email, password, redirect: false });
 
-    // If redirect didn't happen (just in case)
-    if ((result as any)?.error) {
+    if (result?.ok) {
+      // Check if user is admin (first user becomes admin automatically)
+      const sessionRes = await fetch('/api/auth/session');
+      const session = await sessionRes.json();
+
+      if (session?.user?.role && ['ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
+        // Redirect to quirky subdomain admin
+        const protocol = window.location.protocol;
+        const host = window.location.host.replace(/^(www\.|quirky\.)/, '');
+        window.location.href = `${protocol}//quirky.${host}/admin`;
+      } else {
+        router.replace("/");
+      }
+    } else {
       setLoading(false);
-      setError("Auto-login failed. Please log in.");
+      setError("Auto-login failed. Please log in manually.");
     }
   }
 
