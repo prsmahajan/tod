@@ -1,8 +1,10 @@
 {
-  "crons": [
+  "_comment": "Cron jobs disabled - Vercel free plan doesn't support cron jobs",
+  "_crons_disabled": [
     {
       "path": "/api/cron/publish-scheduled",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/15 * * * *",
+      "description": "Auto-publishes scheduled posts every 15 minutes"
     }
   ]
 }
