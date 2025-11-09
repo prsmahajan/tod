@@ -57,20 +57,6 @@ export default function SignupPage() {
 
   return (
     <main>
-        <div className="m-3">
-        <Link href="/" aria-label="Home" className="inline-flex items-center">
-          <span className="place-items-center">
-            <Image
-              src="/images/logo-dark.png"
-              alt="The Open Draft logo"
-              className="rounded-xl"
-              width={50}
-              height={50}
-              priority
-            />
-          </span>
-        </Link>
-      </div>
       <div className="max-w-md mx-auto p-6">
       <h1 className="text-3xl font-semibold text-center mb-4">Create your account</h1>
       <form onSubmit={onSubmit} className="space-y-4">

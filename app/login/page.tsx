@@ -28,20 +28,6 @@ export default function LoginPage() {
 
   return (
     <main>
-      <div className="m-3">
-        <Link href="/" aria-label="Home" className="inline-flex items-center">
-          <span className="place-items-center">
-            <Image
-              src="/images/logo-dark.png"
-              alt="The Open Draft logo"
-              className="rounded-xl"
-              width={50}
-              height={50}
-              priority
-            />
-          </span>
-        </Link>
-      </div>
       <div className="max-w-md mx-auto p-6">
         <h1 className="text-2xl font-semibold">Log in</h1>
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>

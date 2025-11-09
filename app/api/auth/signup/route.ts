@@ -61,7 +61,16 @@ export async function POST(req: Request) {
     const emailNorm = email.trim().toLowerCase();
     const nameNorm = titleCase(name);
 
-    // 2) duplicate email check
+    // 2) Check user limit (max 3 users)
+    const userCount = await prisma.user.count();
+    if (userCount >= 3) {
+      return NextResponse.json(
+        { error: "Maximum user limit reached. Contact admin for access." },
+        { status: 403 }
+      );
+    }
+
+    // 3) duplicate email check
     const exists = await prisma.user.findUnique({
       where: { email: emailNorm },
       select: { id: true, emailVerified: true },
@@ -73,23 +82,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3) create user
+    // 4) create user (first user becomes ADMIN automatically)
     const passwordHash = await bcrypt.hash(password, 12);
+    const isFirstUser = userCount === 0;
+
     await prisma.user.create({
-      data: { name: nameNorm, email: emailNorm, passwordHash },
+      data: {
+        name: nameNorm,
+        email: emailNorm,
+        passwordHash,
+        role: isFirstUser ? "ADMIN" : "USER",
+        emailVerified: isFirstUser ? new Date() : null, // First user auto-verified
+      },
     });
 
-    // 4) create verification token + send email
-    try {
-      const rawToken = await createEmailVerificationToken(emailNorm);
-      const base =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        process.env.APP_URL ||
-        new URL(req.url).origin;
-      const verifyUrl = `${base}/verify?token=${encodeURIComponent(rawToken)}`;
+    // 5) create verification token + send email (skip for first user - already verified)
+    if (!isFirstUser) {
+      try {
+        const rawToken = await createEmailVerificationToken(emailNorm);
+        const base =
+          process.env.NEXT_PUBLIC_APP_URL ||
+          process.env.APP_URL ||
+          new URL(req.url).origin;
+        const verifyUrl = `${base}/verify?token=${encodeURIComponent(rawToken)}`;
 
-      await sendVerificationEmail(emailNorm, verifyUrl);
-    } catch (emailErr: any) {
+        await sendVerificationEmail(emailNorm, verifyUrl);
+      } catch (emailErr: any) {
       console.error("EMAIL_FLOW_ERROR →", emailErr);
       const msg = String(emailErr?.message ?? "").toLowerCase();
       const mailError =
@@ -115,10 +133,19 @@ export async function POST(req: Request) {
         },
         { status: 502 }
       );
+      }
     }
 
-    // 5) success
-    return NextResponse.json({ ok: true }, { status: 201 });
+    // 6) success
+    return NextResponse.json(
+      {
+        ok: true,
+        message: isFirstUser
+          ? "Admin account created! You can now access the admin panel."
+          : "Account created! Check your email for verification.",
+      },
+      { status: 201 }
+    );
   } catch (err: any) {
     console.error("SIGNUP_ERROR →", err);
 
