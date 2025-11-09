@@ -51,10 +51,13 @@ export default function Navbar() {
               Our Mission
             </Link>
             {isAdmin && (
-              <Link href="/admin" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition flex items-center gap-1">
+              <a
+                href={typeof window !== 'undefined' ? `${window.location.protocol}//quirky.${window.location.host.replace(/^(www\.|quirky\.)/, '')}/admin` : '/admin'}
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition flex items-center gap-1"
+              >
                 <LayoutDashboard size={16} />
                 Admin
-              </Link>
+              </a>
             )}
           </div>
         </div>
@@ -80,14 +83,14 @@ export default function Navbar() {
             {open && (
               <div className="absolute right-0 mt-2 w-48 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
                 {isAdmin && (
-                  <Link
-                    href="/admin"
+                  <a
+                    href={typeof window !== 'undefined' ? `${window.location.protocol}//quirky.${window.location.host.replace(/^(www\.|quirky\.)/, '')}/admin` : '/admin'}
                     className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-gray-700 dark:text-gray-200"
                     onClick={() => setOpen(false)}
                   >
                     <LayoutDashboard size={16} />
                     Admin Dashboard
-                  </Link>
+                  </a>
                 )}
                 <Link
                   href="/saved"
