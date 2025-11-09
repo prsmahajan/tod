@@ -21,7 +21,7 @@ export function Hero() {
       {/* Main Heading */}
       <div className="text-center space-y-4">
         <h1 className="text-balance font-sans text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
-          <span className="font-serif bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="font-serif text-[#111]">
             The Open Draft
           </span>
         </h1>

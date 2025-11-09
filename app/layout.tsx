@@ -2,12 +2,13 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-import { Instrument_Sans, Instrument_Serif } from "next/font/google"
+import { Inter, Merriweather, Caveat } from "next/font/google"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import Providers from "@/components/Providers"
 import Navbar from "@/components/Navbar"
 import GoogleAnalytics from "@/components/GoogleAnalytics"
+import { ThemeProvider } from "@/components/ThemeProvider"
 // import { InitialLoading } from "@/components/initial-loading"
 // import { Suspense } from "react"
 
@@ -17,14 +18,18 @@ export const metadata: Metadata = {
   description: "Helping you understand the technology that runs your systems.",
 }
 
-const instrumentSans = Instrument_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-instrument-sans",
+  variable: "--font-inter",
 })
-const instrumentSerif = Instrument_Serif({
+const merriweather = Merriweather({
   subsets: ["latin"],
-  variable: "--font-instrument-serif",
-  weight: '400',
+  variable: "--font-merriweather",
+  weight: ['300', '400', '700'],
+})
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat",
 })
 
 export default function RootLayout({
@@ -35,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSans.variable} ${instrumentSerif.variable} ${GeistMono.variable} antialiased`}
+      className={`${inter.variable} ${merriweather.variable} ${caveat.variable} ${GeistMono.variable} antialiased`}
     >
       <head>
         <GoogleAnalytics />
@@ -43,12 +48,14 @@ export default function RootLayout({
       <body className="font-sans" style={{ isolation: "isolate" }}>
         {/* <Suspense fallback={<div>Loading...</div>}> */}
           {/* <InitialLoading /> */}
-          <Providers>
-            <Navbar />
-          {children}
+          <ThemeProvider>
+            <Providers>
+              <Navbar />
+              {children}
+              <Analytics />
+            </Providers>
+          </ThemeProvider>
         {/* </Suspense> */}
-        <Analytics />
-          </Providers>
       </body>
     </html>
   )

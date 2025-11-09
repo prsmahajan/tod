@@ -17,10 +17,10 @@ export default function MissionPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
               <Heart size={40} className="text-red-600 fill-current" />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
-              Every Subscription <span className="text-red-600">Feeds a Life</span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 font-serif">
+              Every Subscription <span className="text-red-600 font-hand">Feeds a Life</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed font-serif">
               We're not just another tech newsletter. We're a community that uses technology knowledge to feed hungry stray animals across India.
             </p>
           </div>
@@ -29,15 +29,15 @@ export default function MissionPage() {
         {/* The Problem */}
         <section className="py-12 px-4 bg-white">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">The Reality We're Facing</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center font-serif">The Reality We're Facing</h2>
             <div className="prose prose-lg max-w-none">
-              <p className="text-gray-700 text-lg leading-relaxed mb-6">
+              <p className="text-gray-700 text-lg leading-relaxed mb-6 font-serif">
                 Across India, millions of stray animals—dogs, cats, cows, bulls, and pigeons—struggle to survive on our streets.
                 They face hunger, neglect, and harsh conditions every single day. Many go days without a proper meal.
               </p>
-              <p className="text-gray-700 text-lg leading-relaxed mb-6">
+              <p className="text-gray-700 text-lg leading-relaxed mb-6 font-serif">
                 These innocent creatures didn't choose this life. They depend on the compassion of humans to survive.
-                But compassion alone isn't enough—we need <strong>action</strong>.
+                But compassion alone isn't enough—we need <strong className="font-hand text-xl text-gray-900">action</strong>.
               </p>
             </div>
           </div>
@@ -46,30 +46,30 @@ export default function MissionPage() {
         {/* Our Solution */}
         <section className="py-12 px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">Our Solution: Tech for Good</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center font-serif">Our Solution: <span className="font-hand text-blue-600">Tech for Good</span></h2>
             <div className="bg-blue-50 rounded-2xl p-8 md:p-12 border-2 border-blue-200">
-              <p className="text-gray-800 text-lg leading-relaxed mb-6">
-                <strong className="text-blue-600">Here's the model:</strong> We create valuable technology content that people want to learn.
+              <p className="text-gray-800 text-lg leading-relaxed mb-6 font-serif">
+                <strong className="text-blue-600 font-hand text-xl">Here's the model:</strong> We create valuable technology content that people want to learn.
                 You get knowledge about how things work in the tech world—clear, simple, in-depth articles.
               </p>
-              <p className="text-gray-800 text-lg leading-relaxed mb-6">
-                In return for just <strong className="text-2xl text-blue-600">₹10 per month</strong>, you get access to premium content.
-                But here's what makes this special: <strong>100% of subscription revenue (minus operational costs) goes directly to feeding stray animals.</strong>
+              <p className="text-gray-800 text-lg leading-relaxed mb-6 font-serif">
+                In return for just <strong className="text-3xl text-blue-600 font-hand">₹10 per month</strong>, you get access to premium content.
+                But here's what makes this special: <strong className="font-hand text-xl">100% of subscription revenue (minus operational costs) goes directly to feeding stray animals.</strong>
               </p>
               <div className="bg-white rounded-xl p-6 mt-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900">The Math That Saves Lives:</h3>
-                <ul className="space-y-3 text-gray-700">
+                <h3 className="text-xl font-bold mb-4 text-gray-900 font-hand">The Math That Saves Lives:</h3>
+                <ul className="space-y-3 text-gray-700 font-serif">
                   <li className="flex items-start gap-3">
                     <span className="text-green-600 font-bold">✓</span>
-                    <span>20,000 subscribers × ₹10/month = <strong className="text-green-600">₹2,00,000/month</strong></span>
+                    <span>20,000 subscribers × ₹10/month = <strong className="text-green-600 font-hand text-xl">₹2,00,000/month</strong></span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-green-600 font-bold">✓</span>
-                    <span>After operational costs → <strong className="text-green-600">₹1,50,000+</strong> for animal food</span>
+                    <span>After operational costs → <strong className="text-green-600 font-hand text-xl">₹1,50,000+</strong> for animal food</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-green-600 font-bold">✓</span>
-                    <span>That's <strong className="text-green-600">thousands of meals</strong> every single month</span>
+                    <span>That's <strong className="text-green-600 font-hand text-xl">thousands of meals</strong> every single month</span>
                   </li>
                 </ul>
               </div>
@@ -80,7 +80,7 @@ export default function MissionPage() {
         {/* How It Works */}
         <section className="py-12 px-4 bg-gray-50">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">How Your Subscription Helps</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center font-serif">How Your Subscription <span className="font-hand text-red-600">Helps</span></h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-white rounded-xl p-6 shadow-md text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -145,11 +145,11 @@ export default function MissionPage() {
         {/* CTA Section */}
         <section className="py-16 px-4 bg-gradient-to-b from-white to-blue-50">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Learn Tech. <span className="text-red-600">Feed Lives.</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 font-serif">
+              Learn Tech. <span className="text-red-600 font-hand text-5xl">Feed Lives.</span>
             </h2>
-            <p className="text-xl text-gray-700 mb-8">
-              Your ₹10 subscription isn't just buying content—it's buying meals for animals who have no one else.
+            <p className="text-xl text-gray-700 mb-8 font-serif">
+              Your <span className="font-hand text-2xl text-blue-600">₹10</span> subscription isn't just buying content—it's <span className="font-hand text-xl text-red-600">buying meals</span> for animals who have no one else.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
