@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=18 <21"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
