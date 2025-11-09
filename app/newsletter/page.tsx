@@ -14,11 +14,11 @@ export default async function NewsletterPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 dark:bg-[#111]">
       <div className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-4">Newsletter</h1>
-          <p className="text-xl text-gray-600">
+          <h1 className="text-5xl font-bold mb-4 text-[#111] dark:text-white">Newsletter</h1>
+          <p className="text-xl text-gray-600 dark:text-[#fff]">
             Helping you understand the technology that runs your systems
           </p>
         </div>
@@ -39,13 +39,13 @@ export default async function NewsletterPage() {
                     <img
                       src={post.coverImage}
                       alt={post.title}
-                      className="w-full h-64 object-cover"
+                      className="w-full h-64 object-cover object-[25%_34%]"
                     />
                   </div>
                 )}
 
                 <Link href={`/newsletter/${post.slug}`}>
-                  <h2 className="text-3xl font-bold mb-3 hover:text-blue-600 transition-colors">
+                  <h2 className="text-3xl font-bold mb-3 hover:text-blue-600 transition-colors dark:text-[#000]">
                     {post.title}
                   </h2>
                 </Link>
