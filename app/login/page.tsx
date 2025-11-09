@@ -53,51 +53,16 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <p className="mt-4 text-sm text-gray-600">
+          <Link href="/reset" className="underline text-blue-600">
+            Forgot your password?
+          </Link>
+        </p>
+
         <p className="mt-6 text-sm text-gray-600">No account? Try signing up:{" "}
            <Link href="/signup" className={`underline text-blue-600 font-semibold`}>Sign up</Link>
         </p>
       </div>
     </main>
-  );
-}
-
-function SignupForm() {
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  async function onSignup(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setErr(null);
-    setLoading(true);
-
-    const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email"));
-    const password = String(fd.get("password"));
-    const name = String(fd.get("name") || "");
-
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-
-    setLoading(false);
-    const data = await res.json();
-    if (!res.ok) return setErr(data.error || "Signup failed");
-    setOk(true);
-  }
-
-  return (
-    <form className="mt-3 space-y-3" onSubmit={onSignup}>
-      <input name="name" placeholder="Name (optional)" className="w-full border p-2 rounded" />
-      <input name="email" type="email" placeholder="Email" required className="w-full border p-2 rounded" />
-      <input name="password" type="password" placeholder="Password (min 8 chars)" required className="w-full border p-2 rounded" />
-      {err && <p className="text-red-600 text-sm">{err}</p>}
-      {ok && <p className="text-green-700 text-sm">Account created. Now log in above.</p>}
-      <button disabled={loading} className="w-full border p-2 rounded">
-        {loading ? "Creating..." : "Create account"}
-      </button>
-    </form>
   );
 }

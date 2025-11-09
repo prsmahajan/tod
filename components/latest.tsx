@@ -1,17 +1,119 @@
-export function Latest() {
+import { prisma } from "@/lib/db";
+import Link from "next/link";
+import { Calendar, ArrowRight } from "lucide-react";
+
+export async function Latest() {
+  const posts = await prisma.post.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { publishedAt: "desc" },
+    take: 6,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      excerpt: true,
+      publishedAt: true,
+      coverImage: true,
+      categories: {
+        include: { category: true },
+      },
+    },
+  });
+
   return (
-    <section className="py-12 sm:py-16">
-      <h2 className="mb-10 text-center font-sans text-2xl font-semibold sm:text-3xl sm:text-left sm:ml-6 md:ml-20">
-        <span className="font-serif">Latest</span>
-      </h2>
-      <div className="grid place-items-center py-10 text-muted-foreground sm:mx-8">
-        <p className="text-lg font-medium text-justify">I'm writing something for you to understand in layman terms, please allow me some time.</p>
-        <p className="text-lg font-medium text-justify">Currently you can login and signup, rest of the components are broken, please bare with me</p>
-        <p className="text-lg font-medium text-justify">I am working and update you within few weeks, i know its a hell lot of a time, but bare with me, pleaseeee</p>
-        <p className="text-lg font-2xl text-center mt-10 text-[#000]">If you want to contact me, please reach out to me on <a href="mailto:paras.mahajan@mmactiv.com" className="text-[#001233] font-extrabold text-xl">tod@theopendraft.com</a></p>
+    <section className="py-12 sm:py-16 bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Info Message */}
+        <div className="max-w-3xl mx-auto text-center mb-16">
+          <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-200">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">We're Building Something Special 🚀</h2>
+            <div className="text-gray-600 space-y-3">
+              <p>I'm creating in-depth articles to help you understand technology in simple, clear terms.</p>
+              <p>New content is coming soon! Thank you for your patience.</p>
+              <p className="mt-6 text-sm">
+                Questions or feedback? Reach me at{" "}
+                <a href="mailto:tod@theopendraft.com" className="text-blue-600 font-semibold hover:underline">
+                  tod@theopendraft.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Latest Articles */}
+        {posts.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl sm:text-4xl font-bold">
+                <span className="font-serif bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Latest Articles
+                </span>
+              </h2>
+              <Link
+                href="/newsletter"
+                className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2 group"
+              >
+                View All
+                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/newsletter/${post.slug}`}
+                  className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200"
+                >
+                  {post.coverImage && (
+                    <div className="h-48 overflow-hidden bg-gray-200">
+                      <img
+                        src={post.coverImage}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    {post.categories.length > 0 && (
+                      <div className="flex gap-2 mb-3">
+                        {post.categories.slice(0, 2).map(({ category }) => (
+                          <span
+                            key={category.id}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
+                          >
+                            {category.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+
+                    {post.excerpt && (
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
+                    )}
+
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Calendar size={14} className="mr-1" />
+                      {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      }) : ""}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
-  )
+  );
 }
 
-export default Latest
+export default Latest;

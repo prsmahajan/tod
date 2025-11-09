@@ -7,16 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+  SUBSCRIBER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+}
+
 model User {
   id             String   @id @default(cuid())
   name           String
   email          String   @unique
   passwordHash   String
   emailVerified  DateTime?
+  role           UserRole @default(SUBSCRIBER)
+  bio            String?
+  avatar         String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   passwordResetTokens PasswordResetToken[]
+  posts               Post[]
+  savedPosts          SavedPost[]
 }
 
 model PasswordResetToken {
@@ -39,6 +57,93 @@ model EmailVerificationToken {
   createdAt  DateTime @default(now())
   expiresAt  DateTime
   usedAt     DateTime?
-  
+
   @@index([email])
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  excerpt         String?
+  content         String     @db.Text
+  contentMarkdown String?    @db.Text
+  coverImage      String?
+  status          PostStatus @default(DRAFT)
+  publishedAt     DateTime?
+  scheduledFor    DateTime?
+  authorId        String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  emailSent       Boolean    @default(false)
+
+  author     User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  categories PostCategory[]
+  savedBy    SavedPost[]
+
+  @@index([authorId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([slug])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts PostCategory[]
+}
+
+model PostCategory {
+  postId     String
+  categoryId String
+
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+  @@index([postId])
+  @@index([categoryId])
+}
+
+model Subscriber {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  isActive      Boolean   @default(true)
+  subscribedAt  DateTime  @default(now())
+  unsubscribedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([isActive])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }

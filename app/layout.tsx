@@ -44,7 +44,7 @@ export default function RootLayout({
         {/* <Suspense fallback={<div>Loading...</div>}> */}
           {/* <InitialLoading /> */}
           <Providers>
-            {/* <Navbar /> */}
+            <Navbar />
           {children}
         {/* </Suspense> */}
         <Analytics />

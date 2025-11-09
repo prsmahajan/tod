@@ -7,34 +7,74 @@ import { Button } from "@/components/ui/button"
 
 export function NewsletterForm({ className }: { className?: string }) {
   const [email, setEmail] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
+  const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    console.log("[v0] Newsletter subscribe:", email)
+    setLoading(true)
+    setMessage(null)
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to subscribe" })
+        setLoading(false)
+        return
+      }
+
+      setMessage({ type: "success", text: data.message || "Successfully subscribed!" })
+      setEmail("")
+      setLoading(false)
+    } catch (error) {
+      setMessage({ type: "error", text: "Something went wrong. Please try again." })
+      setLoading(false)
+    }
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className={cn("w-full max-w-xl rounded-xl border border-input bg-card p-2 shadow-sm", className)}
-    >
-      <div className="flex items-center gap-2">
-        <label htmlFor="email" className="sr-only">
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="flex-1 rounded-lg border-0 bg-transparent focus-visible:ring-0"
-          required
-        />
-        <Button type="submit" className="rounded-xl px-5">
-          Subscribe
-        </Button>
-      </div>
-    </form>
+    <div className={cn("w-full max-w-xl", className)}>
+      <form
+        onSubmit={onSubmit}
+        className="rounded-xl border border-input bg-card p-2 shadow-sm"
+      >
+        <div className="flex items-center gap-2">
+          <label htmlFor="email" className="sr-only">
+            Email
+          </label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="flex-1 rounded-lg border-0 bg-transparent focus-visible:ring-0"
+            required
+            disabled={loading}
+          />
+          <Button type="submit" className="rounded-xl px-5" disabled={loading}>
+            {loading ? "Subscribing..." : "Subscribe"}
+          </Button>
+        </div>
+      </form>
+
+      {message && (
+        <p
+          className={cn(
+            "mt-3 text-center text-sm",
+            message.type === "success" ? "text-green-600" : "text-red-600"
+          )}
+        >
+          {message.text}
+        </p>
+      )}
+    </div>
   )
 }

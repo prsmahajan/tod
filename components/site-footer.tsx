@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { NewsletterForm } from "./newsletter-form"
 
 export function SiteFooter() {
@@ -10,8 +11,11 @@ export function SiteFooter() {
               <span className="font-serif">The Open Draft</span>
             </h3>
             <p className="max-w-lg text-muted-foreground">
-              Explore our latest news that no one is covering, but we do.
+              Technology explained simply. Every subscription feeds stray animals in India.
             </p>
+            <Link href="/mission" className="inline-block text-blue-600 hover:underline font-semibold">
+              Learn about our mission →
+            </Link>
           </div>
           <div className="md:justify-self-end">
             <NewsletterForm />
@@ -19,14 +23,17 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 text-sm text-muted-foreground md:flex-row">
-          <p>© 2025 The Open Draft.</p>
+          <p>© 2025 The Open Draft. Built with ❤️ for animals.</p>
           <nav className="flex gap-6">
-            <a href="#" className="hover:underline">
-              Privacy policy
-            </a>
-            <a href="#" className="hover:underline">
-              Terms of use
-            </a>
+            <Link href="/mission" className="hover:underline">
+              Our Mission
+            </Link>
+            <Link href="/newsletter" className="hover:underline">
+              Newsletter
+            </Link>
+            <Link href="mailto:tod@theopendraft.com" className="hover:underline">
+              Contact
+            </Link>
           </nav>
         </div>
       </div>
