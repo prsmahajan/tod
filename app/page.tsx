@@ -1,4 +1,4 @@
-import { Hero } from "@/components/hero"
+import Hero from "@/components/hero"
 import { Latest } from "@/components/latest"
 import { SiteFooter } from "@/components/site-footer"
 import { generateSEO } from "@/components/SEOHead"

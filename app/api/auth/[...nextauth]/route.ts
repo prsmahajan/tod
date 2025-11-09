@@ -33,7 +33,9 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name: process.env.NODE_ENV === 'production'
+        ? `__Secure-next-auth.session-token`
+        : `next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: 'lax',
@@ -43,6 +45,7 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
+  debug: process.env.NODE_ENV === 'development',
 callbacks: {
     async jwt({ token, user }) {
       // On sign-in, stash emailVerified and role on the token

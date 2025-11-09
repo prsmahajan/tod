@@ -44,18 +44,8 @@ export default function SignupPage() {
     const result = await signIn("credentials", { email, password, redirect: false });
 
     if (result?.ok) {
-      // Check if user is admin (first user becomes admin automatically)
-      const sessionRes = await fetch('/api/auth/session');
-      const session = await sessionRes.json();
-
-      if (session?.user?.role && ['ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
-        // Redirect to quirky subdomain admin
-        const protocol = window.location.protocol;
-        const host = window.location.host.replace(/^(www\.|quirky\.)/, '');
-        window.location.href = `${protocol}//quirky.${host}/admin`;
-      } else {
-        router.replace("/");
-      }
+      // Redirect to admin (first user is auto-admin)
+      router.replace("/admin");
     } else {
       setLoading(false);
       setError("Auto-login failed. Please log in manually.");

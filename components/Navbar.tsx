@@ -3,12 +3,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { User, LogOut, Settings, LayoutDashboard, Bookmark } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
-export default function Navbar() {
+function Navbar() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -24,7 +24,22 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const isAdmin = session?.user && ["ADMIN", "EDITOR", "AUTHOR"].includes((session.user as any).role);
+  const isAdmin = useMemo(
+    () => session?.user && ["ADMIN", "EDITOR", "AUTHOR"].includes((session.user as any).role),
+    [session]
+  );
+
+  const handleSignOut = useCallback(() => {
+    signOut({ callbackUrl: "/" });
+  }, []);
+
+  const toggleDropdown = useCallback(() => {
+    setOpen((x) => !x);
+  }, []);
+
+  const closeDropdown = useCallback(() => {
+    setOpen(false);
+  }, []);
 
   return (
     <nav className="w-full border-b bg-white dark:bg-gray-900 dark:border-gray-800 px-6 py-4 sticky top-0 z-50">
@@ -51,13 +66,13 @@ export default function Navbar() {
               Our Mission
             </Link>
             {isAdmin && (
-              <a
-                href={typeof window !== 'undefined' ? `${window.location.protocol}//quirky.${window.location.host.replace(/^(www\.|quirky\.)/, '')}/admin` : '/admin'}
+              <Link
+                href="/admin"
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition flex items-center gap-1"
               >
                 <LayoutDashboard size={16} />
                 Admin
-              </a>
+              </Link>
             )}
           </div>
         </div>
@@ -69,7 +84,7 @@ export default function Navbar() {
           {status === "authenticated" ? (
             <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setOpen((x) => !x)}
+              onClick={toggleDropdown}
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               <span className="hidden sm:inline text-sm text-gray-700 dark:text-gray-300">
@@ -83,25 +98,25 @@ export default function Navbar() {
             {open && (
               <div className="absolute right-0 mt-2 w-48 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
                 {isAdmin && (
-                  <a
-                    href={typeof window !== 'undefined' ? `${window.location.protocol}//quirky.${window.location.host.replace(/^(www\.|quirky\.)/, '')}/admin` : '/admin'}
+                  <Link
+                    href="/admin"
                     className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-gray-700 dark:text-gray-200"
-                    onClick={() => setOpen(false)}
+                    onClick={closeDropdown}
                   >
                     <LayoutDashboard size={16} />
                     Admin Dashboard
-                  </a>
+                  </Link>
                 )}
                 <Link
                   href="/saved"
                   className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-gray-700 dark:text-gray-200"
-                  onClick={() => setOpen(false)}
+                  onClick={closeDropdown}
                 >
                   <Bookmark size={16} />
                   Saved Posts
                 </Link>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={handleSignOut}
                   className="w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-left text-red-600 dark:text-red-400"
                 >
                   <LogOut size={16} />
@@ -131,3 +146,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+export default memo(Navbar);

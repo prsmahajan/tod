@@ -14,28 +14,23 @@ export async function middleware(request: NextRequest) {
                         hostname.includes("localhost") ||
                         hostname.includes("vercel.app"));
 
-  // Admin routes should ONLY work on quirky subdomain
+  // Admin routes - check authentication
   if (pathname.startsWith("/admin")) {
-    if (!isQuirkySubdomain) {
-      // Redirect to quirky subdomain
-      const quirkyUrl = new URL(request.url);
-      quirkyUrl.host = hostname.replace(/^(www\.)?/, "quirky.");
-
-      // If localhost, use quirky.localhost
-      if (hostname.includes("localhost")) {
-        quirkyUrl.host = `quirky.${hostname}`;
-      }
-
-      return NextResponse.redirect(quirkyUrl);
-    }
-
-    // On quirky subdomain - check authentication
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
     });
 
+    console.log('[MIDDLEWARE] Admin access attempt');
+    console.log('[MIDDLEWARE] Path:', pathname);
+    console.log('[MIDDLEWARE] Host:', hostname);
+    console.log('[MIDDLEWARE] Token found:', !!token);
+    if (token) {
+      console.log('[MIDDLEWARE] User role:', (token as any).role);
+    }
+
     if (!token) {
+      console.log('[MIDDLEWARE] No token - redirecting to login');
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
@@ -44,9 +39,11 @@ export async function middleware(request: NextRequest) {
     // Check if user has admin role
     const userRole = (token as any).role;
     if (!["ADMIN", "EDITOR", "AUTHOR"].includes(userRole)) {
+      console.log('[MIDDLEWARE] User not admin - redirecting home');
       return NextResponse.redirect(new URL("/", request.url));
     }
 
+    console.log('[MIDDLEWARE] Admin access granted');
     return NextResponse.next();
   }
 

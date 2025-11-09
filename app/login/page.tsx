@@ -20,22 +20,21 @@ export default function LoginPage() {
     const password = String(fd.get("password"));
 
     const res = await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
 
     if (res?.ok) {
-      // Redirect to admin subdomain for admins, dashboard for regular users
-      const sessionRes = await fetch('/api/auth/session');
-      const session = await sessionRes.json();
+      // Check if there's a callback URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const callbackUrl = urlParams.get('callbackUrl');
 
-      if (session?.user?.role && ['ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
-        // Redirect to quirky subdomain admin
-        const protocol = window.location.protocol;
-        const host = window.location.host.replace(/^(www\.|quirky\.)/, '');
-        window.location.href = `${protocol}//quirky.${host}/admin`;
+      if (callbackUrl) {
+        // Redirect to the callback URL
+        router.replace(callbackUrl);
       } else {
-        router.replace("/dashboard");
+        // Default redirect
+        router.replace("/admin");
       }
     } else {
+      setLoading(false);
       setErr("Invalid email or password");
     }
   }

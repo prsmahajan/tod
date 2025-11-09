@@ -1,7 +1,7 @@
 "use client";
 
 import { Share2, Twitter, Facebook, Linkedin, Link as LinkIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SocialShareProps {
   url: string;
@@ -11,10 +11,13 @@ interface SocialShareProps {
 
 export function SocialShare({ url, title, description }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [shareUrl, setShareUrl] = useState(url);
 
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${url}`
-    : url;
+  useEffect(() => {
+    setMounted(true);
+    setShareUrl(`${window.location.origin}${url}`);
+  }, [url]);
 
   const shareText = description || title;
 
@@ -53,7 +56,7 @@ export function SocialShare({ url, title, description }: SocialShareProps) {
       <span className="text-sm font-semibold text-gray-700">Share:</span>
 
       {/* Native Share (Mobile) */}
-      {typeof navigator !== 'undefined' && navigator.share && (
+      {mounted && navigator.share && (
         <button
           onClick={handleNativeShare}
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition text-sm"

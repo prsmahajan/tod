@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import Image from "next/image";
 import { Calendar, ArrowRight } from "lucide-react";
 
 export async function Latest() {
@@ -66,11 +67,14 @@ export async function Latest() {
                   className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200"
                 >
                   {post.coverImage && (
-                    <div className="h-48 overflow-hidden bg-gray-200">
-                      <img
+                    <div className="relative h-48 overflow-hidden bg-gray-200">
+                      <Image
                         src={post.coverImage}
                         alt={post.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover"
+                        loading="lazy"
                       />
                     </div>
                   )}

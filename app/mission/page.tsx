@@ -177,27 +177,27 @@ export default function MissionPage() {
             <h2 className="text-3xl font-bold mb-8 text-center dark:text-[#000]">Common Questions</h2>
             <div className="space-y-6">
               <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]ggi">How much of my subscription goes to animals?</h3>
+                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">How much of my subscription goes to animals?</h3>
                 <p className="text-gray-700">
                   100% of revenue after minimal operational costs (hosting, email service, payment processing fees).
                   We're committed to keeping operations lean so maximum funds reach the animals.
                 </p>
               </div>
               <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]ggi">Where are the animals located?</h3>
+                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">Where are the animals located?</h3>
                 <p className="text-gray-700">
                   We feed stray animals across various locations in India, focusing on areas with the highest need.
                   Monthly reports include locations and photos.
                 </p>
               </div>
               <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]ggi">Can I cancel anytime?</h3>
+                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">Can I cancel anytime?</h3>
                 <p className="text-gray-700">
                   Yes, absolutely. No hard feelings. You can cancel your subscription anytime from your account settings.
                 </p>
               </div>
               <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]ggi">What kind of content do I get?</h3>
+                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">What kind of content do I get?</h3>
                 <p className="text-gray-700">
                   In-depth articles explaining how technology works—from web development to system design,
                   cloud computing to databases. Complex topics made simple and clear.

@@ -2,8 +2,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { NewsletterForm } from "./newsletter-form"
 import { Heart } from "lucide-react"
+import { memo } from "react"
 
-export function Hero() {
+function Hero() {
   return (
     <section className="mx-auto flex max-w-4xl flex-col items-center gap-8 py-12 sm:py-16 px-4">
       {/* Logo */}
@@ -78,4 +79,4 @@ export function Hero() {
   )
 }
 
-export default Hero
+export default memo(Hero)
