@@ -13,7 +13,6 @@ interface AnimalPhoto {
 export function AnimalPhotoCarousel() {
   const [photos, setPhotos] = useState<AnimalPhoto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     async function fetchPhotos() {
@@ -57,16 +56,11 @@ export function AnimalPhotoCarousel() {
         </p>
       </div>
 
-      <div
-        className="relative"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
+      <div className="relative">
         <div className="flex gap-6 px-6 overflow-hidden">
           <div
-            className={`flex gap-6 ${isPaused ? "" : "animate-scroll"}`}
+            className="flex gap-6 animate-scroll"
             style={{
-              animationPlayState: isPaused ? "paused" : "running",
               willChange: 'transform',
               backfaceVisibility: 'hidden',
               transform: 'translateZ(0)',
