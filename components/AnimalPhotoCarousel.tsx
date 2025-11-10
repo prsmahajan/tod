@@ -80,6 +80,12 @@ export function AnimalPhotoCarousel() {
                   fill
                   className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-125"
                   sizes="320px"
+                  unoptimized={photo.imageUrl.startsWith("http")}
+                  onError={(e) => {
+                    // Hide broken images gracefully
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                  }}
                 />
                 {photo.caption && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
