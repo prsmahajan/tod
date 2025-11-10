@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Heart, DollarSign, Users, TrendingUp } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { ImpactDashboard } from "@/components/ImpactDashboard";
+import { SubscriptionCalculator } from "@/components/SubscriptionCalculator";
 
 export const metadata = {
   title: "Our Mission - Feeding Stray Animals in India | The Open Draft",
@@ -113,6 +114,13 @@ export default function MissionPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Interactive Calculator */}
+        <section className="py-12 px-4">
+          <div className="max-w-6xl mx-auto">
+            <SubscriptionCalculator />
           </div>
         </section>
 

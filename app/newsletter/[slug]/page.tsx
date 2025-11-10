@@ -8,6 +8,7 @@ import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import { RelatedPosts } from "@/components/RelatedPosts";
 import { TableOfContents } from "@/components/TableOfContents";
 import { PostViews } from "@/components/PostViews";
+import { ReadingProgressBar } from "@/components/ReadingProgressBar";
 import { Clock } from "lucide-react";
 
 export async function generateStaticParams() {
@@ -77,10 +78,12 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
   const readingTime = calculateReadingTime(post.content);
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-16">
-        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8">
-          <article className="max-w-3xl">
+    <>
+      <ReadingProgressBar />
+      <main className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-16">
+          <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8">
+            <article className="max-w-3xl">
         <Link
           href="/newsletter"
           className="inline-block mb-8 text-blue-600 hover:underline"
@@ -186,8 +189,9 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
       <aside className="hidden lg:block">
         <TableOfContents content={post.content} />
       </aside>
-    </div>
-    </div>
-    </main>
+      </div>
+      </div>
+      </main>
+    </>
   );
 }
