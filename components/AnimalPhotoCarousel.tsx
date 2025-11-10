@@ -73,20 +73,24 @@ export function AnimalPhotoCarousel() {
               <div
                 key={`${photo.id}-${index}`}
                 className="flex-shrink-0 w-80 h-80 relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
+                style={{ willChange: 'transform' }}
               >
-                <Image
-                  src={photo.imageUrl}
-                  alt={photo.caption || "Animal being fed"}
-                  fill
-                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-125"
-                  sizes="320px"
-                  unoptimized={photo.imageUrl.startsWith("http")}
-                  onError={(e) => {
-                    // Hide broken images gracefully
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                  }}
-                />
+                <div className="w-full h-full relative overflow-hidden">
+                  <Image
+                    src={photo.imageUrl}
+                    alt={photo.caption || "Animal being fed"}
+                    fill
+                    className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-300 ease-out"
+                    style={{ transformOrigin: 'center center' }}
+                    sizes="320px"
+                    unoptimized={photo.imageUrl.startsWith("http")}
+                    onError={(e) => {
+                      // Hide broken images gracefully
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                    }}
+                  />
+                </div>
                 {photo.caption && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <p className="text-white text-sm font-medium">
