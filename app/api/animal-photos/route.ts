@@ -36,14 +36,7 @@ export async function GET(req: Request) {
       orderBy: { order: "asc" },
     });
 
-    // Filter out local photos in production (when Blob storage is available)
-    let filteredPhotos = photos;
-    if (process.env.BLOB_READ_WRITE_TOKEN && !isAdmin) {
-      // In production, only show Blob URLs (http/https), hide local paths
-      filteredPhotos = photos.filter(photo => photo.imageUrl.startsWith('http'));
-    }
-
-    return NextResponse.json(filteredPhotos);
+    return NextResponse.json(photos);
   } catch (error) {
     console.error("Failed to fetch photos:", error);
     return NextResponse.json(
