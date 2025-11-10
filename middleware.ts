@@ -7,44 +7,58 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") || "";
 
-  // Extract subdomain
-  const isQuirkySubdomain = hostname.startsWith("quirky.");
-  const isMainDomain = !hostname.startsWith("quirky.") &&
-                       (hostname.includes("theopendraft.com") ||
-                        hostname.includes("localhost") ||
-                        hostname.includes("vercel.app"));
+  console.log('[MIDDLEWARE] Request:', {
+    pathname,
+    hostname,
+    hasSecret: !!process.env.NEXTAUTH_SECRET,
+    cookies: request.cookies.getAll().map(c => ({ name: c.name, hasValue: !!c.value })),
+  });
 
   // Admin routes - check authentication
   if (pathname.startsWith("/admin")) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    try {
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
 
-    console.log('[MIDDLEWARE] Admin access attempt');
-    console.log('[MIDDLEWARE] Path:', pathname);
-    console.log('[MIDDLEWARE] Host:', hostname);
-    console.log('[MIDDLEWARE] Token found:', !!token);
-    if (token) {
-      console.log('[MIDDLEWARE] User role:', (token as any).role);
-    }
+      console.log('[MIDDLEWARE] Admin access attempt:', {
+        pathname,
+        hostname,
+        hasToken: !!token,
+        tokenData: token ? {
+          role: (token as any).role,
+          email: token.email,
+          name: token.name,
+          uid: (token as any).uid,
+        } : null,
+      });
 
-    if (!token) {
-      console.log('[MIDDLEWARE] No token - redirecting to login');
+      if (!token) {
+        console.log('[MIDDLEWARE] No token - redirecting to login');
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      // Check if user has admin role
+      const userRole = (token as any).role;
+      console.log('[MIDDLEWARE] User role check:', { userRole, allowedRoles: ["ADMIN", "EDITOR", "AUTHOR"] });
+
+      if (!["ADMIN", "EDITOR", "AUTHOR"].includes(userRole)) {
+        console.log('[MIDDLEWARE] User not admin - redirecting home');
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+
+      console.log('[MIDDLEWARE] Admin access granted');
+      return NextResponse.next();
+    } catch (error: any) {
+      console.error('[MIDDLEWARE] Error in admin check:', error.message, error.stack);
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
+      loginUrl.searchParams.set("error", "auth_error");
       return NextResponse.redirect(loginUrl);
     }
-
-    // Check if user has admin role
-    const userRole = (token as any).role;
-    if (!["ADMIN", "EDITOR", "AUTHOR"].includes(userRole)) {
-      console.log('[MIDDLEWARE] User not admin - redirecting home');
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    console.log('[MIDDLEWARE] Admin access granted');
-    return NextResponse.next();
   }
 
   // Dashboard, account, settings - require auth on any domain
@@ -53,18 +67,25 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/account") ||
     pathname.startsWith("/settings")
   ) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    try {
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
 
-    if (!token) {
+      if (!token) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      return NextResponse.next();
+    } catch (error: any) {
+      console.error('[MIDDLEWARE] Error in auth check:', error.message);
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
-
-    return NextResponse.next();
   }
 
   return NextResponse.next();

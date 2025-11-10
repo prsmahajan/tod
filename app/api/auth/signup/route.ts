@@ -57,13 +57,16 @@ export async function POST(req: Request) {
   try {
     // 1) parse & normalize
     const body = await req.json();
+    console.log('[SIGNUP] Signup attempt');
     const { name, email, password } = schema.parse(body);
     const emailNorm = email.trim().toLowerCase();
     const nameNorm = titleCase(name);
 
     // 2) Check user limit (max 3 users)
     const userCount = await prisma.user.count();
+    console.log('[SIGNUP] Current user count:', userCount);
     if (userCount >= 3) {
+      console.log('[SIGNUP] User limit reached');
       return NextResponse.json(
         { error: "Maximum user limit reached. Contact admin for access." },
         { status: 403 }
@@ -76,6 +79,7 @@ export async function POST(req: Request) {
       select: { id: true, emailVerified: true },
     });
     if (exists) {
+      console.log('[SIGNUP] Email already exists:', emailNorm);
       return NextResponse.json(
         { error: "An account with this email already exists. Try logging in." },
         { status: 409 }
@@ -86,6 +90,8 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 12);
     const isFirstUser = userCount === 0;
 
+    console.log('[SIGNUP] Creating user:', { email: emailNorm, isFirstUser, role: isFirstUser ? 'ADMIN' : 'USER' });
+
     await prisma.user.create({
       data: {
         name: nameNorm,
@@ -95,6 +101,8 @@ export async function POST(req: Request) {
         emailVerified: isFirstUser ? new Date() : null, // First user auto-verified
       },
     });
+
+    console.log('[SIGNUP] User created successfully');
 
     // 5) create verification token + send email (skip for first user - already verified)
     if (!isFirstUser) {

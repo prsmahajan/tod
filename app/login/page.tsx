@@ -1,14 +1,27 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Check for error in URL params
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const callbackUrl = searchParams.get('callbackUrl');
+
+    if (error === 'auth_error') {
+      setErr("Authentication error. Please try logging in again. If the problem persists, check the deployment configuration.");
+    } else if (callbackUrl) {
+      setErr(`You must be logged in to access ${callbackUrl}`);
+    }
+  }, [searchParams]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -19,12 +32,17 @@ export default function LoginPage() {
     const email = String(fd.get("email"));
     const password = String(fd.get("password"));
 
+    console.log('[LOGIN] Attempting login for:', email);
+
     const res = await signIn("credentials", { email, password, redirect: false });
+
+    console.log('[LOGIN] Sign in result:', { ok: res?.ok, error: res?.error });
 
     if (res?.ok) {
       // Check if there's a callback URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const callbackUrl = urlParams.get('callbackUrl');
+      const callbackUrl = searchParams.get('callbackUrl');
+
+      console.log('[LOGIN] Login successful, redirecting to:', callbackUrl || '/admin');
 
       if (callbackUrl) {
         // Redirect to the callback URL
@@ -35,7 +53,9 @@ export default function LoginPage() {
       }
     } else {
       setLoading(false);
-      setErr("Invalid email or password");
+      const errorMessage = res?.error || "Invalid email or password";
+      console.error('[LOGIN] Login failed:', errorMessage);
+      setErr(errorMessage);
     }
   }
 

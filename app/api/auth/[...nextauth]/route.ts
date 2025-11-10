@@ -16,15 +16,29 @@ export const authOptions: NextAuthOptions = {
       name: "Email & Password",
       credentials: { email: { label: "Email", type: "email" }, password: { label: "Password", type: "password" } },
       async authorize(raw) {
+        console.log('[NEXTAUTH] Authorization attempt');
         const parsed = credentialsSchema.safeParse(raw);
-        if (!parsed.success) return null;
+        if (!parsed.success) {
+          console.log('[NEXTAUTH] Invalid credentials format');
+          return null;
+        }
         const { email, password } = parsed.data;
 
+        console.log('[NEXTAUTH] Looking up user:', email);
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
-        const ok = await bcrypt.compare(password, user.passwordHash);
-        if (!ok) return null;
+        if (!user) {
+          console.log('[NEXTAUTH] User not found');
+          return null;
+        }
 
+        console.log('[NEXTAUTH] Verifying password');
+        const ok = await bcrypt.compare(password, user.passwordHash);
+        if (!ok) {
+          console.log('[NEXTAUTH] Password incorrect');
+          return null;
+        }
+
+        console.log('[NEXTAUTH] Authorization successful for:', email);
         // Return minimal public profile; NextAuth will put this into the JWT
         return { id: user.id, email: user.email, name: user.name };
       },
@@ -41,15 +55,17 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.theopendraft.com' : undefined,
+        // Remove domain restriction since we're not using subdomains for admin anymore
+        // domain: process.env.NODE_ENV === 'production' ? '.theopendraft.com' : undefined,
       },
     },
   },
-  debug: process.env.NODE_ENV === 'development',
-callbacks: {
+  debug: true, // Enable debug in all environments for now
+  callbacks: {
     async jwt({ token, user }) {
       // On sign-in, stash emailVerified and role on the token
       if (user) {
+        console.log('[NEXTAUTH] JWT callback - adding user data to token');
         token.uid = (user as any).id;
         token.name = user.name;
 
@@ -58,6 +74,7 @@ callbacks: {
           where: { id: (user as any).id },
           select: { emailVerified: true, role: true },
         });
+        console.log('[NEXTAUTH] JWT callback - user role:', dbUser?.role);
         (token as any).emailVerified = dbUser?.emailVerified ?? null;
         (token as any).role = dbUser?.role ?? 'USER';
       }
@@ -65,6 +82,7 @@ callbacks: {
     },
     async session({ session, token }) {
       if (session.user) {
+        console.log('[NEXTAUTH] Session callback - building session with role:', (token as any).role);
         session.user.name = token.name as string | undefined;
         // Expose verified flag and role to the client
         (session as any).emailVerified = (token as any).emailVerified ?? null;
