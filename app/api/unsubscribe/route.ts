@@ -3,7 +3,8 @@ import { prisma } from "@/lib/db";
 import crypto from "crypto";
 
 // Generate a simple unsubscribe token
-function generateUnsubToken(email: string): string {
+// Exported for use in newsletter email generation
+export function generateUnsubToken(email: string): string {
   // Simple hash of email with a secret
   const secret = process.env.NEXTAUTH_SECRET || "fallback-secret";
   return crypto.createHash("sha256").update(email + secret).digest("hex").slice(0, 32);
@@ -61,28 +62,12 @@ export async function POST(req: Request) {
       message: "Successfully unsubscribed from newsletter",
     });
   } catch (error: any) {
-    console.error("Unsubscribe error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to unsubscribe" },
+      { error: "Failed to unsubscribe" },
       { status: 500 }
     );
   }
 }
 
-// GET - Generate unsubscribe token (for testing or preview)
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email");
-
-    if (!email) {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
-    }
-
-    const token = generateUnsubToken(email);
-
-    return NextResponse.json({ token });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to generate token" }, { status: 500 });
-  }
-}
+// NOTE: Unsubscribe tokens are generated server-side only when sending emails.
+// No public API endpoint for token generation to prevent abuse.

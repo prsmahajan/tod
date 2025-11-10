@@ -10,9 +10,28 @@ export async function GET(req: Request) {
     const status = searchParams.get("status");
     const authorId = searchParams.get("authorId");
 
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    let user = null;
+    if (session?.user?.email) {
+      user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+      });
+    }
+
+    const isAuthorized = user && ["ADMIN", "EDITOR", "AUTHOR"].includes(user.role);
+
     const where: any = {};
-    if (status) where.status = status;
-    if (authorId) where.authorId = authorId;
+
+    // Only authenticated users can filter by status
+    // Unauthenticated users only see PUBLISHED posts
+    if (isAuthorized) {
+      if (status) where.status = status;
+      if (authorId) where.authorId = authorId;
+    } else {
+      // Public access - only published posts
+      where.status = "PUBLISHED";
+    }
 
     const posts = await prisma.post.findMany({
       where,

@@ -4,11 +4,19 @@ import { prisma } from "@/lib/db";
 // This endpoint should be called by a cron job to publish scheduled posts
 export async function GET(req: Request) {
   try {
-    // Verify the request is from a cron job (optional but recommended)
+    // Verify the request is from a cron job - REQUIRED
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // CRON_SECRET is required - fail if not set
+    if (!cronSecret) {
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      );
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -63,8 +71,6 @@ export async function GET(req: Request) {
       }
     }
 
-    console.log(`Published ${scheduledPosts.length} scheduled posts:`, scheduledPosts.map(p => p.title));
-
     return NextResponse.json({
       success: true,
       message: `Published ${scheduledPosts.length} post(s)`,
@@ -72,23 +78,8 @@ export async function GET(req: Request) {
       posts: scheduledPosts.map((p) => ({ id: p.id, title: p.title, slug: p.slug })),
     });
   } catch (error: any) {
-    console.error("Scheduled post publishing error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to publish scheduled posts" },
-      { status: 500 }
-    );
-  }
-}
-
-// POST endpoint for manual triggering (admin only)
-export async function POST(req: Request) {
-  try {
-    // This allows admins to manually trigger the cron job
-    // You could add additional authentication here if needed
-    return GET(req);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to publish scheduled posts" },
+      { error: "Failed to publish scheduled posts" },
       { status: 500 }
     );
   }
