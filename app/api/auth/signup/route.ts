@@ -62,16 +62,18 @@ export async function POST(req: Request) {
     const emailNorm = email.trim().toLowerCase();
     const nameNorm = titleCase(name);
 
-    // 2) Check user limit (max 3 users)
+    // 2) Check user limit (TEMPORARILY DISABLED for initial setup)
     const userCount = await prisma.user.count();
     console.log('[SIGNUP] Current user count:', userCount);
-    if (userCount >= 3) {
-      console.log('[SIGNUP] User limit reached');
-      return NextResponse.json(
-        { error: "Maximum user limit reached. Contact admin for access." },
-        { status: 403 }
-      );
-    }
+    // User limit temporarily disabled to allow owner to sign up
+    // TODO: Re-enable after initial admin setup
+    // if (userCount >= 3) {
+    //   console.log('[SIGNUP] User limit reached');
+    //   return NextResponse.json(
+    //     { error: "Maximum user limit reached. Contact admin for access." },
+    //     { status: 403 }
+    //   );
+    // }
 
     // 3) duplicate email check
     const exists = await prisma.user.findUnique({
@@ -86,26 +88,38 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) create user (first user becomes ADMIN automatically)
+    // 4) create user (first user OR first admin becomes ADMIN automatically)
     const passwordHash = await bcrypt.hash(password, 12);
     const isFirstUser = userCount === 0;
 
-    console.log('[SIGNUP] Creating user:', { email: emailNorm, isFirstUser, role: isFirstUser ? 'ADMIN' : 'USER' });
+    // Check if there's any admin yet
+    const adminCount = await prisma.user.count({
+      where: { role: 'ADMIN' }
+    });
+    const shouldBeAdmin = isFirstUser || adminCount === 0;
+
+    console.log('[SIGNUP] Creating user:', {
+      email: emailNorm,
+      isFirstUser,
+      adminCount,
+      shouldBeAdmin,
+      role: shouldBeAdmin ? 'ADMIN' : 'USER'
+    });
 
     await prisma.user.create({
       data: {
         name: nameNorm,
         email: emailNorm,
         passwordHash,
-        role: isFirstUser ? "ADMIN" : "USER",
-        emailVerified: isFirstUser ? new Date() : null, // First user auto-verified
+        role: shouldBeAdmin ? "ADMIN" : "USER",
+        emailVerified: shouldBeAdmin ? new Date() : null, // Admin auto-verified
       },
     });
 
     console.log('[SIGNUP] User created successfully');
 
-    // 5) create verification token + send email (skip for first user - already verified)
-    if (!isFirstUser) {
+    // 5) create verification token + send email (skip for admin - already verified)
+    if (!shouldBeAdmin) {
       try {
         const rawToken = await createEmailVerificationToken(emailNorm);
         const base =
@@ -148,7 +162,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: true,
-        message: isFirstUser
+        message: shouldBeAdmin
           ? "Admin account created! You can now access the admin panel."
           : "Account created! Check your email for verification.",
       },
