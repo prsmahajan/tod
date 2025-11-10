@@ -3,6 +3,7 @@ import { Heart, DollarSign, Users, TrendingUp } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { ImpactDashboard } from "@/components/ImpactDashboard";
 import { SubscriptionCalculator } from "@/components/SubscriptionCalculator";
+import { AnimalPhotoCarousel } from "@/components/AnimalPhotoCarousel";
 
 export const metadata = {
   title: "Our Mission - Feeding Stray Animals in India | The Open Draft",
@@ -157,6 +158,9 @@ export default function MissionPage() {
             </div>
           </div>
         </section>
+
+        {/* Animal Photos Carousel */}
+        <AnimalPhotoCarousel />
 
         {/* CTA Section */}
         <section className="py-16 px-4 bg-gradient-to-b from-white to-blue-50">

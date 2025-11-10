@@ -35,6 +35,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   posts               Post[]
   savedPosts          SavedPost[]
+  animalPhotos        AnimalPhoto[]
 }
 
 model PasswordResetToken {
@@ -147,4 +148,21 @@ model SavedPost {
   @@unique([userId, postId])
   @@index([userId])
   @@index([postId])
+}
+
+model AnimalPhoto {
+  id          String   @id @default(cuid())
+  imageUrl    String
+  caption     String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  uploader User @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([uploadedBy])
+  @@index([isActive])
+  @@index([order])
 }
