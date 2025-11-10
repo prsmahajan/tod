@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
-import { writeFile } from "fs/promises";
-import { join } from "path";
+import { put } from "@vercel/blob";
 
 // GET all active photos (public) or all photos (admin)
 export async function GET(req: Request) {
@@ -75,18 +74,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Upload the file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Check file size (3MB max)
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File size exceeds 3MB limit" },
+        { status: 400 }
+      );
+    }
 
-    // Create unique filename
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "Only image files are allowed" },
+        { status: 400 }
+      );
+    }
+
+    // Upload to Vercel Blob
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const filename = `animal-${uniqueSuffix}-${file.name.replace(/\s/g, "-")}`;
-    const path = join(process.cwd(), "public", "uploads", filename);
 
-    await writeFile(path, buffer);
+    const blob = await put(filename, file, {
+      access: "public",
+      addRandomSuffix: false,
+    });
 
-    const imageUrl = `/uploads/${filename}`;
+    const imageUrl = blob.url;
 
     // Get the highest order number and increment by 1
     const highestOrder = await prisma.animalPhoto.findFirst({

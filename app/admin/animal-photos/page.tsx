@@ -41,6 +41,21 @@ export default function AnimalPhotosPage() {
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (3MB max)
+      const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB in bytes
+      if (file.size > MAX_FILE_SIZE) {
+        alert("File size exceeds 3MB limit. Please choose a smaller image.");
+        e.target.value = ""; // Clear the input
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith("image/")) {
+        alert("Only image files are allowed.");
+        e.target.value = ""; // Clear the input
+        return;
+      }
+
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -180,7 +195,7 @@ export default function AnimalPhotosPage() {
                       Click to upload or drag and drop
                     </p>
                     <p className="text-sm text-gray-500">
-                      PNG, JPG, GIF up to 10MB
+                      PNG, JPG, GIF up to 3MB
                     </p>
                     <input
                       type="file"

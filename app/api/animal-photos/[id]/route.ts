@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
-import { unlink } from "fs/promises";
-import { join } from "path";
+import { del } from "@vercel/blob";
 
 // UPDATE photo (admin only)
 export async function PATCH(
@@ -85,12 +84,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Photo not found" }, { status: 404 });
     }
 
-    // Delete the file
+    // Delete the file from Vercel Blob
     try {
-      const filePath = join(process.cwd(), "public", photo.imageUrl);
-      await unlink(filePath);
+      await del(photo.imageUrl);
     } catch (error) {
-      console.error("Failed to delete file:", error);
+      console.error("Failed to delete file from Vercel Blob:", error);
       // Continue even if file deletion fails
     }
 

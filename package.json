@@ -58,6 +58,7 @@
     "@tiptap/react": "^3.10.4",
     "@tiptap/starter-kit": "^3.10.4",
     "@vercel/analytics": "latest",
+    "@vercel/blob": "^2.0.0",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
