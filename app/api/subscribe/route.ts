@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { appendSubscriberToSheet } from "@/lib/google-sheets";
 import { z } from "zod";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const subscribeSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -10,6 +11,18 @@ const subscribeSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting - 5 subscriptions per 10 seconds per IP
+    const ipHeader = req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown";
+    const ip = ipHeader.split(",")[0].trim();
+
+    const { success } = await checkRateLimit(`subscribe:${ip}`);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many subscription attempts. Try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { email, name } = subscribeSchema.parse(body);
 

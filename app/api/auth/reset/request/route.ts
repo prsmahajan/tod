@@ -2,11 +2,24 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createPasswordResetToken } from "@/lib/tokens";
 import { sendPasswordResetEmail } from "@/lib/mail";
+import { checkAuthRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
     if (typeof email !== "string") throw new Error("bad");
+
+    // Rate limiting - 3 password resets per minute per IP
+    const ipHeader = req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown";
+    const ip = ipHeader.split(",")[0].trim();
+
+    const { success } = await checkAuthRateLimit(`reset:${ip}`);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many password reset attempts. Try again later." },
+        { status: 429 }
+      );
+    }
 
     const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true } });
     // Always respond success to avoid enumeration

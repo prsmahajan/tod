@@ -6,22 +6,9 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { createEmailVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
+import { checkAuthRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
-
-// ---------- tiny, in-memory rate limit (per instance) ----------
-const hits = new Map<string, { count: number; ts: number }>();
-function rateLimit(ip: string, windowMs = 60_000, max = 20) {
-  const now = Date.now();
-  const rec = hits.get(ip) ?? { count: 0, ts: now };
-  if (now - rec.ts > windowMs) {
-    rec.count = 0;
-    rec.ts = now;
-  }
-  rec.count++;
-  hits.set(ip, rec);
-  return rec.count <= max;
-}
 
 // ---------- validation ----------
 const passwordPolicy = z
@@ -48,16 +35,18 @@ function titleCase(str: string) {
 
 // ---------- main handler ----------
 export async function POST(req: Request) {
+  // Rate limiting - 3 signups per minute per IP
   const ipHeader = req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown";
   const ip = ipHeader.split(",")[0].trim();
-  if (!rateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
+
+  const { success } = await checkAuthRateLimit(`signup:${ip}`);
+  if (!success) {
+    return NextResponse.json({ error: "Too many signup attempts. Try again later." }, { status: 429 });
   }
 
   try {
     // 1) parse & normalize
     const body = await req.json();
-    console.log('[SIGNUP] Signup attempt');
     const { name, email, password } = schema.parse(body);
     const emailNorm = email.trim().toLowerCase();
     const nameNorm = titleCase(name);
