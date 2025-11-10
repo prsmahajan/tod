@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
 // GET single post
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -122,6 +123,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       }
     }
 
+    // Revalidate pages when post is published or updated
+    if (status === "PUBLISHED") {
+      revalidatePath("/");
+      revalidatePath("/dashboard");
+      revalidatePath("/newsletter");
+      revalidatePath(`/newsletter/${post.slug}`);
+    }
+
     return NextResponse.json(post);
   } catch (error: any) {
     console.error("Post update error:", error);
@@ -148,9 +157,14 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return NextResponse.json({ error: "Only admins and editors can delete posts" }, { status: 403 });
     }
 
-    await prisma.post.delete({
+    const deletedPost = await prisma.post.delete({
       where: { id: params.id },
     });
+
+    // Revalidate pages after deletion
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+    revalidatePath("/newsletter");
 
     return NextResponse.json({ success: true });
   } catch (error) {

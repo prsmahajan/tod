@@ -9,6 +9,9 @@ export const metadata = generateSEO({
   url: "/",
 });
 
+// Revalidate every 60 seconds for Vercel (ISR)
+export const revalidate = 60;
+
 export default function Page() {
   return (
     <>

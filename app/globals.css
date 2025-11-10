@@ -40,6 +40,12 @@
   --font-inter: "Inter", sans-serif;
   --font-merriweather: "Merriweather", serif;
   --font-caveat: "Caveat", cursive;
+  --font-roboto: "Roboto", sans-serif;
+  --font-open-sans: "Open Sans", sans-serif;
+  --font-lato: "Lato", sans-serif;
+  --font-playfair: "Playfair Display", serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
 }
 
 .dark {
@@ -122,4 +128,24 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Prose styling for post content */
+.prose hr {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border-top: 1px solid rgb(229, 231, 235);
+}
+
+.prose-lg hr {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Ensure proper spacing in editor */
+.ProseMirror hr {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: none;
+  border-top: 2px solid rgb(209, 213, 219);
 }

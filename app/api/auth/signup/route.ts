@@ -88,83 +88,47 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) create user (first user OR first admin becomes ADMIN automatically)
+    // 4) create user
     const passwordHash = await bcrypt.hash(password, 12);
     const isFirstUser = userCount === 0;
 
-    // Check if there's any admin yet
-    const adminCount = await prisma.user.count({
-      where: { role: 'ADMIN' }
-    });
-    const shouldBeAdmin = isFirstUser || adminCount === 0;
-
     console.log('[SIGNUP] Creating user:', {
       email: emailNorm,
+      userCount,
       isFirstUser,
-      adminCount,
-      shouldBeAdmin,
-      role: shouldBeAdmin ? 'ADMIN' : 'USER'
+      role: isFirstUser ? 'ADMIN' : 'SUBSCRIBER',
+      requiresEmailVerification: !isFirstUser,
     });
 
+    // First user is auto-admin with verified email
+    // All other users are subscribers requiring email verification
     await prisma.user.create({
       data: {
         name: nameNorm,
         email: emailNorm,
         passwordHash,
-        role: shouldBeAdmin ? "ADMIN" : "USER",
-        emailVerified: shouldBeAdmin ? new Date() : null, // Admin auto-verified
+        role: isFirstUser ? "ADMIN" : "SUBSCRIBER",
+        emailVerified: isFirstUser ? new Date() : null,
       },
     });
 
-    console.log('[SIGNUP] User created successfully');
+    console.log(`[SIGNUP] User created successfully as ${isFirstUser ? 'ADMIN (first user)' : 'USER'}`);
 
-    // 5) create verification token + send email (skip for admin - already verified)
-    if (!shouldBeAdmin) {
-      try {
-        const rawToken = await createEmailVerificationToken(emailNorm);
-        const base =
-          process.env.NEXT_PUBLIC_APP_URL ||
-          process.env.APP_URL ||
-          new URL(req.url).origin;
-        const verifyUrl = `${base}/verify?token=${encodeURIComponent(rawToken)}`;
-
-        await sendVerificationEmail(emailNorm, verifyUrl);
-      } catch (emailErr: any) {
-      console.error("EMAIL_FLOW_ERROR →", emailErr);
-      const msg = String(emailErr?.message ?? "").toLowerCase();
-      const mailError =
-        emailErr?.name === "ResendError" ||
-        msg.includes("resend") ||
-        msg.includes("smtp") ||
-        msg.includes("mail") ||
-        msg.includes("invalid from") ||
-        msg.includes("unauthorized") ||
-        msg.includes("apikey") ||
-        msg.includes("domain") ||
-        msg.includes("dns") ||
-        msg.includes("app_url");
-
-      return NextResponse.json(
-        {
-          error:
-            process.env.NODE_ENV === "development"
-              ? `Email send failed: ${emailErr?.message || emailErr}`
-              : mailError
-              ? "We couldn't send the verification email. Check mail settings and try again."
-              : "We couldn't complete email verification. Try again shortly.",
-        },
-        { status: 502 }
-      );
-      }
+    // 5) Send verification email for non-first users
+    if (!isFirstUser) {
+      const raw = await createEmailVerificationToken(emailNorm);
+      const base = process.env.APP_URL!;
+      const url = `${base}/verify?token=${encodeURIComponent(raw)}`;
+      await sendVerificationEmail(emailNorm, url);
     }
 
     // 6) success
     return NextResponse.json(
       {
         ok: true,
-        message: shouldBeAdmin
+        message: isFirstUser
           ? "Admin account created! You can now access the admin panel."
-          : "Account created! Check your email for verification.",
+          : "Account created! Check your email to verify your account.",
       },
       { status: 201 }
     );

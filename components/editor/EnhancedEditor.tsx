@@ -9,6 +9,7 @@ import Underline from "@tiptap/extension-underline";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
+import { FontFamily } from "@tiptap/extension-font-family";
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   List, ListOrdered, Quote, Code, Undo, Redo,
@@ -35,6 +36,9 @@ export function EnhancedEditor({ content, onChange }: EditorProps) {
       TextStyle,
       Color,
       Highlight,
+      FontFamily.configure({
+        types: ["textStyle"],
+      }),
     ],
     content,
     immediatelyRender: false,
@@ -125,6 +129,32 @@ export function EnhancedEditor({ content, onChange }: EditorProps) {
           <option value="4">Heading 4</option>
           <option value="5">Heading 5</option>
           <option value="6">Heading 6</option>
+        </select>
+
+        {/* Font Family Dropdown */}
+        <select
+          onChange={(e) => {
+            const font = e.target.value;
+            if (font === "default") {
+              editor.chain().focus().unsetFontFamily().run();
+            } else {
+              editor.chain().focus().setFontFamily(font).run();
+            }
+          }}
+          className="px-3 py-1.5 border rounded text-sm min-w-[140px]"
+          value={editor.getAttributes("textStyle").fontFamily || "default"}
+        >
+          <option value="default">Default</option>
+          <option value="Inter, sans-serif">Inter</option>
+          <option value="Roboto, sans-serif">Roboto</option>
+          <option value="Open Sans, sans-serif">Open Sans</option>
+          <option value="Lato, sans-serif">Lato</option>
+          <option value="Poppins, sans-serif">Poppins</option>
+          <option value="Montserrat, sans-serif">Montserrat</option>
+          <option value="Merriweather, serif">Merriweather</option>
+          <option value="Playfair Display, serif">Playfair Display</option>
+          <option value="Caveat, cursive">Caveat</option>
+          <option value="monospace">Monospace</option>
         </select>
 
         <div className="w-px bg-gray-300" />

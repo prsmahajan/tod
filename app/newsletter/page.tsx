@@ -2,6 +2,9 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
 
+// Revalidate every 60 seconds for Vercel (ISR)
+export const revalidate = 60;
+
 export default async function NewsletterPage() {
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },

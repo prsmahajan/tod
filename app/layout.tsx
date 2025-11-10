@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-import { Inter, Merriweather, Caveat } from "next/font/google"
+import { Inter, Merriweather, Caveat, Roboto, Open_Sans, Lato, Playfair_Display, Poppins, Montserrat } from "next/font/google"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import Providers from "@/components/Providers"
@@ -31,6 +31,33 @@ const caveat = Caveat({
   subsets: ["latin"],
   variable: "--font-caveat",
 })
+const roboto = Roboto({
+  subsets: ["latin"],
+  variable: "--font-roboto",
+  weight: ['300', '400', '500', '700'],
+})
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+})
+const lato = Lato({
+  subsets: ["latin"],
+  variable: "--font-lato",
+  weight: ['300', '400', '700'],
+})
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+})
+const poppins = Poppins({
+  subsets: ["latin"],
+  variable: "--font-poppins",
+  weight: ['300', '400', '500', '600', '700'],
+})
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+})
 
 export default function RootLayout({
   children,
@@ -40,7 +67,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${merriweather.variable} ${caveat.variable} ${GeistMono.variable} antialiased`}
+      className={`${inter.variable} ${merriweather.variable} ${caveat.variable} ${roboto.variable} ${openSans.variable} ${lato.variable} ${playfair.variable} ${poppins.variable} ${montserrat.variable} ${GeistMono.variable} antialiased`}
     >
       <head>
         <GoogleAnalytics />
