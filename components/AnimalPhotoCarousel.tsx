@@ -62,26 +62,36 @@ export function AnimalPhotoCarousel() {
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        <div className="flex gap-6 px-6">
+        <div className="flex gap-6 px-6 overflow-hidden">
           <div
             className={`flex gap-6 ${isPaused ? "" : "animate-scroll"}`}
             style={{
               animationPlayState: isPaused ? "paused" : "running",
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
             }}
           >
             {duplicatedPhotos.map((photo, index) => (
               <div
                 key={`${photo.id}-${index}`}
                 className="flex-shrink-0 w-80 h-80 relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
-                style={{ willChange: 'transform' }}
+                style={{
+                  isolation: 'isolate',
+                  backfaceVisibility: 'hidden',
+                  transform: 'translateZ(0)'
+                }}
               >
                 <div className="w-full h-full relative overflow-hidden">
                   <Image
                     src={photo.imageUrl}
                     alt={photo.caption || "Animal being fed"}
                     fill
-                    className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-300 ease-out"
-                    style={{ transformOrigin: 'center center' }}
+                    className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-200 ease-out"
+                    style={{
+                      transformOrigin: 'center center',
+                      willChange: 'transform, filter'
+                    }}
                     sizes="320px"
                     unoptimized={photo.imageUrl.startsWith("http")}
                     onError={(e) => {
@@ -111,10 +121,10 @@ export function AnimalPhotoCarousel() {
       <style jsx>{`
         @keyframes scroll {
           0% {
-            transform: translateX(0);
+            transform: translate3d(0, 0, 0);
           }
           100% {
-            transform: translateX(calc(-320px * ${photos.length} - ${photos.length * 24}px));
+            transform: translate3d(calc(-320px * ${photos.length} - ${photos.length * 24}px), 0, 0);
           }
         }
 
