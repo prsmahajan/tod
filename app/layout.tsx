@@ -72,6 +72,12 @@ export default function RootLayout({
     >
       <head>
         <GoogleAnalytics />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="The Open Draft RSS Feed"
+          href="/feed.xml"
+        />
       </head>
       <body className="font-sans" style={{ isolation: "isolate" }}>
         {/* <Suspense fallback={<div>Loading...</div>}> */}

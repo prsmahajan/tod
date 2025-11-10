@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { NewsletterForm } from "./newsletter-form"
+import { SocialProof } from "./SocialProof"
 import { Heart } from "lucide-react"
 import { memo } from "react"
 
@@ -32,15 +33,20 @@ function Hero() {
       </div>
 
       {/* Mission Banner */}
-      <div className="w-full max-w-2xl bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 sm:p-6">
+      <div className="w-full max-w-2xl bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 sm:p-6 shadow-lg">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Heart size={24} className="text-red-600 dark:text-red-400 fill-current" />
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Our Purpose</h2>
         </div>
         <p className="text-center text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
           Every subscription helps feed <strong className="text-red-600 dark:text-red-400">stray animals across India</strong>.
-          Learn tech, save lives. <Link href="/mission" className="text-blue-600 dark:text-blue-400 underline font-semibold">Read our story →</Link>
+          Learn tech, save lives. <Link href="/mission" className="text-blue-600 dark:text-blue-400 underline font-semibold hover:text-blue-700 dark:hover:text-blue-300">Read our story →</Link>
         </p>
+      </div>
+
+      {/* Social Proof Widget */}
+      <div className="w-full max-w-2xl">
+        <SocialProof />
       </div>
 
       {/* Description */}
@@ -50,14 +56,24 @@ function Hero() {
       </p>
 
       {/* CTA Box */}
-      <div className="w-full max-w-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 sm:p-8 shadow-md">
-        <h2 className="text-center text-lg sm:text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
-          📬 Join Our Newsletter
-        </h2>
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Get weekly insights on technology, explained in simple terms
-        </p>
+      <div className="w-full max-w-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div className="text-center mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+            📬 Join Our Mission
+          </h2>
+          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">
+            Get <span className="text-blue-600 dark:text-blue-400 font-bold">FREE tech insights</span> + help feed animals
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            No spam. Unsubscribe anytime. Your email is safe with us.
+          </p>
+        </div>
         <NewsletterForm className="mt-0" />
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            ✨ Welcome email with exclusive content sent immediately
+          </p>
+        </div>
       </div>
 
       {/* Trust Indicators */}
