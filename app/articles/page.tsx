@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 // Revalidate every 60 seconds for Vercel (ISR)
 export const revalidate = 60;
 
-export default async function NewsletterPage() {
+export default async function ArticlesPage() {
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { publishedAt: "desc" },
@@ -21,7 +21,7 @@ export default async function NewsletterPage() {
     <main className="min-h-screen bg-gray-50 dark:bg-[#111]">
       <div className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4 text-[#111] dark:text-white">Newsletter</h1>
+          <h1 className="text-5xl font-bold mb-4 text-[#111] dark:text-white">Articles</h1>
           <p className="text-xl text-gray-600 dark:text-[#fff]">
             Helping you understand the technology that runs your systems
           </p>
@@ -53,7 +53,7 @@ export default async function NewsletterPage() {
                   </div>
                 )}
 
-                <Link href={`/newsletter/${post.slug}`}>
+                <Link href={`/articles/${post.slug}`}>
                   <h2 className="text-3xl font-bold mb-3 hover:text-blue-600 transition-colors dark:text-[#000]">
                     {post.title}
                   </h2>
@@ -86,7 +86,7 @@ export default async function NewsletterPage() {
                 </div>
 
                 <Link
-                  href={`/newsletter/${post.slug}`}
+                  href={`/articles/${post.slug}`}
                   className="inline-block mt-4 text-blue-600 font-semibold hover:underline"
                 >
                   Read more →

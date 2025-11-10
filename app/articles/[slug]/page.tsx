@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title: post.title,
     description: post.excerpt || `Read ${post.title} on The Open Draft - Technology explained simply while feeding stray animals in India.`,
     image: post.coverImage || undefined,
-    url: `/newsletter/${params.slug}`,
+    url: `/articles/${params.slug}`,
     type: 'article',
     publishedTime: post.publishedAt?.toISOString(),
     author: post.author.name,
@@ -85,7 +85,7 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
           <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8">
             <article className="max-w-3xl">
         <Link
-          href="/newsletter"
+          href="/articles"
           className="inline-block mb-8 text-blue-600 hover:underline"
         >
           ← Back to all posts
@@ -165,7 +165,7 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
         {/* Social Sharing */}
         <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
           <SocialShare
-            url={`/newsletter/${post.slug}`}
+            url={`/articles/${post.slug}`}
             title={post.title}
             description={post.excerpt || undefined}
           />

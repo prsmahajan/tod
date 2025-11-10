@@ -51,7 +51,7 @@ export async function Latest() {
                 </span>
               </h2>
               <Link
-                href="/newsletter"
+                href="/articles"
                 className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2 group"
               >
                 View All
@@ -63,7 +63,7 @@ export async function Latest() {
               {posts.map((post) => (
                 <Link
                   key={post.id}
-                  href={`/newsletter/${post.slug}`}
+                  href={`/articles/${post.slug}`}
                   className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200"
                 >
                   {post.coverImage && (

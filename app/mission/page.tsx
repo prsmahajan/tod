@@ -24,7 +24,7 @@ export default function MissionPage() {
               Every Subscription <span className="text-red-600 dark:text-red-400 font-hand">Feeds a Life</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 leading-relaxed font-serif">
-              We're not just another tech newsletter. We're a community that uses technology knowledge to feed hungry stray animals across India.
+              We're not just another tech articles. We're a community that uses technology knowledge to feed hungry stray animals across India.
             </p>
           </div>
         </section>
@@ -173,7 +173,7 @@ export default function MissionPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/newsletter"
+                href="/articles"
                 className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
               >
                 Read Free Articles
