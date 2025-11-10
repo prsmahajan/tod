@@ -9,6 +9,7 @@ import Providers from "@/components/Providers"
 import Navbar from "@/components/Navbar"
 import GoogleAnalytics from "@/components/GoogleAnalytics"
 import { ThemeProvider } from "@/components/ThemeProvider"
+import { ExitIntentPopup } from "@/components/ExitIntentPopup"
 // import { InitialLoading } from "@/components/initial-loading"
 // import { Suspense } from "react"
 
@@ -79,6 +80,7 @@ export default function RootLayout({
             <Providers>
               <Navbar />
               {children}
+              <ExitIntentPopup />
               <Analytics />
             </Providers>
           </ThemeProvider>
