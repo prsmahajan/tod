@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2, Twitter, Facebook, Linkedin, Link as LinkIcon } from "lucide-react";
+import { Share2, Twitter, Facebook, Linkedin, Link as LinkIcon, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface SocialShareProps {
@@ -24,6 +24,7 @@ export function SocialShare({ url, title, description }: SocialShareProps) {
   const shareLinks = {
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(shareUrl)}&via=theopendraft`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title} - ${shareUrl}`)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
   };
 
@@ -86,6 +87,17 @@ export function SocialShare({ url, title, description }: SocialShareProps) {
       >
         <Facebook size={16} />
         <span className="hidden sm:inline">Share</span>
+      </a>
+
+      {/* WhatsApp */}
+      <a
+        href={shareLinks.whatsapp}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition text-white text-sm"
+      >
+        <MessageCircle size={16} />
+        <span className="hidden sm:inline">WhatsApp</span>
       </a>
 
       {/* LinkedIn */}
