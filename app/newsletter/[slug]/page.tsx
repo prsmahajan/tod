@@ -6,6 +6,8 @@ import { SocialShare } from "@/components/SocialShare";
 import { generateSEO } from "@/components/SEOHead";
 import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import { RelatedPosts } from "@/components/RelatedPosts";
+import { TableOfContents } from "@/components/TableOfContents";
+import { PostViews } from "@/components/PostViews";
 import { Clock } from "lucide-react";
 
 export async function generateStaticParams() {
@@ -49,7 +51,16 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function NewsletterPostPage({ params }: { params: { slug: string } }) {
   const post = await prisma.post.findUnique({
     where: { slug: params.slug },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      excerpt: true,
+      content: true,
+      coverImage: true,
+      publishedAt: true,
+      status: true,
+      slug: true,
+      views: true,
       author: {
         select: { name: true, bio: true, avatar: true },
       },
@@ -67,7 +78,9 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <article className="max-w-3xl mx-auto px-4 py-16">
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8">
+          <article className="max-w-3xl">
         <Link
           href="/newsletter"
           className="inline-block mb-8 text-blue-600 hover:underline"
@@ -117,6 +130,8 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
                   <Clock size={14} />
                   <span>{formatReadingTime(readingTime)}</span>
                 </div>
+                <span>•</span>
+                <PostViews postId={post.id} initialViews={post.views} />
               </div>
             </div>
           </div>
@@ -166,6 +181,13 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
           categoryIds={post.categories.map(c => c.category.id)}
         />
       </article>
+
+      {/* Table of Contents - Right Sidebar */}
+      <aside className="hidden lg:block">
+        <TableOfContents content={post.content} />
+      </aside>
+    </div>
+    </div>
     </main>
   );
 }

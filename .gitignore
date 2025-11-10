@@ -22,6 +22,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# sensitive local docs
+PRODUCTION_ENV_SETUP.md
+*_SETUP.md
+*.local.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

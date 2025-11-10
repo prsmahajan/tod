@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Users, Tag, Settings, LayoutDashboard, Mail } from "lucide-react";
+import { FileText, Users, Tag, Settings, LayoutDashboard, Mail, BarChart3 } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Posts", href: "/admin/posts", icon: FileText },
   { name: "Categories", href: "/admin/categories", icon: Tag },
   { name: "Subscribers", href: "/admin/subscribers", icon: Mail },

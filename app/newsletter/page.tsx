@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
+import { SearchBar } from "@/components/SearchBar";
 
 // Revalidate every 60 seconds for Vercel (ISR)
 export const revalidate = 60;
@@ -19,11 +20,16 @@ export default async function NewsletterPage() {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-[#111]">
       <div className="max-w-4xl mx-auto px-4 py-16">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <h1 className="text-5xl font-bold mb-4 text-[#111] dark:text-white">Newsletter</h1>
           <p className="text-xl text-gray-600 dark:text-[#fff]">
             Helping you understand the technology that runs your systems
           </p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-12">
+          <SearchBar />
         </div>
 
         <div className="space-y-8">

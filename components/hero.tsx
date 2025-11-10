@@ -63,15 +63,15 @@ function Hero() {
       {/* Trust Indicators */}
       <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-center mt-4">
         <div className="flex flex-col">
-          <span className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">Free</span>
+          <span className="text-2xl sm:text-3xl font-bold text-[#104da2] dark:text-blue-400">Free</span>
           <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Always</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">Weekly</span>
+          <span className="text-2xl sm:text-3xl font-bold text-[#c341eb] dark:text-purple-400">Weekly</span>
           <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Updates</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">No Spam</span>
+          <span className="text-2xl sm:text-3xl font-bold text-[#146b0c] dark:text-green-400">No Spam</span>
           <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Guaranteed</span>
         </div>
       </div>

@@ -31,7 +31,7 @@ export function SiteFooter() {
             <Link href="/newsletter" className="hover:underline">
               Newsletter
             </Link>
-            <Link href="mailto:tod@theopendraft.com" className="hover:underline">
+            <Link href="mailto:account@theopendraft.com" className="hover:underline">
               Contact
             </Link>
           </nav>

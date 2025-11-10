@@ -34,7 +34,7 @@ export async function Latest() {
               <p className="mt-6 text-sm">
                 Questions or feedback? Reach me at{" "}
                 <a href="mailto:tod@theopendraft.com" className="text-blue-600 font-semibold hover:underline">
-                  tod@theopendraft.com
+                  account@theopendraft.com
                 </a>
               </p>
             </div>
@@ -46,7 +46,7 @@ export async function Latest() {
           <div>
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl sm:text-4xl font-bold">
-                <span className="font-serif bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="font-serif bg-gradient-to-r from-gray-400 to-gray-900 bg-clip-text text-transparent">
                   Latest Articles
                 </span>
               </h2>
