@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
 import { put } from "@vercel/blob";
+import { writeFile } from "fs/promises";
+import { join } from "path";
 
 export async function POST(req: Request) {
   try {
@@ -57,13 +59,26 @@ export async function POST(req: Request) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const filename = `upload-${uniqueSuffix}-${sanitizedName}`;
 
-    // Upload to Vercel Blob storage
-    const blob = await put(filename, file, {
-      access: "public",
-      addRandomSuffix: false,
-    });
+    let imageUrl: string;
 
-    return NextResponse.json({ url: blob.url });
+    // Check if Vercel Blob is configured (production) or use local storage (development)
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      // Production: Upload to Vercel Blob storage
+      const blob = await put(filename, file, {
+        access: "public",
+        addRandomSuffix: false,
+      });
+      imageUrl = blob.url;
+    } else {
+      // Development: Save to local filesystem
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const path = join(process.cwd(), "public", "uploads", filename);
+      await writeFile(path, buffer);
+      imageUrl = `/uploads/${filename}`;
+    }
+
+    return NextResponse.json({ url: imageUrl });
   } catch (error) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

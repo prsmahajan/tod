@@ -84,11 +84,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Photo not found" }, { status: 404 });
     }
 
-    // Delete the file from Vercel Blob
+    // Delete the file from Vercel Blob (production) or local filesystem (development)
     try {
-      await del(photo.imageUrl);
+      if (process.env.BLOB_READ_WRITE_TOKEN && photo.imageUrl.startsWith("http")) {
+        // Production: Delete from Vercel Blob
+        await del(photo.imageUrl);
+      } else {
+        // Development: Delete from local filesystem
+        const { unlink } = await import("fs/promises");
+        const { join } = await import("path");
+        const filePath = join(process.cwd(), "public", photo.imageUrl);
+        await unlink(filePath);
+      }
     } catch (error) {
-      console.error("Failed to delete file from Vercel Blob:", error);
+      console.error("Failed to delete file:", error);
       // Continue even if file deletion fails
     }
 

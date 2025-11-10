@@ -91,16 +91,29 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upload to Vercel Blob
+    // Upload to Vercel Blob (production) or local filesystem (development)
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const filename = `animal-${uniqueSuffix}-${file.name.replace(/\s/g, "-")}`;
 
-    const blob = await put(filename, file, {
-      access: "public",
-      addRandomSuffix: false,
-    });
+    let imageUrl: string;
 
-    const imageUrl = blob.url;
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      // Production: Upload to Vercel Blob
+      const blob = await put(filename, file, {
+        access: "public",
+        addRandomSuffix: false,
+      });
+      imageUrl = blob.url;
+    } else {
+      // Development: Save to local filesystem
+      const { writeFile } = await import("fs/promises");
+      const { join } = await import("path");
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const path = join(process.cwd(), "public", "uploads", filename);
+      await writeFile(path, buffer);
+      imageUrl = `/uploads/${filename}`;
+    }
 
     // Get the highest order number and increment by 1
     const highestOrder = await prisma.animalPhoto.findFirst({
