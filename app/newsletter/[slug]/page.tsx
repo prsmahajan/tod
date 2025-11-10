@@ -4,6 +4,9 @@ import Link from "next/link";
 import { SavePostButton } from "@/components/SavePostButton";
 import { SocialShare } from "@/components/SocialShare";
 import { generateSEO } from "@/components/SEOHead";
+import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
+import { RelatedPosts } from "@/components/RelatedPosts";
+import { Clock } from "lucide-react";
 
 export async function generateStaticParams() {
   const posts = await prisma.post.findMany({
@@ -60,6 +63,8 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
     notFound();
   }
 
+  const readingTime = calculateReadingTime(post.content);
+
   return (
     <main className="min-h-screen bg-gray-50">
       <article className="max-w-3xl mx-auto px-4 py-16">
@@ -95,17 +100,24 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
                 className="w-12 h-12 rounded-full"
               />
             )}
-            <div>
+            <div className="flex-1">
               <p className="font-semibold text-gray-900">{post.author.name}</p>
-              <time className="text-sm">
-                {post.publishedAt
-                  ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : ""}
-              </time>
+              <div className="flex items-center gap-3 text-sm">
+                <time>
+                  {post.publishedAt
+                    ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : ""}
+                </time>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <Clock size={14} />
+                  <span>{formatReadingTime(readingTime)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -147,6 +159,12 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
             <p className="text-gray-600">{post.author.bio}</p>
           </div>
         )}
+
+        {/* Related Posts */}
+        <RelatedPosts
+          currentPostId={post.id}
+          categoryIds={post.categories.map(c => c.category.id)}
+        />
       </article>
     </main>
   );

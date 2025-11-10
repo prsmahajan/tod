@@ -2,6 +2,7 @@ import Hero from "@/components/hero"
 import { Latest } from "@/components/latest"
 import { SiteFooter } from "@/components/site-footer"
 import { generateSEO } from "@/components/SEOHead"
+import { ImpactDashboard } from "@/components/ImpactDashboard"
 
 export const metadata = generateSEO({
   title: "The Open Draft - Tech Explained Simply, Animals Fed Compassionately",
@@ -17,6 +18,9 @@ export default function Page() {
     <>
       <main className="container mx-auto px-4">
         <Hero />
+        <div className="my-12">
+          <ImpactDashboard />
+        </div>
         <Latest />
       </main>
       <SiteFooter />

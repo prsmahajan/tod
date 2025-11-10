@@ -10,11 +10,13 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import { FontFamily } from "@tiptap/extension-font-family";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { common, createLowlight } from "lowlight";
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   List, ListOrdered, Quote, Code, Undo, Redo,
   Link as LinkIcon, AlignLeft, AlignCenter, AlignRight,
-  Image as ImageIcon, Minus, Upload
+  Image as ImageIcon, Minus, Upload, FileCode
 } from "lucide-react";
 import { useRef } from "react";
 
@@ -26,9 +28,15 @@ interface EditorProps {
 export function EnhancedEditor({ content, onChange }: EditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Create lowlight instance with common languages
+  const lowlight = createLowlight(common);
+
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable the default code block
+        codeBlock: false,
+      }),
       Link.configure({ openOnClick: false }),
       Image,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
@@ -38,6 +46,10 @@ export function EnhancedEditor({ content, onChange }: EditorProps) {
       Highlight,
       FontFamily.configure({
         types: ["textStyle"],
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        defaultLanguage: "javascript",
       }),
     ],
     content,
@@ -200,9 +212,18 @@ export function EnhancedEditor({ content, onChange }: EditorProps) {
           type="button"
           onClick={() => editor.chain().focus().toggleCode().run()}
           className={`p-2 rounded hover:bg-gray-200 ${editor.isActive("code") ? "bg-gray-300" : ""}`}
-          title="Code"
+          title="Inline Code"
         >
           <Code size={18} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={`p-2 rounded hover:bg-gray-200 ${editor.isActive("codeBlock") ? "bg-gray-300" : ""}`}
+          title="Code Block"
+        >
+          <FileCode size={18} />
         </button>
 
         <div className="w-px bg-gray-300" />
