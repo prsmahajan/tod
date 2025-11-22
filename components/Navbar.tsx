@@ -60,17 +60,10 @@ function Navbar() {
             <Link href="/articles" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
               Articles
             </Link>
-<<<<<<< Current (Your changes)
             <Link href="/impact" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
               Impact
             </Link>
             <Link href="/mission" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
-=======
-            <Link href="/impact" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition">
-              Impact
-            </Link>
-            <Link href="/mission" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition">
->>>>>>> Incoming (Background Agent changes)
               Our Mission
             </Link>
             <Link href="/community" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
