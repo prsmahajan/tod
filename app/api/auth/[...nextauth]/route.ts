@@ -27,6 +27,14 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Check if this is magic link authentication
+        if (password === "__MAGIC_LINK__") {
+          // For magic link, we trust that the token was already validated in the verify route
+          // Just return the user
+          return { id: user.id, email: user.email, name: user.name };
+        }
+
+        // Regular password authentication
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) {
           return null;

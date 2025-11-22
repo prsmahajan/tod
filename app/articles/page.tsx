@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
 import { SearchBar } from "@/components/SearchBar";
+import { Calendar } from "lucide-react";
 
 // Revalidate every 60 seconds for Vercel (ISR)
 export const revalidate = 60;
@@ -18,11 +19,11 @@ export default async function ArticlesPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-[#111]">
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4 text-[#111] dark:text-white">Articles</h1>
-          <p className="text-xl text-gray-600 dark:text-[#fff]">
+    <main className="min-h-screen bg-white">
+      <div className="max-w-[1200px] mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-semibold mb-4 text-black">Articles</h1>
+          <p className="text-base text-[#212121]">
             Helping you understand the technology that runs your systems
           </p>
         </div>
@@ -35,35 +36,35 @@ export default async function ArticlesPage() {
         <div className="space-y-8">
           {posts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No posts published yet. Check back soon!</p>
+              <p className="text-[#212121] text-base">No posts published yet. Check back soon!</p>
             </div>
           ) : (
             posts.map((post) => (
               <article
                 key={post.id}
-                className="bg-white rounded-lg shadow-sm p-8 hover:shadow-md transition-shadow"
+                className="bg-white border border-[#E5E5E5] p-8 hover:opacity-80 transition-opacity"
               >
                 {post.coverImage && (
-                  <div className="mb-6 rounded-lg overflow-hidden">
+                  <div className="mb-6 overflow-hidden">
                     <img
                       src={post.coverImage}
                       alt={post.title}
-                      className="w-full h-64 object-cover object-[25%_34%]"
+                      className="w-full h-64 object-cover"
                     />
                   </div>
                 )}
 
                 <Link href={`/articles/${post.slug}`}>
-                  <h2 className="text-3xl font-bold mb-3 hover:text-blue-600 transition-colors dark:text-[#000]">
+                  <h2 className="text-2xl font-semibold mb-3 hover:opacity-70 transition-opacity text-black">
                     {post.title}
                   </h2>
                 </Link>
 
                 {post.excerpt && (
-                  <p className="text-gray-600 mb-4 text-lg">{post.excerpt}</p>
+                  <p className="text-[#212121] mb-4 text-base leading-relaxed">{post.excerpt}</p>
                 )}
 
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-[#212121] pt-4 border-t border-[#E5E5E5]">
                   <div className="flex items-center gap-2">
                     {post.author.avatar && (
                       <img
@@ -74,20 +75,23 @@ export default async function ArticlesPage() {
                     )}
                     <span>By {post.author.name}</span>
                   </div>
-                  <time>
-                    {post.publishedAt
-                      ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
-                      : ""}
-                  </time>
+                  <div className="flex items-center gap-1">
+                    <Calendar size={14} />
+                    <time>
+                      {post.publishedAt
+                        ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : ""}
+                    </time>
+                  </div>
                 </div>
 
                 <Link
                   href={`/articles/${post.slug}`}
-                  className="inline-block mt-4 text-blue-600 font-semibold hover:underline"
+                  className="inline-block mt-4 text-[#212121] font-semibold underline hover:opacity-70 transition-opacity"
                 >
                   Read more →
                 </Link>

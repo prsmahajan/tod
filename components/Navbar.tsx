@@ -1,4 +1,3 @@
-// components/Navbar.tsx
 "use client";
 
 import Link from "next/link";
@@ -6,14 +5,14 @@ import Image from "next/image";
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { User, LogOut, Settings, LayoutDashboard, Bookmark } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
+import { LoginModal } from "@/components/LoginModal";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function Navbar() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -42,33 +41,45 @@ function Navbar() {
   }, []);
 
   return (
-    <nav className="w-full border-b bg-white dark:bg-gray-900 dark:border-gray-800 px-6 py-4 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <nav className="w-full border-b border-[#E5E5E5] dark:border-[#212121] bg-white dark:bg-black sticky top-0 z-50">
+      <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 py-4">
         {/* Logo & Navigation */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/images/logo-dark.png"
               alt="The Open Draft"
-              width={40}
-              height={40}
-              className="rounded-lg"
+              width={32}
+              height={32}
               priority
             />
-            <span className="text-xl font-bold text-gray-900 dark:text-gray-100 hidden sm:inline">The Open Draft</span>
+            <span className="text-lg font-semibold text-black dark:text-white hidden sm:inline">The Open Draft</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/articles" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition">
+            <Link href="/articles" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
               Articles
             </Link>
+<<<<<<< Current (Your changes)
+            <Link href="/impact" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
+              Impact
+            </Link>
+            <Link href="/mission" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
+=======
+            <Link href="/impact" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition">
+              Impact
+            </Link>
             <Link href="/mission" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition">
+>>>>>>> Incoming (Background Agent changes)
               Our Mission
+            </Link>
+            <Link href="/community" className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors text-sm">
+              Community
             </Link>
             {isAdmin && (
               <Link
                 href="/admin"
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition flex items-center gap-1"
+                className="text-[#212121] dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors flex items-center gap-1 text-sm"
               >
                 <LayoutDashboard size={16} />
                 Admin
@@ -77,69 +88,59 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Theme Toggle & User Menu */}
-        <div className="flex items-center gap-2">
+        {/* User Menu & Theme Toggle */}
+        <div className="flex items-center gap-3">
           <ThemeToggle />
-
           {status === "authenticated" ? (
             <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={toggleDropdown}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-              <span className="hidden sm:inline text-sm text-gray-700 dark:text-gray-300">
-                {session?.user?.name ?? session?.user?.email ?? "User"}
-              </span>
-              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <User size={18} className="text-gray-600 dark:text-gray-300" />
-              </div>
-            </button>
+              <button
+                onClick={toggleDropdown}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors"
+              >
+                <span className="hidden sm:inline text-sm text-[#212121] dark:text-gray-300">
+                  {session?.user?.name ?? session?.user?.email ?? "User"}
+                </span>
+                <div className="w-8 h-8 bg-[#FAFAFA] dark:bg-[#212121] border border-[#E5E5E5] dark:border-[#404040] flex items-center justify-center">
+                  <User size={18} className="text-[#212121] dark:text-gray-300" />
+                </div>
+              </button>
 
-            {open && (
-              <div className="absolute right-0 mt-2 w-48 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
-                {isAdmin && (
+              {open && (
+                <div className="absolute right-0 mt-2 w-48 border border-[#E5E5E5] dark:border-[#404040] bg-white dark:bg-black shadow-lg">
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 px-4 py-3 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors text-sm text-[#212121] dark:text-gray-300"
+                      onClick={closeDropdown}
+                    >
+                      <LayoutDashboard size={16} />
+                      Admin Dashboard
+                    </Link>
+                  )}
                   <Link
-                    href="/admin"
-                    className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-gray-700 dark:text-gray-200"
+                    href="/saved"
+                    className="flex items-center gap-2 px-4 py-3 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors text-sm text-[#212121] dark:text-gray-300"
                     onClick={closeDropdown}
                   >
-                    <LayoutDashboard size={16} />
-                    Admin Dashboard
+                    <Bookmark size={16} />
+                    Saved Posts
                   </Link>
-                )}
-                <Link
-                  href="/saved"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-gray-700 dark:text-gray-200"
-                  onClick={closeDropdown}
-                >
-                  <Bookmark size={16} />
-                  Saved Posts
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm text-left text-red-600 dark:text-red-400"
-                >
-                  <LogOut size={16} />
-                  Log out
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors text-sm text-left text-[#DC2626]"
+                  >
+                    <LogOut size={16} />
+                    Log out
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="flex gap-3">
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition"
-              >
+            <LoginModal>
+              <button className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity">
                 Log in
-              </Link>
-              <Link
-                href="/signup"
-                className="px-4 py-2 text-sm bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-              >
-                Sign up
-              </Link>
-            </div>
+              </button>
+            </LoginModal>
           )}
         </div>
       </div>

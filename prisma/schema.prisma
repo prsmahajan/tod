@@ -20,22 +20,56 @@ enum PostStatus {
   SCHEDULED
 }
 
+enum AnimalSpecies {
+  DOG
+  CAT
+  COW
+  PIGEON
+  BULL
+}
+
+enum AnimalStatus {
+  HUNGRY
+  FED_TODAY
+  RESCUED
+  ADOPTED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  PAUSED
+  EXPIRED
+}
+
 model User {
-  id             String   @id @default(cuid())
-  name           String
-  email          String   @unique
-  passwordHash   String
-  emailVerified  DateTime?
-  role           UserRole @default(SUBSCRIBER)
-  bio            String?
-  avatar         String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                    String             @id @default(cuid())
+  name                  String
+  email                 String             @unique
+  passwordHash          String
+  emailVerified         DateTime?
+  role                  UserRole           @default(SUBSCRIBER)
+  bio                   String?
+  avatar                String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  // Subscription fields
+  razorpaySubscriptionId String?           @unique
+  subscriptionStatus     SubscriptionStatus?
+  subscriptionStartedAt  DateTime?
+  subscriptionEndsAt     DateTime?
+  nextBillingDate        DateTime?
+  animalsFed             Int               @default(0)
 
   passwordResetTokens PasswordResetToken[]
   posts               Post[]
   savedPosts          SavedPost[]
   animalPhotos        AnimalPhoto[]
+
+  @@index([razorpaySubscriptionId])
+  @@index([subscriptionStatus])
 }
 
 model PasswordResetToken {
@@ -60,6 +94,21 @@ model EmailVerificationToken {
   usedAt     DateTime?
 
   @@index([email])
+}
+
+model MagicLinkToken {
+  id            String   @id @default(cuid())
+  email         String
+  tokenHash     String   @unique
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  usedAt        DateTime?
+  verifyCode    String?  @unique
+  verifyExpiresAt DateTime?
+
+  @@index([email])
+  @@index([tokenHash])
+  @@index([verifyCode])
 }
 
 model Post {
@@ -165,4 +214,85 @@ model AnimalPhoto {
   @@index([uploadedBy])
   @@index([isActive])
   @@index([order])
+}
+
+enum SharePlatform {
+  TWITTER
+  FACEBOOK
+  WHATSAPP
+  INSTAGRAM
+  LINKEDIN
+  COPY_LINK
+  NATIVE
+}
+
+model Animal {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  species         AnimalSpecies
+  photoUrl        String?
+  shortStory      String        @db.VarChar(200)
+  description     String        @db.Text
+  status          AnimalStatus
+  location        String
+  firstSpottedDate DateTime
+  featured        Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  shares          AnimalShare[]
+
+  @@index([slug])
+  @@index([species])
+  @@index([status])
+  @@index([featured])
+  @@index([firstSpottedDate])
+}
+
+model AnimalShare {
+  id        String       @id @default(cuid())
+  animalId  String
+  platform  SharePlatform
+  createdAt DateTime     @default(now())
+
+  animal    Animal       @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([animalId])
+  @@index([platform])
+  @@index([createdAt])
+}
+
+model Volunteer {
+  id          String   @id @default(cuid())
+  name        String
+  area        String
+  availability String  @db.Text
+  phone       String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([area])
+  @@index([createdAt])
+}
+
+model Waitlist {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  city          String?
+  referredBy    String?  // email of referrer
+  source        String?  // where they came from
+  position      Int      // position in waitlist (1, 2, 3, etc.)
+  referralCode  String   @unique // unique code for their referral link
+  joinedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([email])
+  @@index([referralCode])
+  @@index([referredBy])
+  @@index([position])
+  @@index([joinedAt])
 }

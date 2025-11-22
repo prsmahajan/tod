@@ -1,95 +1,62 @@
+"use client"
 import Image from "next/image"
 import Link from "next/link"
 import { NewsletterForm } from "./newsletter-form"
-import { SocialProof } from "./SocialProof"
 import { Heart } from "lucide-react"
 import { memo } from "react"
 
 function Hero() {
   return (
-    <section className="mx-auto flex max-w-4xl flex-col items-center gap-8 py-12 sm:py-16 px-4">
-      {/* Logo */}
-      <div className="place-items-center">
-        <Image
-          src="/images/logo-dark.png"
-          alt="The Open Draft logo"
-          width={100}
-          height={100}
-          className="rounded-xl shadow-lg"
-          priority
-        />
-      </div>
-
+    <section className="mx-auto flex max-w-[1200px] flex-col items-center gap-16 py-24 px-4 bg-white dark:bg-black">
       {/* Main Heading */}
       <div className="text-center space-y-4">
-        <h1 className="text-balance font-sans text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
-          <span className="font-serif text-gray-900 dark:text-gray-100">
-            The Open Draft
-          </span>
+        <h1 className="text-4xl font-semibold leading-tight text-black dark:text-white">
+          The Open Draft
         </h1>
-        <p className="text-xl sm:text-2xl font-medium text-gray-700 dark:text-gray-300">
+        <p className="text-lg text-[#212121] dark:text-gray-300">
           Technology Explained, Simply
         </p>
       </div>
 
-      {/* Mission Banner */}
-      <div className="w-full max-w-2xl bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 sm:p-6 shadow-lg">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Heart size={24} className="text-red-600 dark:text-red-400 fill-current" />
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Our Purpose</h2>
-        </div>
-        <p className="text-center text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-          Every subscription helps feed <strong className="text-red-600 dark:text-red-400">stray animals across India</strong>.
-          Learn tech, save lives. <Link href="/mission" className="text-blue-600 dark:text-blue-400 underline font-semibold hover:text-blue-700 dark:hover:text-blue-300">Read our story →</Link>
-        </p>
-      </div>
-
-      {/* Social Proof Widget */}
+      {/* Photo Section - Placeholder for photo with animal */}
       <div className="w-full max-w-2xl">
-        <SocialProof />
+        <div className="relative aspect-[4/3] bg-[#FAFAFA] dark:bg-[#212121] border border-[#E5E5E5] dark:border-[#404040] overflow-hidden rounded-lg">
+          <Image
+            src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=1200&h=900&fit=crop&q=80"
+            alt="Person feeding stray animals in India"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 800px"
+            priority
+          />
+        </div>
       </div>
 
-      {/* Description */}
-      <p className="text-pretty max-w-2xl text-center text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
-        Helping you understand the technology that runs your systems, protects your data, and drives growth—so you can
-        lead confidently in a digital world.
-      </p>
+      {/* Mission Statement */}
+      <div className="w-full max-w-2xl text-center space-y-6">
+        <p className="text-base leading-relaxed text-[#212121] dark:text-gray-300">
+          Every subscription helps feed <strong className="text-[#DC2626]">stray animals across India</strong>.
+          Learn tech, save lives.
+        </p>
+        <Link 
+          href="/mission" 
+          className="inline-block text-[#212121] dark:text-gray-300 underline hover:opacity-70 transition-opacity"
+        >
+          Read our story →
+        </Link>
+      </div>
 
-      {/* CTA Box */}
-      <div className="w-full max-w-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-6 sm:p-8 shadow-xl">
-        <div className="text-center mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-            📬 Join Our Mission
+      {/* CTA Button */}
+      <div className="w-full max-w-xl">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-semibold mb-2 text-black dark:text-white">
+            Join Our Waitlist
           </h2>
-          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">
-            Get <span className="text-blue-600 dark:text-blue-400 font-bold">FREE tech insights</span> + help feed animals
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            No spam. Unsubscribe anytime. Your email is safe with us.
+          <p className="text-base text-[#212121] dark:text-gray-300">
+            Be among the first 1,000 Feeders + get first access when we launch
           </p>
         </div>
         <NewsletterForm className="mt-0" />
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            ✨ Welcome email with exclusive content sent immediately
-          </p>
-        </div>
-      </div>
-
-      {/* Trust Indicators */}
-      <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-center mt-4">
-        <div className="flex flex-col">
-          <span className="text-2xl sm:text-3xl font-bold text-[#104da2] dark:text-blue-400">Free</span>
-          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Always</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-2xl sm:text-3xl font-bold text-[#c341eb] dark:text-purple-400">Weekly</span>
-          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Updates</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-2xl sm:text-3xl font-bold text-[#146b0c] dark:text-green-400">No Spam</span>
-          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Guaranteed</span>
-        </div>
       </div>
     </section>
   )

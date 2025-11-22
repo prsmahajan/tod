@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
+import { LoginModal } from "@/components/LoginModal";
 
 export function SiteHeader() {
     const { data: session, status } = useSession();
@@ -42,12 +43,6 @@ export function SiteHeader() {
         </div>
 
         <nav className="flex items-center gap-2">
-          {/* <Link href="/login" className="rounded-md px-3 py-2 text-sm hover:bg-accent" aria-label="Login">
-            Login
-          </Link>
-          <Button asChild className="rounded-full px-4 py-2" aria-label="Sign Up">
-            <Link href="/signup">Sign Up</Link>
-          </Button> */}
           {status === "authenticated" ? (
         <div className="relative">
           <button onClick={() => setOpen((x) => !x)} className="flex items-center gap-3">
@@ -74,10 +69,11 @@ export function SiteHeader() {
           )}
         </div>
       ) : (
-        <div className="flex gap-3">
-          <Link href="/login" className="border px-3 py-1.5 rounded hover:bg-gray-50">Log in</Link>
-          <Link href="/signup" className="border px-3 py-1.5 rounded bg-black text-white hover:bg-gray-900">Sign up</Link>
-        </div>
+        <LoginModal>
+          <button className="border px-3 py-1.5 rounded bg-black text-white hover:bg-gray-900">
+            Log in
+          </button>
+        </LoginModal>
       )}
         </nav>
       </div>

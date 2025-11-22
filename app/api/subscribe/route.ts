@@ -1,26 +1,29 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { appendSubscriberToSheet } from "@/lib/google-sheets";
 import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { resend, EMAIL_FROM } from "@/lib/resend";
-import { WelcomeEmail } from "@/lib/email-templates";
+import crypto from "crypto";
 
 const subscribeSchema = z.object({
   email: z.string().email("Invalid email address"),
   name: z.string().optional(),
 });
 
+function generateReferralCode(): string {
+  return crypto.randomBytes(8).toString("hex").toUpperCase();
+}
+
+// Redirect subscribe to waitlist
 export async function POST(req: Request) {
   try {
-    // Rate limiting - 5 subscriptions per 10 seconds per IP
+    // Rate limiting - 5 signups per 10 seconds per IP
     const ipHeader = req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown";
     const ip = ipHeader.split(",")[0].trim();
 
-    const { success } = await checkRateLimit(`subscribe:${ip}`);
+    const { success } = await checkRateLimit(`waitlist:${ip}`);
     if (!success) {
       return NextResponse.json(
-        { error: "Too many subscription attempts. Try again later." },
+        { error: "Too many signup attempts. Try again later." },
         { status: 429 }
       );
     }
@@ -28,63 +31,53 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { email, name } = subscribeSchema.parse(body);
 
-    // Check if already subscribed
-    const existing = await prisma.subscriber.findUnique({
-      where: { email },
+    // Normalize email
+    const emailNormalized = email.trim().toLowerCase();
+
+    // Check if already on waitlist
+    const existing = await prisma.waitlist.findUnique({
+      where: { email: emailNormalized },
     });
 
     if (existing) {
-      if (existing.isActive) {
-        return NextResponse.json(
-          { error: "You're already subscribed!" },
-          { status: 400 }
-        );
-      }
-
-      // Reactivate if previously unsubscribed
-      const updated = await prisma.subscriber.update({
-        where: { email },
-        data: { isActive: true, unsubscribedAt: null, name },
-      });
-
-      // Append to Google Sheet
-      await appendSubscriberToSheet({
-        email: updated.email,
-        name: updated.name,
-        subscribedAt: updated.subscribedAt,
-      });
-
-      return NextResponse.json({ success: true, message: "Subscription reactivated!" });
+      return NextResponse.json(
+        { 
+          error: "You're already on the waitlist!",
+          position: existing.position,
+          referralCode: existing.referralCode,
+        },
+        { status: 400 }
+      );
     }
 
-    // Create new subscriber in database
-    const subscriber = await prisma.subscriber.create({
-      data: { email, name },
-    });
+    // Get current waitlist count to determine position
+    const currentCount = await prisma.waitlist.count();
+    const position = currentCount + 1;
 
-    // Append to Google Sheet
-    await appendSubscriberToSheet({
-      email: subscriber.email,
-      name: subscriber.name,
-      subscribedAt: subscriber.subscribedAt,
-    });
-
-    // Send welcome email
-    try {
-      await resend.emails.send({
-        from: EMAIL_FROM,
-        to: subscriber.email,
-        subject: "Welcome to The Open Draft!",
-        react: WelcomeEmail({
-          subscriberName: subscriber.name || undefined,
-        }),
-      });
-    } catch (emailError) {
-      console.error("Failed to send welcome email:", emailError);
-      // Don't fail the subscription if email fails
+    // Generate unique referral code
+    let referralCode = generateReferralCode();
+    let codeExists = await prisma.waitlist.findUnique({ where: { referralCode } });
+    while (codeExists) {
+      referralCode = generateReferralCode();
+      codeExists = await prisma.waitlist.findUnique({ where: { referralCode } });
     }
 
-    return NextResponse.json({ success: true, message: "Successfully subscribed!" });
+    // Create waitlist entry
+    const waitlistEntry = await prisma.waitlist.create({
+      data: {
+        email: emailNormalized,
+        name: name?.trim() || null,
+        position,
+        referralCode,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      position,
+      referralCode,
+      message: `You're on the waitlist! You're position #${position}.`,
+    });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -95,7 +88,7 @@ export async function POST(req: Request) {
 
     console.error("Subscribe error:", error);
     return NextResponse.json(
-      { error: "Failed to subscribe. Please try again." },
+      { error: "Failed to join waitlist. Please try again." },
       { status: 500 }
     );
   }

@@ -24,3 +24,17 @@ export async function createPasswordResetToken(userId: string) {
   await prisma.passwordResetToken.create({ data: { userId, tokenHash, expiresAt } });
   return token;
 }
+
+export async function createMagicLinkToken(email: string) {
+  const token = generateToken();
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  
+  // Check if magicLinkToken model exists
+  if (!prisma.magicLinkToken) {
+    throw new Error("MagicLinkToken model is not available. Please restart the server after running 'npx prisma generate'");
+  }
+  
+  await prisma.magicLinkToken.create({ data: { email, tokenHash, expiresAt } });
+  return token;
+}

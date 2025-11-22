@@ -86,47 +86,47 @@ export default function SavedPostsPage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin" size={48} />
+        <Loader2 className="animate-spin text-[#212121]" size={48} />
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-            <Bookmark size={36} className="text-blue-600" />
+    <main className="min-h-screen bg-white">
+      <div className="max-w-[1200px] mx-auto px-4 py-16">
+        <div className="mb-12">
+          <h1 className="text-4xl font-semibold mb-2 flex items-center gap-3 text-black">
+            <Bookmark size={36} className="text-[#DC2626]" />
             Saved Posts
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[#212121]">
             Your collection of bookmarked articles
           </p>
         </div>
 
         {savedPosts.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Bookmark size={64} className="mx-auto mb-4 text-gray-300" />
-            <h2 className="text-2xl font-semibold mb-2 text-gray-900">No saved posts yet</h2>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-[#FAFAFA] border border-[#E5E5E5] p-12 text-center">
+            <Bookmark size={64} className="mx-auto mb-4 text-[#E5E5E5]" />
+            <h2 className="text-2xl font-semibold mb-2 text-black">No saved posts yet</h2>
+            <p className="text-[#212121] mb-6">
               Start saving posts you want to read later by clicking the bookmark icon
             </p>
             <Link
-              href="/newsletter"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+              href="/articles"
+              className="inline-block bg-black text-white px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
             >
               Browse Posts
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {savedPosts.map((savedPost) => (
               <div
                 key={savedPost.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200 group"
+                className="bg-white border border-[#E5E5E5] hover:opacity-80 transition-opacity"
               >
                 {savedPost.post.coverImage && (
-                  <div className="h-48 overflow-hidden bg-gray-200">
+                  <div className="h-48 overflow-hidden bg-[#FAFAFA]">
                     <img
                       src={savedPost.post.coverImage}
                       alt={savedPost.post.title}
@@ -141,7 +141,7 @@ export default function SavedPostsPage() {
                       {savedPost.post.categories.slice(0, 2).map(({ category }) => (
                         <span
                           key={category.id}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
+                          className="px-2 py-1 bg-[#FAFAFA] text-[#212121] border border-[#E5E5E5] text-xs font-medium"
                         >
                           {category.name}
                         </span>
@@ -149,20 +149,20 @@ export default function SavedPostsPage() {
                     </div>
                   )}
 
-                  <Link href={`/newsletter/${savedPost.post.slug}`}>
-                    <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  <Link href={`/articles/${savedPost.post.slug}`}>
+                    <h3 className="text-xl font-semibold mb-2 text-black hover:opacity-70 transition-opacity line-clamp-2">
                       {savedPost.post.title}
                     </h3>
                   </Link>
 
                   {savedPost.post.excerpt && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    <p className="text-[#212121] text-sm mb-4 line-clamp-3 leading-relaxed">
                       {savedPost.post.excerpt}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center justify-between pt-4 border-t border-[#E5E5E5]">
+                    <div className="flex items-center text-xs text-[#212121]">
                       <Calendar size={14} className="mr-1" />
                       {savedPost.post.publishedAt
                         ? new Date(savedPost.post.publishedAt).toLocaleDateString("en-US", {
@@ -176,7 +176,7 @@ export default function SavedPostsPage() {
                     <button
                       onClick={() => handleRemove(savedPost.post.id)}
                       disabled={removingId === savedPost.post.id}
-                      className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
+                      className="flex items-center gap-1 text-[#DC2626] hover:opacity-70 text-sm font-medium disabled:opacity-50 transition-opacity"
                     >
                       {removingId === savedPost.post.id ? (
                         <Loader2 size={14} className="animate-spin" />

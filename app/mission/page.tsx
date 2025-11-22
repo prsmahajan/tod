@@ -1,233 +1,224 @@
-import Link from "next/link";
-import { Heart, DollarSign, Users, TrendingUp } from "lucide-react";
-import { SiteFooter } from "@/components/site-footer";
-import { ImpactDashboard } from "@/components/ImpactDashboard";
-import { SubscriptionCalculator } from "@/components/SubscriptionCalculator";
-import { AnimalPhotoCarousel } from "@/components/AnimalPhotoCarousel";
+"use client"
 
-export const metadata = {
-  title: "Our Mission - Feeding Stray Animals in India | The Open Draft",
-  description: "Every subscription helps feed hungry stray dogs, cats, cows, and birds across India. Learn how your ₹10/month makes a real difference.",
-};
+import { useState } from "react"
+import Image from "next/image"
+import { Heart, Calendar, MapPin, Target, CheckCircle2, Mail } from "lucide-react"
+import { SiteFooter } from "@/components/site-footer"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { NewsletterForm } from "@/components/newsletter-form"
 
 export default function MissionPage() {
   return (
     <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <main className="min-h-screen bg-white">
         {/* Hero Section */}
-        <section className="py-16 px-4 shadow-[0_10px_10px_-5px_rgba(255,255,255,0.5)]">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full mb-6">
-              <Heart size={40} className="text-red-600 dark:text-red-400 fill-current" />
-            </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-gray-100 font-serif">
-              Every Subscription <span className="text-red-600 dark:text-red-400 font-hand">Feeds a Life</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 leading-relaxed font-serif">
-              We're not just another tech articles. We're a community that uses technology knowledge to feed hungry stray animals across India.
-            </p>
-          </div>
-        </section>
-
-        {/* The Problem */}
-        <section className="py-12 px-4 bg-white dark:bg-[#1E1A1D]">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center font-serif text-gray-900 dark:text-gray-100">The Reality We're Facing</h2>
-            <div className="prose prose-lg max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6 font-serif">
-                Across India, millions of stray animals—dogs, cats, cows, bulls, and pigeons—struggle to survive on our streets.
-                They face hunger, neglect, and harsh conditions every single day. Many go days without a proper meal.
-              </p>
-              <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6 font-serif">
-                These innocent creatures didn't choose this life. They depend on the compassion of humans to survive.
-                But compassion alone isn't enough—we need <strong className="font-hand text-xl text-gray-900 dark:text-gray-100">action</strong>.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Our Solution */}
-        <section className="py-12 px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center font-serif text-gray-900 dark:text-gray-100">Our Solution: <span className="font-hand text-blue-600 dark:text-blue-400">Tech for Good</span></h2>
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-8 md:p-12 border-2 border-blue-200 dark:border-blue-800">
-              <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed mb-6 font-serif">
-                <strong className="text-blue-600 dark:text-blue-400 font-hand text-xl">Here's the model:</strong> We create valuable technology content that people want to learn.
-                You get knowledge about how things work in the tech world—clear, simple, in-depth articles.
-              </p>
-              <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed mb-6 font-serif">
-                In return for just <strong className="text-3xl text-blue-600 dark:text-blue-400 font-hand">₹10 per month</strong>, you get access to premium content.
-                But here's what makes this special: <strong className="font-hand text-xl text-gray-900 dark:text-gray-100">100% of subscription revenue (minus operational costs) goes directly to feeding stray animals.</strong>
-              </p>
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mt-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100 font-hand">The Math That Saves Lives:</h3>
-                <ul className="space-y-3 text-gray-700 dark:text-gray-300 font-serif">
-                  <li className="flex items-start gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
-                    <span>20,000 subscribers × ₹10/month = <strong className="text-green-600 dark:text-green-400 font-hand text-xl">₹2,00,000/month</strong></span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
-                    <span>After operational costs → <strong className="text-green-600 dark:text-green-400 font-hand text-xl">₹1,50,000+</strong> for animal food</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
-                    <span>That's <strong className="text-green-600 dark:text-green-400 font-hand text-xl">thousands of meals</strong> every single month</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works */}
-        <section className="py-12 px-4 bg-gray-50 dark:bg-[#211d20]">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center font-serif text-gray-900 dark:text-gray-100">How Your Subscription <span className="font-hand text-red-600 dark:text-red-400">Helps</span></h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-md text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
-                  <Users size={32} className="text-blue-600 dark:text-blue-400" />
+        <section className="py-24 px-4">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="grid md:grid-cols-2 gap-16 items-center">
+              {/* Photo Section */}
+              <div className="relative">
+                <div className="relative aspect-[4/5] bg-[#FAFAFA] border border-[#E5E5E5] overflow-hidden rounded-lg">
+                  <Image
+                    src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=1000&fit=crop&q=80"
+                    alt="Feeding stray animals in Pune"
+                    fill
+                    className="object-cover"
+                    priority
+                    sizes="(max-width: 768px) 100vw, 500px"
+                  />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">You Subscribe</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  For just ₹10/month, you get access to premium tech content that simplifies complex topics.
-                </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-md text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
-                  <DollarSign size={32} className="text-green-600 dark:text-green-400" />
+              {/* Story Section */}
+              <div className="space-y-6">
+                <h1 className="text-4xl font-semibold leading-tight text-black">
+                  Why I Started This
+                </h1>
+                <div className="space-y-4 text-base leading-relaxed text-[#212121]">
+                  <p>
+                    I live in Pune, a city I love. But every day, I walk past stray dogs, cats, and cows who are hungry. 
+                    <strong className="text-[#DC2626]"> Really hungry.</strong>
+                  </p>
+                  <p>
+                    I started feeding them whenever I could—a few rotis here, some rice there. But I realized something: 
+                    <em className="text-black"> my small efforts weren't enough.</em> There are thousands of animals, and I'm just one person.
+                  </p>
+                  <p className="text-lg text-[#DC2626]">
+                    So I decided to do something bigger. Something that could actually make a difference.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">We Collect Funds</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  All subscription revenue is pooled together, minus minimal operational costs.
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-md text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
-                  <Heart size={32} className="text-red-600 dark:text-red-400 fill-current" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">Animals Get Fed</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  100% of proceeds buy food for stray dogs, cats, cows, bulls, and birds.
-                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Interactive Calculator */}
-        <section className="py-12 px-4">
-          <div className="max-w-6xl mx-auto">
-            <SubscriptionCalculator />
-          </div>
-        </section>
-
-        {/* Live Impact Dashboard */}
-        <section className="py-12 px-4 bg-gray-50 dark:bg-[#211d20]">
-          <div className="max-w-6xl mx-auto">
-            <ImpactDashboard />
-          </div>
-        </section>
-
-        {/* Transparency Pledge */}
-        <section className="py-12 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 dark:bg-gradient-to-r dark:from-[#1f1f1f] dark:to-[#444] rounded-2xl p-8 md:p-12 text-white">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">Our Transparency Pledge</h2>
-              <div className="space-y-4 text-lg">
-                <p className="flex items-start gap-3">
-                  <span className="text-[#fff] font-bold">✓</span>
-                  <span>Monthly public reports showing exactly how much was collected and spent</span>
-                </p>
-                <p className="flex items-start gap-3">
-                  <span className="text-[#fff] font-bold">✓</span>
-                  <span>Photos and videos of feeding sessions</span>
-                </p>
-                <p className="flex items-start gap-3">
-                  <span className="text-[#fff] font-bold">✓</span>
-                  <span>Real-time impact counter on our homepage</span>
-                </p>
-                <p className="flex items-start gap-3">
-                  <span className="text-[#fff] font-bold">✓</span>
-                  <span>Every rupee accounted for</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Animal Photos Carousel */}
-        <AnimalPhotoCarousel />
-
-        {/* CTA Section */}
-        <section className="py-16 px-4 bg-gradient-to-b from-white to-blue-50">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 font-serif dark:text-[#000]">
-              Learn Tech. <span className="text-red-600 font-hand text-5xl">Feed Lives.</span>
+        {/* Timeline/Story Section */}
+        <section className="py-16 px-4 bg-[#FAFAFA]">
+          <div className="max-w-[1200px] mx-auto">
+            <h2 className="text-3xl font-semibold mb-12 text-center text-black">
+              The Day I Decided to Act
             </h2>
-            <p className="text-xl text-gray-700 mb-8 font-serif">
-              Your <span className="font-hand text-2xl text-blue-600">₹10</span> subscription isn't just buying content—it's <span className="font-hand text-xl text-red-600">buying meals</span> for animals who have no one else.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/articles"
-                className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
-              >
-                Read Free Articles
-              </Link>
-              <Link
-                href="/subscribe"
-                className="inline-block bg-red-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-red-700 transition"
-              >
-                Subscribe & Help Feed Animals
-              </Link>
+
+            <div className="space-y-8">
+              {/* The Incident */}
+              <div className="bg-white border-l-4 border-[#DC2626] p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <Calendar className="text-[#DC2626]" size={24} />
+                  <span className="text-lg font-semibold text-black">The Moment That Changed Everything</span>
+                </div>
+                <p className="text-base text-[#212121] leading-relaxed mb-4">
+                  It was a hot afternoon in Pune. I saw a mother dog trying to feed her puppies, but she was so thin, 
+                  so weak. She had nothing to give them. The puppies were crying, and she just looked at me with eyes 
+                  that said everything.
+                </p>
+                <p className="text-base text-[#212121] leading-relaxed">
+                  <strong className="text-[#DC2626]">That's when I knew.</strong> I couldn't just walk away anymore. 
+                  I had to find a way to help—not just this one family, but all the animals who have no one.
+                </p>
+              </div>
+
+              {/* Current Reality */}
+              <div className="bg-white border-l-4 border-[#DC2626] p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <MapPin className="text-[#DC2626]" size={24} />
+                  <span className="text-lg font-semibold text-black">The Reality in Pune Today</span>
+                </div>
+                <p className="text-base text-[#212121] leading-relaxed mb-4">
+                  Every single day, thousands of stray animals in Pune go hungry. Dogs searching through garbage. 
+                  Cats hiding in corners. Cows wandering the streets, looking for something to eat.
+                </p>
+                <p className="text-base text-[#212121] leading-relaxed">
+                  They didn't choose this life. They depend on us. And right now, <em className="text-[#DC2626]">we're failing them.</em>
+                </p>
+              </div>
+
+              {/* Vision */}
+              <div className="bg-white border-l-4 border-[#DC2626] p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <Target className="text-[#DC2626]" size={24} />
+                  <span className="text-lg font-semibold text-black">My Vision for the Future</span>
+                </div>
+                <p className="text-base text-[#212121] leading-relaxed mb-4">
+                  I want to create something sustainable. Something that doesn't depend on one person's ability to give, 
+                  but on a community that cares.
+                </p>
+                <p className="text-base text-[#212121] leading-relaxed">
+                  Imagine if thousands of people came together, each giving just <strong className="text-[#DC2626] text-lg">₹10 a month</strong>. 
+                  That's less than a cup of coffee. But together? <em className="text-[#DC2626]">That's thousands of meals for animals who have nothing.</em>
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mt-6">
-              Not ready to subscribe? You can also make a <Link href="/donate" className="text-blue-600 underline">one-time donation</Link>
-            </p>
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="py-12 px-4 bg-white">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center dark:text-[#000]">Common Questions</h2>
-            <div className="space-y-6">
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">How much of my subscription goes to animals?</h3>
-                <p className="text-gray-700">
-                  100% of revenue after minimal operational costs (hosting, email service, payment processing fees).
-                  We're committed to keeping operations lean so maximum funds reach the animals.
+        {/* How It Works - Transparency */}
+        <section className="py-16 px-4 bg-white">
+          <div className="max-w-[1200px] mx-auto">
+            <h2 className="text-3xl font-semibold mb-6 text-center text-black">
+              How It Works
+            </h2>
+            <p className="text-base text-center text-[#212121] mb-12">
+              Complete transparency. Every rupee accounted for.
+            </p>
+
+            {/* ₹10 Breakdown */}
+            <div className="bg-[#FAFAFA] border border-[#E5E5E5] p-8 mb-12">
+              <h3 className="text-2xl font-semibold mb-8 text-center text-black">
+                Your ₹10 Breakdown
+              </h3>
+              
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white border border-[#E5E5E5] p-6 text-center">
+                  <div className="text-4xl font-semibold text-[#212121] mb-2">₹8.50</div>
+                  <div className="text-sm text-[#212121] mb-2">Direct to Animals</div>
+                  <div className="text-lg font-semibold text-black">85%</div>
+                </div>
+                <div className="bg-white border border-[#E5E5E5] p-6 text-center">
+                  <div className="text-4xl font-semibold text-[#212121] mb-2">₹1.00</div>
+                  <div className="text-sm text-[#212121] mb-2">Operational Costs</div>
+                  <div className="text-lg font-semibold text-black">10%</div>
+                </div>
+                <div className="bg-white border border-[#E5E5E5] p-6 text-center">
+                  <div className="text-4xl font-semibold text-[#212121] mb-2">₹0.50</div>
+                  <div className="text-sm text-[#212121] mb-2">Payment Processing</div>
+                  <div className="text-lg font-semibold text-black">5%</div>
+                </div>
+              </div>
+
+              <div className="bg-white border-l-4 border-[#DC2626] p-6">
+                <p className="text-base text-[#212121] leading-relaxed">
+                  <strong className="text-[#DC2626]">Why ₹10?</strong> Because everyone should be able to help. 
+                  A student, a working professional, a retiree—₹10 is something we can all afford. 
+                  It's not about how much you give. <em className="text-black">It's about coming together.</em>
                 </p>
               </div>
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">Where are the animals located?</h3>
-                <p className="text-gray-700">
-                  We feed stray animals across various locations in India, focusing on areas with the highest need.
-                  Monthly reports include locations and photos.
-                </p>
+            </div>
+
+            {/* My Commitment */}
+            <div className="bg-black text-white p-8">
+              <h3 className="text-2xl font-semibold mb-6 text-center">My Commitment to You</h3>
+              <div className="space-y-4 text-base">
+                <div className="flex items-start gap-4">
+                  <CheckCircle2 className="text-white flex-shrink-0 mt-1" size={24} />
+                  <p>
+                    <strong>Monthly Reports:</strong> Every month, I'll publish exactly how much was collected, 
+                    how much was spent, and where the food went.
+                  </p>
+                </div>
+                <div className="flex items-start gap-4">
+                  <CheckCircle2 className="text-white flex-shrink-0 mt-1" size={24} />
+                  <p>
+                    <strong>Photos & Videos:</strong> You'll see the animals being fed. Real moments. Real impact.
+                  </p>
+                </div>
+                <div className="flex items-start gap-4">
+                  <CheckCircle2 className="text-white flex-shrink-0 mt-1" size={24} />
+                  <p>
+                    <strong>100% Transparency:</strong> Every rupee tracked. Every meal documented. 
+                    This is my promise to you, and to the animals.
+                  </p>
+                </div>
+                <div className="flex items-start gap-4">
+                  <CheckCircle2 className="text-white flex-shrink-0 mt-1" size={24} />
+                  <p>
+                    <strong>Accountability:</strong> If you ever have questions, I'm here. 
+                    Email me. Ask me anything. This is personal for me, and I want you to trust this mission.
+                  </p>
+                </div>
               </div>
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">Can I cancel anytime?</h3>
-                <p className="text-gray-700">
-                  Yes, absolutely. No hard feelings. You can cancel your subscription anytime from your account settings.
-                </p>
-              </div>
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-bold mb-2 dark:text-[#000]">What kind of content do I get?</h3>
-                <p className="text-gray-700">
-                  In-depth articles explaining how technology works—from web development to system design,
-                  cloud computing to databases. Complex topics made simple and clear.
-                </p>
-              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Call to Action - Waitlist */}
+        <section className="py-16 px-4 bg-[#FAFAFA]">
+          <div className="max-w-[1200px] mx-auto text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-6">
+              <Heart className="text-[#DC2626]" size={40} fill="currentColor" />
+            </div>
+            <h2 className="text-3xl font-semibold mb-6 text-black">
+              Join Me in This Mission
+            </h2>
+            <p className="text-base text-[#212121] mb-4 leading-relaxed max-w-2xl mx-auto">
+              I'm still setting up the payment system, but I'd love to know if you're interested.
+            </p>
+            <p className="text-base text-[#212121] mb-10 leading-relaxed max-w-2xl mx-auto">
+              Join the waitlist, and I'll notify you the moment subscriptions are ready. 
+              Together, we can make a real difference.
+            </p>
+
+            {/* Waitlist Form */}
+            <div className="bg-white border border-[#E5E5E5] p-8 max-w-xl mx-auto">
+              <NewsletterForm />
+              <p className="text-sm text-[#212121] mt-6 text-center">
+                No spam. Just a notification when we're ready. That's it.
+              </p>
             </div>
           </div>
         </section>
       </main>
       <SiteFooter />
     </>
-  );
+  )
 }

@@ -21,6 +21,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'vercel.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'miro.medium.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
   // Security headers

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Heart, Users, Utensils, TrendingUp } from "lucide-react";
+import { LoginModal } from "@/components/LoginModal";
 
 export function SubscriptionCalculator() {
   const [subscribers, setSubscribers] = useState(100);
@@ -104,12 +105,11 @@ export function SubscriptionCalculator() {
         <p className="text-sm text-gray-600 mb-4">
           Just ₹10/month = Premium tech content + Real impact on animal lives
         </p>
-        <a
-          href="/signup"
-          className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
-        >
-          Join the Mission
-        </a>
+        <LoginModal>
+          <button className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg">
+            Join the Mission
+          </button>
+        </LoginModal>
       </div>
 
       <style jsx>{`

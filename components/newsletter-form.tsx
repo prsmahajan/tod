@@ -16,7 +16,7 @@ export function NewsletterForm({ className }: { className?: string }) {
     setMessage(null)
 
     try {
-      const res = await fetch("/api/subscribe", {
+      const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -25,12 +25,12 @@ export function NewsletterForm({ className }: { className?: string }) {
       const data = await res.json()
 
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error || "Failed to subscribe" })
+        setMessage({ type: "error", text: data.error || "Failed to join waitlist" })
         setLoading(false)
         return
       }
 
-      setMessage({ type: "success", text: data.message || "Successfully subscribed!" })
+      setMessage({ type: "success", text: `🎉 Success! You're position #${data.position} on the waitlist!` })
       setEmail("")
       setLoading(false)
     } catch (error) {
@@ -43,7 +43,7 @@ export function NewsletterForm({ className }: { className?: string }) {
     <div className={cn("w-full max-w-xl", className)}>
       <form
         onSubmit={onSubmit}
-        className="rounded-xl border border-input bg-card p-2 shadow-sm"
+        className="border-b border-[#E5E5E5] pb-2"
       >
         <div className="flex items-center gap-2">
           <label htmlFor="email" className="sr-only">
@@ -55,12 +55,16 @@ export function NewsletterForm({ className }: { className?: string }) {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="flex-1 rounded-lg border-0 bg-transparent focus-visible:ring-0"
+            className="flex-1 border-0 border-b border-[#E5E5E5] rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-[#212121] px-0"
             required
             disabled={loading}
           />
-          <Button type="submit" className="rounded-xl px-5" disabled={loading}>
-            {loading ? "Subscribing..." : "Subscribe"}
+          <Button 
+            type="submit" 
+            className="bg-[#DC2626] text-white hover:opacity-80 transition-opacity rounded-lg px-5" 
+            disabled={loading}
+          >
+            {loading ? "Joining..." : "Join Waitlist"}
           </Button>
         </div>
       </form>
@@ -69,7 +73,7 @@ export function NewsletterForm({ className }: { className?: string }) {
         <p
           className={cn(
             "mt-3 text-center text-sm",
-            message.type === "success" ? "text-green-600" : "text-red-600"
+            message.type === "success" ? "text-[#212121]" : "text-[#DC2626]"
           )}
         >
           {message.text}

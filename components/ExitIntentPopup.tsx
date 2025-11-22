@@ -43,7 +43,7 @@ export function ExitIntentPopup() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/subscribe", {
+      const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name }),
@@ -52,15 +52,15 @@ export function ExitIntentPopup() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage("Success! Check your email for a welcome message.");
+        setMessage(`🎉 Success! You're position #${data.position} on the waitlist! Check your email.`);
         setEmail("");
         setName("");
-        setTimeout(() => setIsVisible(false), 2000);
+        setTimeout(() => setIsVisible(false), 3000);
       } else {
         setMessage(data.error || "Something went wrong");
       }
     } catch (error) {
-      setMessage("Failed to subscribe. Please try again.");
+      setMessage("Failed to join waitlist. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -152,11 +152,11 @@ export function ExitIntentPopup() {
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
           >
             {loading ? (
-              "Subscribing..."
+              "Joining Waitlist..."
             ) : (
               <>
                 <Mail size={20} />
-                Join Our Mission (FREE)
+                Join Waitlist (FREE)
               </>
             )}
           </button>
