@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
+import { LoginModal } from "@/components/LoginModal";
 
 export function SiteHeader() {
     const { data: session, status } = useSession();
@@ -68,11 +69,11 @@ export function SiteHeader() {
           )}
         </div>
       ) : (
-        <Link href="/login">
+        <LoginModal>
           <button className="border px-3 py-1.5 rounded bg-black text-white hover:bg-gray-900">
             Log in
           </button>
-        </Link>
+        </LoginModal>
       )}
         </nav>
       </div>

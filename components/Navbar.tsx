@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { User, LogOut, Settings, LayoutDashboard, Bookmark } from "lucide-react";
+import { LoginModal } from "@/components/LoginModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function Navbar() {
@@ -128,11 +129,11 @@ function Navbar() {
               )}
             </div>
           ) : (
-            <Link href="/login">
+            <LoginModal>
               <button className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity">
                 Log in
               </button>
-            </Link>
+            </LoginModal>
           )}
         </div>
       </div>
