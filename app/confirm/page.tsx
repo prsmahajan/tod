@@ -1,8 +1,8 @@
 "use client";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 
-export default function ResetConfirmPage() {
+function ResetConfirmPageContent() {
   const router = useRouter();
   const q = useSearchParams();
   const token = q.get("token") || "";
@@ -39,5 +39,13 @@ export default function ResetConfirmPage() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function ResetConfirmPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading reset form...</div>}>
+      <ResetConfirmPageContent />
+    </Suspense>
   );
 }

@@ -4,10 +4,22 @@ import Image from "next/image";
 import { SearchBar } from "@/components/SearchBar";
 import { Calendar } from "lucide-react";
 
+export const dynamic = "force-dynamic";
 // Revalidate every 60 seconds for Vercel (ISR)
 export const revalidate = 60;
 
 export default async function ArticlesPage() {
+  if (!process.env.DATABASE_URL) {
+    return (
+      <main className="min-h-screen bg-white">
+        <div className="max-w-[1200px] mx-auto px-4 py-16">
+          <h1 className="text-3xl font-semibold mb-4 text-black">Articles</h1>
+          <p className="text-base text-[#212121]">Database connection not configured.</p>
+        </div>
+      </main>
+    );
+  }
+
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { publishedAt: "desc" },

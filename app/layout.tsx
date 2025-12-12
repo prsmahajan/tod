@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-import { Varta, Dancing_Script, Caveat } from "next/font/google"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import Providers from "@/components/Providers"
@@ -19,22 +18,6 @@ export const metadata: Metadata = {
   description: "Helping you understand the technology that runs your systems.",
 }
 
-const varta = Varta({
-  subsets: ["latin"],
-  variable: "--font-varta",
-  weight: ['300', '400', '500', '600', '700'],
-})
-const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  variable: "--font-dancing-script",
-  weight: ['400', '500', '600', '700'],
-})
-const caveat = Caveat({
-  subsets: ["latin"],
-  variable: "--font-caveat",
-  weight: ['400', '500', '600', '700'],
-})
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${varta.variable} ${dancingScript.variable} ${caveat.variable} ${GeistMono.variable} antialiased`}
+      className={`${GeistMono.variable} antialiased`}
     >
       <head>
         <GoogleAnalytics />

@@ -4,6 +4,17 @@ import Image from "next/image";
 import { Calendar, ArrowRight } from "lucide-react";
 
 export async function Latest() {
+  if (!process.env.DATABASE_URL) {
+    return (
+      <section className="py-16 bg-white">
+        <div className="max-w-[1200px] mx-auto px-4 text-center text-[#212121]">
+          <h2 className="text-2xl font-semibold mb-4 text-black">Latest Articles</h2>
+          <p>Database connection not configured. Add a DATABASE_URL to load recent posts.</p>
+        </div>
+      </section>
+    );
+  }
+
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { publishedAt: "desc" },
