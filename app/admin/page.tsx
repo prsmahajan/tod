@@ -3,8 +3,14 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
 import { FileText, Users, Mail, Eye } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
+
+  if (!process.env.DATABASE_URL) {
+    return <div>Database connection not configured.</div>;
+  }
 
   const [postsCount, subscribersCount, publishedCount] = await Promise.all([
     prisma.post.count(),

@@ -1,12 +1,30 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.EMAIL_FROM!;
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Missing RESEND_API_KEY environment variable.");
+  }
+
+  return new Resend(apiKey);
+}
+
+function getFromAddress() {
+  const from = process.env.EMAIL_FROM;
+
+  if (!from) {
+    throw new Error("Missing EMAIL_FROM environment variable.");
+  }
+
+  return from;
+}
 
 // -------------------- Verification Email --------------------
 export async function sendVerificationEmail(to: string, url: string) {
+  const resend = getResendClient();
   const { data, error } = await resend.emails.send({
-    from: FROM,
+    from: getFromAddress(),
     to,
     subject: "Verify your email",
     html: `
@@ -30,8 +48,9 @@ export async function sendVerificationEmail(to: string, url: string) {
 
 // -------------------- Password Reset Email --------------------
 export async function sendPasswordResetEmail(to: string, url: string) {
+  const resend = getResendClient();
   const { data, error } = await resend.emails.send({
-    from: FROM,
+    from: getFromAddress(),
     to,
     subject: "Reset your password",
     html: `
@@ -55,8 +74,9 @@ export async function sendPasswordResetEmail(to: string, url: string) {
 
 // -------------------- Magic Link Email --------------------
 export async function sendMagicLinkEmail(to: string, url: string) {
+  const resend = getResendClient();
   const { data, error } = await resend.emails.send({
-    from: FROM,
+    from: getFromAddress(),
     to,
     subject: "Sign in to The Open Draft",
     html: `

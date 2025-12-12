@@ -4,10 +4,16 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "@/components/admin/AdminNav";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
+    redirect("/login");
+  }
+
+  if (!process.env.DATABASE_URL) {
     redirect("/login");
   }
 

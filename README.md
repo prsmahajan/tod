@@ -209,6 +209,10 @@ npx tsx scripts/init-google-sheet.ts     # Init Google Sheets
 4. Deploy
 5. Set up cron jobs (Vercel auto-detects `vercel.json`)
 
+> Builds are configured to run `npm ci` (see `vercel.json`) so installs respect the lockfile versions used during local testing.
+ If `npm ci` is unavailable in the build environment, the install command automatically falls back to `npm install` to avoid failing deployments.
+ Keep `package-lock.json` in sync with `package.json` before triggering a deployment.
+
 ### Database
 
 Use Neon, Supabase, or any PostgreSQL provider.

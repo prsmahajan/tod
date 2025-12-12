@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/db";
 
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return new Response("", {
+      headers: { "Content-Type": "application/xml" },
+    });
+  }
+
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { publishedAt: "desc" },

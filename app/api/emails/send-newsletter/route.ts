@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
-import { resend, EMAIL_FROM } from "@/lib/resend";
+import { getFromEmail, getResendClient } from "@/lib/resend";
 import { NewsletterEmail } from "@/lib/email-templates";
 
 export async function POST(req: Request) {
@@ -75,6 +75,8 @@ export async function POST(req: Request) {
     let sent = 0;
     let failed = 0;
 
+    const resend = getResendClient();
+
     for (let i = 0; i < subscribers.length; i += batchSize) {
       const batch = subscribers.slice(i, i + batchSize);
 
@@ -83,7 +85,7 @@ export async function POST(req: Request) {
           const unsubscribeUrl = `${process.env.NEXTAUTH_URL || "https://theopendraft.com"}/unsubscribe?email=${encodeURIComponent(subscriber.email)}`;
 
           await resend.emails.send({
-            from: EMAIL_FROM,
+            from: getFromEmail(),
             to: subscriber.email,
             subject: post.title,
             react: NewsletterEmail({
