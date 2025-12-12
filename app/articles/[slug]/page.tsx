@@ -11,16 +11,8 @@ import { PostViews } from "@/components/PostViews";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
 import { Clock } from "lucide-react";
 
-export async function generateStaticParams() {
-  const posts = await prisma.post.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true },
-  });
-
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const post = await prisma.post.findUnique({

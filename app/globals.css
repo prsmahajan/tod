@@ -24,9 +24,9 @@
   --input: #E5E5E5;
   --ring: #E5E5E5;
   --radius: 0.5rem;
-  --font-varta: var(--font-varta);
-  --font-dancing-script: var(--font-dancing-script);
-  --font-caveat: var(--font-caveat);
+  --font-varta: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-dancing-script: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-caveat: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .dark {

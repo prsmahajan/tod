@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function SubscribersPage() {
+  if (!process.env.DATABASE_URL) {
+    return <div>Database connection not configured.</div>;
+  }
   const subscribers = await prisma.subscriber.findMany({
     orderBy: { subscribedAt: "desc" },
   });

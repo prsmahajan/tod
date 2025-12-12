@@ -2,7 +2,12 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Eye, TrendingUp, FileText, Users } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AnalyticsPage() {
+  if (!process.env.DATABASE_URL) {
+    return <div>Database connection not configured.</div>;
+  }
   // Get top posts by views
   const topPosts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
