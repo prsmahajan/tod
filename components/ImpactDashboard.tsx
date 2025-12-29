@@ -36,8 +36,8 @@ export function ImpactDashboard() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-[#E5E5E5] p-8">
-        <div className="text-center text-[#212121]">Loading impact data...</div>
+      <div className="bg-white dark:bg-black border border-[#E5E5E5] dark:border-[#212121] p-8">
+        <div className="text-center text-[#212121] dark:text-gray-300">Loading impact data...</div>
       </div>
     );
   }
@@ -48,13 +48,13 @@ export function ImpactDashboard() {
   const projectedMealsPerMonth = Math.floor(projectedMonthlyRevenue / MEAL_COST);
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-black">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-semibold mb-4 text-black">
+          <h2 className="text-3xl font-semibold mb-4 text-black dark:text-white">
             Our Impact
           </h2>
-          <p className="text-base text-[#212121]">
+          <p className="text-base text-[#212121] dark:text-gray-300">
             Every subscription feeds hungry animals across India
           </p>
         </div>
@@ -62,42 +62,42 @@ export function ImpactDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           <div className="text-center">
-            <div className="text-5xl font-semibold mb-2 text-black">
+            <div className="text-5xl font-semibold mb-2 text-black dark:text-white">
               {stats.subscribers.toLocaleString()}
             </div>
-            <div className="text-base text-[#212121]">
+            <div className="text-base text-[#212121] dark:text-gray-300">
               People committed
             </div>
           </div>
 
           <div className="text-center">
-            <div className="text-5xl font-semibold mb-2 text-black">
+            <div className="text-5xl font-semibold mb-2 text-black dark:text-white">
               {TARGET_SUBSCRIBERS.toLocaleString()}
             </div>
-            <div className="text-base text-[#212121]">
+            <div className="text-base text-[#212121] dark:text-gray-300">
               Target subscribers
             </div>
           </div>
 
           <div className="text-center">
-            <div className="text-5xl font-semibold mb-2 text-black">
+            <div className="text-5xl font-semibold mb-2 text-black dark:text-white">
               {projectedMealsPerMonth.toLocaleString()}
             </div>
-            <div className="text-base text-[#212121]">
+            <div className="text-base text-[#212121] dark:text-gray-300">
               Meals/month at target
             </div>
           </div>
         </div>
 
         {/* Projected Impact */}
-        <div className="bg-[#FAFAFA] border border-[#E5E5E5] p-8 text-center">
-          <h3 className="text-xl font-semibold mb-4 text-black">
+        <div className="bg-[#FAFAFA] dark:bg-[#212121] border border-[#E5E5E5] dark:border-[#404040] p-8 text-center">
+          <h3 className="text-xl font-semibold mb-4 text-black dark:text-white">
             Projected Impact at Target
           </h3>
-          <p className="text-2xl font-semibold text-[#212121]">
+          <p className="text-2xl font-semibold text-[#212121] dark:text-gray-300">
             {TARGET_SUBSCRIBERS.toLocaleString()} × ₹{SUBSCRIPTION_AMOUNT} = {projectedMealsPerMonth.toLocaleString()} meals/month
           </p>
-          <p className="text-sm text-[#212121] mt-2">
+          <p className="text-sm text-[#212121] dark:text-gray-300 mt-2">
             That's {Math.floor(projectedMealsPerMonth / 30).toLocaleString()} meals per day
           </p>
         </div>
