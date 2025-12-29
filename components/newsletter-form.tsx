@@ -30,7 +30,7 @@ export function NewsletterForm({ className }: { className?: string }) {
         return
       }
 
-      setMessage({ type: "success", text: `🎉 Success! You're position #${data.position} on the waitlist!` })
+      setMessage({ type: "success", text: `Success! You're position #${data.position} on the waitlist!` })
       setEmail("")
       setLoading(false)
     } catch (error) {
@@ -40,28 +40,21 @@ export function NewsletterForm({ className }: { className?: string }) {
   }
 
   return (
-    <div className={cn("w-full max-w-xl", className)}>
-      <form
-        onSubmit={onSubmit}
-        className="border-b border-[#E5E5E5] dark:border-[#404040] pb-2"
-      >
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2">
-          <label htmlFor="email" className="sr-only">
-            Email
-          </label>
+    <div className={cn("w-full max-w-md mx-auto", className)}>
+      <form onSubmit={onSubmit} className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Input
-            id="email"
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="flex-1 border-0 border-b border-[#E5E5E5] dark:border-[#404040] rounded-none bg-transparent text-black dark:text-white placeholder:text-[#212121] dark:placeholder:text-gray-500 focus-visible:ring-0 focus-visible:border-[#212121] dark:focus-visible:border-white px-0"
+            className="flex-1 h-12 px-4 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
             required
             disabled={loading}
           />
           <Button
             type="submit"
-            className="bg-[#DC2626] text-white hover:opacity-80 transition-opacity rounded-lg px-5 py-2 w-full sm:w-auto"
+            className="h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? "Joining..." : "Join Waitlist"}
@@ -70,14 +63,14 @@ export function NewsletterForm({ className }: { className?: string }) {
       </form>
 
       {message && (
-        <p
+        <div
           className={cn(
-            "mt-3 text-center text-sm",
-            message.type === "success" ? "text-[#212121] dark:text-gray-300" : "text-[#DC2626]"
+            "mt-4 text-center text-sm font-medium",
+            message.type === "success" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
           )}
         >
           {message.text}
-        </p>
+        </div>
       )}
     </div>
   )

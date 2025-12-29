@@ -1,40 +1,58 @@
 import Link from "next/link"
 import { NewsletterForm } from "./newsletter-form"
+import { Heart } from "lucide-react"
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-[#E5E5E5] dark:border-[#212121] bg-white dark:bg-black">
-      <div className="max-w-[1200px] mx-auto px-4 py-12">
-        <div className="grid items-start gap-12 md:grid-cols-2">
-          <div className="space-y-4">
-            <h3 className="text-2xl font-semibold text-black dark:text-white">
-              The Open Draft
-            </h3>
-            <p className="max-w-lg text-[#212121] dark:text-gray-300">
-              Technology explained simply. Every subscription feeds stray animals in India.
-            </p>
-            <Link href="/mission" className="inline-block text-[#212121] dark:text-gray-300 underline hover:opacity-70 transition-opacity">
+    <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+                The Open Draft
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 max-w-md">
+                Technology explained simply. Every subscription feeds stray animals across India. Learn tech, save lives.
+              </p>
+            </div>
+            <Link
+              href="/mission"
+              className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+            >
               Learn about our mission →
             </Link>
           </div>
-          <div className="md:justify-self-end">
+          <div className="lg:justify-self-end w-full max-w-md">
+            <div className="mb-4">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-50 mb-2">
+                Join Our Newsletter
+              </h4>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Get updates on our impact and new articles
+              </p>
+            </div>
             <NewsletterForm />
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-[#E5E5E5] dark:border-[#212121] pt-8 text-sm text-[#212121] dark:text-gray-300 md:flex-row">
-          <p>© 2025 The Open Draft. Built with ❤️ for animals.</p>
-          <nav className="flex gap-6">
-            <Link href="/mission" className="hover:opacity-70 transition-opacity">
-              Our Mission
-            </Link>
-            <Link href="/newsletter" className="hover:opacity-70 transition-opacity">
-              Newsletter
-            </Link>
-            <Link href="mailto:account@theopendraft.com" className="hover:opacity-70 transition-opacity">
-              Contact
-            </Link>
-          </nav>
+        <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              © 2025 The Open Draft. Built with <Heart className="w-4 h-4 text-red-500 inline" fill="currentColor" /> for animals.
+            </p>
+            <nav className="flex gap-6 text-sm">
+              <Link href="/mission" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
+                Our Mission
+              </Link>
+              <Link href="/articles" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
+                Articles
+              </Link>
+              <Link href="mailto:account@theopendraft.com" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
+                Contact
+              </Link>
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

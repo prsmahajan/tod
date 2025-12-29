@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-import { Varta, Dancing_Script, Caveat } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import Providers from "@/components/Providers"
@@ -19,20 +19,10 @@ export const metadata: Metadata = {
   description: "Helping you understand the technology that runs your systems.",
 }
 
-const varta = Varta({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-varta",
-  weight: ['300', '400', '500', '600', '700'],
-})
-const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  variable: "--font-dancing-script",
-  weight: ['400', '500', '600', '700'],
-})
-const caveat = Caveat({
-  subsets: ["latin"],
-  variable: "--font-caveat",
-  weight: ['400', '500', '600', '700'],
+  variable: "--font-inter",
+  weight: ['400', '700'],
 })
 
 export default function RootLayout({
@@ -43,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${varta.variable} ${dancingScript.variable} ${caveat.variable} ${GeistMono.variable} antialiased`}
+      className={`${inter.variable} ${GeistMono.variable} antialiased`}
     >
       <head>
         <GoogleAnalytics />
@@ -68,7 +58,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-varta" style={{ isolation: "isolate" }}>
+      <body className="font-inter" style={{ isolation: "isolate" }}>
         {/* <Suspense fallback={<div>Loading...</div>}> */}
           {/* <InitialLoading /> */}
           <a href="#main-content" className="skip-to-main">

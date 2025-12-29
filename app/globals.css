@@ -4,59 +4,56 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Clean Professional Theme Colors */
   --background: #FFFFFF;
-  --foreground: #000000;
+  --foreground: #1E293B;
   --card: #FFFFFF;
-  --card-foreground: #000000;
+  --card-foreground: #1E293B;
   --popover: #FFFFFF;
-  --popover-foreground: #000000;
-  --primary: #000000;
+  --popover-foreground: #1E293B;
+  --primary: #0F172A;
   --primary-foreground: #FFFFFF;
-  --secondary: #FAFAFA;
-  --secondary-foreground: #212121;
-  --muted: #FAFAFA;
-  --muted-foreground: #212121;
-  --accent: #FAFAFA;
-  --accent-foreground: #212121;
-  --destructive: #DC2626;
+  --secondary: #F8FAFC;
+  --secondary-foreground: #1E293B;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #3B82F6;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E5E5E5;
-  --input: #E5E5E5;
-  --ring: #E5E5E5;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #3B82F6;
   --radius: 0.5rem;
-  --font-varta: var(--font-varta);
-  --font-dancing-script: var(--font-dancing-script);
-  --font-caveat: var(--font-caveat);
+  --font-inter: var(--font-inter);
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #000000;
-  --card-foreground: #FFFFFF;
-  --popover: #000000;
-  --popover-foreground: #FFFFFF;
-  --primary: #FFFFFF;
-  --primary-foreground: #000000;
-  --secondary: #212121;
-  --secondary-foreground: #FFFFFF;
-  --muted: #212121;
-  --muted-foreground: #FFFFFF;
-  --accent: #212121;
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --card: #1E293B;
+  --card-foreground: #F8FAFC;
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+  --primary: #F8FAFC;
+  --primary-foreground: #0F172A;
+  --secondary: #1E293B;
+  --secondary-foreground: #F8FAFC;
+  --muted: #334155;
+  --muted-foreground: #94A3B8;
+  --accent: #3B82F6;
   --accent-foreground: #FFFFFF;
-  --destructive: #DC2626;
+  --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #212121;
-  --input: #212121;
-  --ring: #212121;
+  --border: #334155;
+  --input: #334155;
+  --ring: #3B82F6;
 }
 
 @theme inline {
-  --font-sans: var(--font-varta);
-  --font-serif: var(--font-varta);
-  --font-hand: var(--font-caveat);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  --font-varta: var(--font-varta);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -87,31 +84,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-white dark:bg-black text-foreground;
-    font-family: var(--font-varta), sans-serif;
+    @apply bg-background text-foreground;
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 16px;
     line-height: 1.6;
-    color: #212121;
+    font-weight: 400;
+    color: var(--foreground);
   }
-  .font-varta {
-    font-family: var(--font-varta), sans-serif;
+  .font-inter {
+    font-family: var(--font-inter), sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    line-height: 1.2;
-    color: #000000;
-  }
-  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
-    color: #FFFFFF;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--foreground);
+    letter-spacing: -0.02em;
   }
   h1 {
-    font-size: clamp(28px, 5vw, 36px);
+    font-size: clamp(32px, 5vw, 48px);
   }
   h2 {
-    font-size: clamp(20px, 4vw, 24px);
+    font-size: clamp(24px, 4vw, 32px);
   }
   h3 {
-    font-size: clamp(18px, 3vw, 20px);
+    font-size: clamp(20px, 3vw, 24px);
+  }
+  h4 {
+    font-size: 18px;
   }
 
   /* Responsive text sizing */
@@ -127,7 +126,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: 2px solid #DC2626;
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 
@@ -136,20 +135,16 @@
     position: absolute;
     top: -40px;
     left: 0;
-    background: #000000;
-    color: #FFFFFF;
+    background: var(--primary);
+    color: var(--primary-foreground);
     padding: 8px 16px;
     text-decoration: none;
     z-index: 100;
+    font-weight: 700;
   }
 
   .skip-to-main:focus {
     top: 0;
-  }
-
-  .dark .skip-to-main {
-    background: #FFFFFF;
-    color: #000000;
   }
 }
 
@@ -157,7 +152,7 @@
 .prose hr {
   margin-top: 2rem;
   margin-bottom: 2rem;
-  border-top: 1px solid #E5E5E5;
+  border-top: 1px solid var(--border);
 }
 
 .prose-lg hr {
@@ -170,13 +165,13 @@
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
   border: none;
-  border-top: 1px solid #E5E5E5;
+  border-top: 1px solid var(--border);
 }
 
 /* Code block syntax highlighting */
 .prose pre {
-  background: #282c34;
-  color: #abb2bf;
+  background: #1E293B;
+  color: #E2E8F0;
   font-family: 'Courier New', Courier, monospace;
   padding: 1rem;
   border-radius: 0.5rem;
@@ -186,12 +181,13 @@
 }
 
 .prose code {
-  background: #F5F5F5;
-  color: #DC2626;
+  background: var(--secondary);
+  color: var(--accent);
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.875em;
   font-family: 'Courier New', Courier, monospace;
+  font-weight: 400;
 }
 
 .prose pre code {
@@ -204,14 +200,14 @@
 /* Syntax highlighting colors (One Dark theme) */
 .hljs-comment,
 .hljs-quote {
-  color: #5c6370;
+  color: #94A3B8;
   font-style: italic;
 }
 
 .hljs-doctag,
 .hljs-keyword,
 .hljs-formula {
-  color: #c678dd;
+  color: #C084FC;
 }
 
 .hljs-section,
@@ -219,11 +215,11 @@
 .hljs-selector-tag,
 .hljs-deletion,
 .hljs-subst {
-  color: #e06c75;
+  color: #F87171;
 }
 
 .hljs-literal {
-  color: #56b6c2;
+  color: #67E8F9;
 }
 
 .hljs-string,
@@ -231,7 +227,7 @@
 .hljs-addition,
 .hljs-attribute,
 .hljs-meta .hljs-string {
-  color: #98c379;
+  color: #86EFAC;
 }
 
 .hljs-attr,
@@ -242,7 +238,7 @@
 .hljs-selector-attr,
 .hljs-selector-pseudo,
 .hljs-number {
-  color: #d19a66;
+  color: #FDE047;
 }
 
 .hljs-symbol,
@@ -251,13 +247,13 @@
 .hljs-meta,
 .hljs-selector-id,
 .hljs-title {
-  color: #61aeee;
+  color: #60A5FA;
 }
 
 .hljs-built_in,
 .hljs-title.class_,
 .hljs-class .hljs-title {
-  color: #e6c07b;
+  color: #FCD34D;
 }
 
 .hljs-emphasis {
@@ -274,8 +270,8 @@
 
 /* Editor code block styling */
 .ProseMirror pre {
-  background: #282c34;
-  color: #abb2bf;
+  background: #1E293B;
+  color: #E2E8F0;
   font-family: 'Courier New', Courier, monospace;
   padding: 1rem;
   border-radius: 0.5rem;
@@ -283,8 +279,8 @@
 }
 
 .ProseMirror code {
-  background: #F5F5F5;
-  color: #DC2626;
+  background: var(--secondary);
+  color: var(--accent);
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.875em;
@@ -297,7 +293,7 @@
   padding: 0;
 }
 
-/* Simple fade animation only */
+/* Simple fade animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
