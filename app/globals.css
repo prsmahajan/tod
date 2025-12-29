@@ -101,11 +101,55 @@
     line-height: 1.2;
     color: #000000;
   }
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #FFFFFF;
+  }
   h1 {
-    font-size: 36px;
+    font-size: clamp(28px, 5vw, 36px);
   }
   h2 {
-    font-size: 24px;
+    font-size: clamp(20px, 4vw, 24px);
+  }
+  h3 {
+    font-size: clamp(18px, 3vw, 20px);
+  }
+
+  /* Responsive text sizing */
+  @media (max-width: 640px) {
+    body {
+      font-size: 15px;
+    }
+  }
+
+  /* Accessibility: Improved focus states */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid #DC2626;
+    outline-offset: 2px;
+  }
+
+  /* Skip to main content link for keyboard navigation */
+  .skip-to-main {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000000;
+    color: #FFFFFF;
+    padding: 8px 16px;
+    text-decoration: none;
+    z-index: 100;
+  }
+
+  .skip-to-main:focus {
+    top: 0;
+  }
+
+  .dark .skip-to-main {
+    background: #FFFFFF;
+    color: #000000;
   }
 }
 

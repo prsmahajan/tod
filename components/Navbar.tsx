@@ -4,13 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { User, LogOut, Settings, LayoutDashboard, Bookmark } from "lucide-react";
+import { User, LogOut, Settings, LayoutDashboard, Bookmark, Menu, X } from "lucide-react";
 import { LoginModal } from "@/components/LoginModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function Navbar() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +39,14 @@ function Navbar() {
 
   const closeDropdown = useCallback(() => {
     setOpen(false);
+  }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((x) => !x);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
   }, []);
 
   return (
@@ -83,6 +92,18 @@ function Navbar() {
 
         {/* User Menu & Theme Toggle */}
         <div className="flex items-center gap-3">
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden p-2 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors"
+            aria-label="Toggle mobile menu"
+          >
+            {mobileMenuOpen ? (
+              <X size={24} className="text-[#212121] dark:text-gray-300" />
+            ) : (
+              <Menu size={24} className="text-[#212121] dark:text-gray-300" />
+            )}
+          </button>
           <ThemeToggle />
           {status === "authenticated" ? (
             <div className="relative" ref={dropdownRef}>
@@ -137,6 +158,52 @@ function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-[#E5E5E5] dark:border-[#212121] bg-white dark:bg-black">
+          <div className="flex flex-col py-4">
+            <Link
+              href="/articles"
+              className="px-4 py-3 text-[#212121] dark:text-gray-300 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors"
+              onClick={closeMobileMenu}
+            >
+              Articles
+            </Link>
+            <Link
+              href="/impact"
+              className="px-4 py-3 text-[#212121] dark:text-gray-300 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors"
+              onClick={closeMobileMenu}
+            >
+              Impact
+            </Link>
+            <Link
+              href="/mission"
+              className="px-4 py-3 text-[#212121] dark:text-gray-300 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors"
+              onClick={closeMobileMenu}
+            >
+              Our Mission
+            </Link>
+            <Link
+              href="/community"
+              className="px-4 py-3 text-[#212121] dark:text-gray-300 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors"
+              onClick={closeMobileMenu}
+            >
+              Community
+            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="px-4 py-3 text-[#212121] dark:text-gray-300 hover:bg-[#FAFAFA] dark:hover:bg-[#212121] transition-colors flex items-center gap-2"
+                onClick={closeMobileMenu}
+              >
+                <LayoutDashboard size={16} />
+                Admin
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

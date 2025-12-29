@@ -3,9 +3,6 @@ import { Latest } from "@/components/latest"
 import { SiteFooter } from "@/components/site-footer"
 import { generateSEO } from "@/components/SEOHead"
 import { ImpactDashboard } from "@/components/ImpactDashboard"
-import { FeaturedAnimals } from "@/components/FeaturedAnimals"
-import { InstagramFeed } from "@/components/InstagramFeed"
-import { Testimonials } from "@/components/Testimonials"
 
 export const metadata = generateSEO({
   title: "The Open Draft - Tech Explained Simply, Animals Fed Compassionately",
@@ -19,14 +16,9 @@ export const revalidate = 60;
 export default function Page() {
   return (
     <>
-      <main>
-        <Hero />
-        <ImpactDashboard />
-        <FeaturedAnimals />
-        <InstagramFeed />
-        <Testimonials />
-        <Latest />
-      </main>
+      <Hero />
+      <ImpactDashboard />
+      <Latest />
       <SiteFooter />
     </>
   )

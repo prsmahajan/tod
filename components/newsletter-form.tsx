@@ -43,9 +43,9 @@ export function NewsletterForm({ className }: { className?: string }) {
     <div className={cn("w-full max-w-xl", className)}>
       <form
         onSubmit={onSubmit}
-        className="border-b border-[#E5E5E5] pb-2"
+        className="border-b border-[#E5E5E5] dark:border-[#404040] pb-2"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2">
           <label htmlFor="email" className="sr-only">
             Email
           </label>
@@ -55,13 +55,13 @@ export function NewsletterForm({ className }: { className?: string }) {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="flex-1 border-0 border-b border-[#E5E5E5] rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-[#212121] px-0"
+            className="flex-1 border-0 border-b border-[#E5E5E5] dark:border-[#404040] rounded-none bg-transparent text-black dark:text-white placeholder:text-[#212121] dark:placeholder:text-gray-500 focus-visible:ring-0 focus-visible:border-[#212121] dark:focus-visible:border-white px-0"
             required
             disabled={loading}
           />
-          <Button 
-            type="submit" 
-            className="bg-[#DC2626] text-white hover:opacity-80 transition-opacity rounded-lg px-5" 
+          <Button
+            type="submit"
+            className="bg-[#DC2626] text-white hover:opacity-80 transition-opacity rounded-lg px-5 py-2 w-full sm:w-auto"
             disabled={loading}
           >
             {loading ? "Joining..." : "Join Waitlist"}
@@ -73,7 +73,7 @@ export function NewsletterForm({ className }: { className?: string }) {
         <p
           className={cn(
             "mt-3 text-center text-sm",
-            message.type === "success" ? "text-[#212121]" : "text-[#DC2626]"
+            message.type === "success" ? "text-[#212121] dark:text-gray-300" : "text-[#DC2626]"
           )}
         >
           {message.text}

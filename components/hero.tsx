@@ -7,13 +7,13 @@ import { memo } from "react"
 
 function Hero() {
   return (
-    <section className="mx-auto flex max-w-[1200px] flex-col items-center gap-16 py-24 px-4 bg-white dark:bg-black">
+    <section className="mx-auto flex max-w-[1200px] flex-col items-center gap-12 md:gap-16 py-16 md:py-24 px-4 bg-white dark:bg-black">
       {/* Main Heading */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-semibold leading-tight text-black dark:text-white">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-black dark:text-white">
           The Open Draft
         </h1>
-        <p className="text-lg text-[#212121] dark:text-gray-300">
+        <p className="text-base md:text-lg text-[#212121] dark:text-gray-300">
           Technology Explained, Simply
         </p>
       </div>
@@ -34,13 +34,13 @@ function Hero() {
 
       {/* Mission Statement */}
       <div className="w-full max-w-2xl text-center space-y-6">
-        <p className="text-base leading-relaxed text-[#212121] dark:text-gray-300">
+        <p className="text-base md:text-lg leading-relaxed text-[#212121] dark:text-gray-300">
           Every subscription helps feed <strong className="text-[#DC2626]">stray animals across India</strong>.
           Learn tech, save lives.
         </p>
-        <Link 
-          href="/mission" 
-          className="inline-block text-[#212121] dark:text-gray-300 underline hover:opacity-70 transition-opacity"
+        <Link
+          href="/mission"
+          className="inline-block text-sm md:text-base text-[#212121] dark:text-gray-300 underline hover:opacity-70 transition-opacity focus:outline-2 focus:outline-[#DC2626]"
         >
           Read our story →
         </Link>
@@ -49,10 +49,10 @@ function Hero() {
       {/* CTA Button */}
       <div className="w-full max-w-xl">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-semibold mb-2 text-black dark:text-white">
+          <h2 className="text-xl md:text-2xl font-semibold mb-2 text-black dark:text-white">
             Join Our Waitlist
           </h2>
-          <p className="text-base text-[#212121] dark:text-gray-300">
+          <p className="text-sm md:text-base text-[#212121] dark:text-gray-300">
             Be among the first 1,000 Feeders + get first access when we launch
           </p>
         </div>
