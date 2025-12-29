@@ -71,10 +71,15 @@ export default function RootLayout({
       <body className="font-varta" style={{ isolation: "isolate" }}>
         {/* <Suspense fallback={<div>Loading...</div>}> */}
           {/* <InitialLoading /> */}
+          <a href="#main-content" className="skip-to-main">
+            Skip to main content
+          </a>
           <ThemeProvider>
             <Providers>
               <Navbar />
-              {children}
+              <main id="main-content">
+                {children}
+              </main>
               <ExitIntentPopup />
               <Analytics />
             </Providers>

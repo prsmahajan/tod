@@ -16,11 +16,9 @@ export const revalidate = 60;
 export default function Page() {
   return (
     <>
-      <main>
-        <Hero />
-        <ImpactDashboard />
-        <Latest />
-      </main>
+      <Hero />
+      <ImpactDashboard />
+      <Latest />
       <SiteFooter />
     </>
   )
