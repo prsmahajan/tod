@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -346,21 +345,4 @@ export function LoginModal({ children }: LoginModalProps) {
       </PopoverContent>
     </Popover>
   );
-=======
-"use client"
-
-import Link from "next/link"
-import { ReactNode } from "react"
-
-interface LoginModalProps {
-  children: ReactNode
-}
-
-export function LoginModal({ children }: LoginModalProps) {
-  return (
-    <Link href="/login">
-      {children}
-    </Link>
-  )
->>>>>>> refs/remotes/origin/main
 }
