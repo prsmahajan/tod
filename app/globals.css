@@ -1,53 +1,103 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* Eden Theme System - 3 Themes: off-white, lavender, black */
 
-:root {
-  /* Clean Professional Theme Colors */
-  --background: #FFFFFF;
-  --foreground: #1E293B;
-  --card: #FFFFFF;
-  --card-foreground: #1E293B;
-  --popover: #FFFFFF;
-  --popover-foreground: #1E293B;
-  --primary: #0F172A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F8FAFC;
-  --secondary-foreground: #1E293B;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #3B82F6;
-  --accent-foreground: #FFFFFF;
+:root,
+html.off-white {
+  /* Off-White Theme (Default) */
+  --color-bg: #F8F7F1;
+  --color-text-primary: #292524;
+  --color-text-secondary: #57534e;
+  --color-border: #d6d3d1;
+  --color-accent: #A8A29E;
+  --color-card-bg: #ffffff;
+
+  /* Compatibility with existing components */
+  --background: #F8F7F1;
+  --foreground: #292524;
+  --card: #ffffff;
+  --card-foreground: #292524;
+  --popover: #ffffff;
+  --popover-foreground: #292524;
+  --primary: #292524;
+  --primary-foreground: #F8F7F1;
+  --secondary: #ffffff;
+  --secondary-foreground: #292524;
+  --muted: #d6d3d1;
+  --muted-foreground: #57534e;
+  --accent: #A8A29E;
+  --accent-foreground: #292524;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #3B82F6;
+  --border: #d6d3d1;
+  --input: #d6d3d1;
+  --ring: #A8A29E;
   --radius: 0.5rem;
-  --font-inter: var(--font-inter);
 }
 
-.dark {
-  --background: #0F172A;
-  --foreground: #F8FAFC;
-  --card: #1E293B;
-  --card-foreground: #F8FAFC;
-  --popover: #1E293B;
-  --popover-foreground: #F8FAFC;
-  --primary: #F8FAFC;
-  --primary-foreground: #0F172A;
-  --secondary: #1E293B;
-  --secondary-foreground: #F8FAFC;
-  --muted: #334155;
-  --muted-foreground: #94A3B8;
-  --accent: #3B82F6;
-  --accent-foreground: #FFFFFF;
+html.lavender {
+  /* Lavender Theme */
+  --color-bg: #F5F3FF;
+  --color-text-primary: #312e81;
+  --color-text-secondary: #4338ca;
+  --color-border: #c7d2fe;
+  --color-accent: #818CF8;
+  --color-card-bg: #eef2ff;
+
+  /* Compatibility with existing components */
+  --background: #F5F3FF;
+  --foreground: #312e81;
+  --card: #eef2ff;
+  --card-foreground: #312e81;
+  --popover: #eef2ff;
+  --popover-foreground: #312e81;
+  --primary: #312e81;
+  --primary-foreground: #F5F3FF;
+  --secondary: #eef2ff;
+  --secondary-foreground: #312e81;
+  --muted: #c7d2fe;
+  --muted-foreground: #4338ca;
+  --accent: #818CF8;
+  --accent-foreground: #312e81;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #334155;
-  --input: #334155;
-  --ring: #3B82F6;
+  --border: #c7d2fe;
+  --input: #c7d2fe;
+  --ring: #818CF8;
+  --radius: 0.5rem;
+}
+
+html.black {
+  /* Black Theme */
+  --color-bg: #030712;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-border: #374151;
+  --color-accent: #9ca3af;
+  --color-card-bg: #1f2937;
+
+  /* Compatibility with existing components */
+  --background: #030712;
+  --foreground: #f9fafb;
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+  --popover: #1f2937;
+  --popover-foreground: #f9fafb;
+  --primary: #f9fafb;
+  --primary-foreground: #030712;
+  --secondary: #1f2937;
+  --secondary-foreground: #f9fafb;
+  --muted: #374151;
+  --muted-foreground: #d1d5db;
+  --accent: #9ca3af;
+  --accent-foreground: #f9fafb;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #374151;
+  --input: #374151;
+  --ring: #9ca3af;
+  --radius: 0.5rem;
 }
 
 @theme inline {
@@ -133,8 +183,12 @@
   /* Skip to main content link for keyboard navigation */
   .skip-to-main {
     position: absolute;
-    top: -40px;
-    left: 0;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
     background: var(--primary);
     color: var(--primary-foreground);
     padding: 8px 16px;
@@ -144,7 +198,15 @@
   }
 
   .skip-to-main:focus {
-    top: 0;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: auto;
+    height: auto;
+    clip: auto;
+    overflow: visible;
+    white-space: normal;
+    border-radius: 4px;
   }
 }
 
@@ -305,4 +367,52 @@
 
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Eden Custom Animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.marquee-content {
+  animation: marquee-scroll 40s linear infinite;
+}
+
+/* Theme transition smoothness */
+html {
+  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+}
+
+/* Font family classes for Eden typography */
+.font-heading {
+  font-family: var(--font-heading, 'Manrope', var(--font-inter), sans-serif);
+}
+
+.font-body {
+  font-family: var(--font-body, 'DM Sans', var(--font-inter), sans-serif);
+}
+
+.font-nav {
+  font-family: var(--font-nav, var(--font-inter), sans-serif);
 }

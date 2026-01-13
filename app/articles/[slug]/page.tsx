@@ -8,7 +8,6 @@ import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import { RelatedPosts } from "@/components/RelatedPosts";
 import { TableOfContents } from "@/components/TableOfContents";
 import { PostViews } from "@/components/PostViews";
-import { ReadingProgressBar } from "@/components/ReadingProgressBar";
 import { Clock } from "lucide-react";
 
 export async function generateStaticParams() {
@@ -79,7 +78,6 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
 
   return (
     <>
-      <ReadingProgressBar />
       <main className="min-h-screen bg-white">
         <div className="max-w-[1200px] mx-auto px-4 py-16">
           <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8">

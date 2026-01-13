@@ -2,29 +2,29 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "off-white" | "lavender" | "black";
 
 type ThemeContextType = {
   theme: Theme;
-  toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("off-white");
   const [mounted, setMounted] = useState(false);
 
   // Load theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
-    
-    // Only use saved theme, default to light mode
-    if (savedTheme) {
-      setTheme(savedTheme);
+
+    // Only use saved theme if it's valid, default to off-white
+    if (savedTheme && ["off-white", "lavender", "black"].includes(savedTheme)) {
+      setThemeState(savedTheme);
     } else {
-      // Explicitly default to light mode
-      setTheme("light");
+      // Explicitly default to off-white theme
+      setThemeState("off-white");
     }
 
     setMounted(true);
@@ -34,17 +34,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (mounted) {
       const root = document.documentElement;
-      if (theme === "dark") {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
+
+      // Remove all theme classes
+      root.classList.remove("off-white", "lavender", "black");
+
+      // Add current theme class
+      root.classList.add(theme);
+
+      // Save to localStorage
       localStorage.setItem("theme", theme);
     }
   }, [theme, mounted]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
   };
 
   // Prevent flash of unstyled content
@@ -53,7 +56,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -64,8 +67,8 @@ export function useTheme() {
   if (context === undefined) {
     // Return default values if not in a provider (e.g., during SSR)
     return {
-      theme: "light" as Theme,
-      toggleTheme: () => {},
+      theme: "off-white" as Theme,
+      setTheme: () => {},
     };
   }
   return context;

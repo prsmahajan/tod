@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { SearchBar } from "@/components/SearchBar";
 import { Calendar } from "lucide-react";
+import AnimatedSection from "@/components/AnimatedSection";
+import Footer from "@/components/Footer";
 
 // Revalidate every 60 seconds for Vercel (ISR)
 export const revalidate = 60;
@@ -19,87 +21,103 @@ export default async function ArticlesPage() {
   });
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="max-w-[1200px] mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-semibold mb-4 text-black">Articles</h1>
-          <p className="text-base text-[#212121]">
-            Helping you understand the technology that runs your systems
-          </p>
-        </div>
-
-        {/* Search Bar */}
-        <div className="mb-12">
-          <SearchBar />
-        </div>
-
-        <div className="space-y-8">
-          {posts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-[#212121] text-base">No posts published yet. Check back soon!</p>
+    <>
+      <main className="min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-24">
+          <AnimatedSection>
+            <div className="text-center mb-12">
+              <h1 className="font-heading text-4xl md:text-5xl font-extrabold mb-4 text-[var(--color-text-primary)]">
+                Articles
+              </h1>
+              <p className="text-base text-[var(--color-text-secondary)]">
+                Helping you understand the technology that runs your systems
+              </p>
             </div>
-          ) : (
-            posts.map((post) => (
-              <article
-                key={post.id}
-                className="bg-white border border-[#E5E5E5] p-8 hover:opacity-80 transition-opacity"
-              >
-                {post.coverImage && (
-                  <div className="mb-6 overflow-hidden">
-                    <img
-                      src={post.coverImage}
-                      alt={post.title}
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                )}
+          </AnimatedSection>
 
-                <Link href={`/articles/${post.slug}`}>
-                  <h2 className="text-2xl font-semibold mb-3 hover:opacity-70 transition-opacity text-black">
-                    {post.title}
-                  </h2>
-                </Link>
+          {/* Search Bar */}
+          <AnimatedSection>
+            <div className="mb-12 max-w-2xl mx-auto">
+              <SearchBar />
+            </div>
+          </AnimatedSection>
 
-                {post.excerpt && (
-                  <p className="text-[#212121] mb-4 text-base leading-relaxed">{post.excerpt}</p>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-[#212121] pt-4 border-t border-[#E5E5E5]">
-                  <div className="flex items-center gap-2">
-                    {post.author.avatar && (
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        className="w-8 h-8 rounded-full"
-                      />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-[var(--color-text-secondary)] text-base">
+                  No posts published yet. Check back soon!
+                </p>
+              </div>
+            ) : (
+              posts.map((post, index) => (
+                <AnimatedSection key={post.id} direction={index % 2 === 0 ? "left" : "right"}>
+                  <article className="bg-[var(--color-card-bg)] rounded-lg overflow-hidden border border-[var(--color-border)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
+                    {post.coverImage && (
+                      <div className="relative h-48 overflow-hidden">
+                        <img
+                          src={post.coverImage}
+                          alt={post.title}
+                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        />
+                      </div>
                     )}
-                    <span>By {post.author.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar size={14} />
-                    <time>
-                      {post.publishedAt
-                        ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : ""}
-                    </time>
-                  </div>
-                </div>
 
-                <Link
-                  href={`/articles/${post.slug}`}
-                  className="inline-block mt-4 text-[#212121] font-semibold underline hover:opacity-70 transition-opacity"
-                >
-                  Read more →
-                </Link>
-              </article>
-            ))
-          )}
+                    <div className="p-6 flex flex-col flex-1">
+                      <Link href={`/articles/${post.slug}`}>
+                        <h2 className="font-heading text-xl font-bold mb-3 text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors">
+                          {post.title}
+                        </h2>
+                      </Link>
+
+                      {post.excerpt && (
+                        <p className="text-[var(--color-text-secondary)] mb-4 text-sm leading-relaxed line-clamp-3 flex-1">
+                          {post.excerpt}
+                        </p>
+                      )}
+
+                      <div className="mt-auto">
+                        <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] pb-4 border-b border-[var(--color-border)]">
+                          <div className="flex items-center gap-2">
+                            {post.author.avatar && (
+                              <img
+                                src={post.author.avatar}
+                                alt={post.author.name}
+                                className="w-6 h-6 rounded-full"
+                              />
+                            )}
+                            <span>{post.author.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar size={12} />
+                            <time>
+                              {post.publishedAt
+                                ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  })
+                                : ""}
+                            </time>
+                          </div>
+                        </div>
+
+                        <Link
+                          href={`/articles/${post.slug}`}
+                          className="inline-block mt-4 text-[var(--color-accent)] text-sm font-medium hover:text-[var(--color-text-primary)] transition-colors"
+                        >
+                          Read more →
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                </AnimatedSection>
+              ))
+            )}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+      <Footer />
+    </>
   );
 }
