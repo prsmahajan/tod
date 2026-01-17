@@ -1,11 +1,21 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import AnimatedSection from '@/components/AnimatedSection';
 import { useTypeText } from '@/hooks/useTypeText';
 import Icon from '@/components/Icon';
 import Marquee from '@/components/Marquee';
 import Footer from '@/components/Footer';
+
+interface FeaturedPhoto {
+  id: string;
+  imageUrl: string;
+  description: string;
+  userName: string;
+  location?: string;
+  feedDate: string;
+  animalCount?: number;
+}
 
 const ImpactCard = ({ imageUrl, title, description, delay = 0 }: { imageUrl: string, title: string, description: string, delay?: number }) => (
   <div className="bg-[var(--color-card-bg)] rounded-lg overflow-hidden border border-[var(--color-border)] transition-shadow duration-300 hover:shadow-xl h-full animate-float" style={{ animationDelay: `${delay}s` }}>
@@ -56,6 +66,65 @@ const marqueeImages = [
 
 const ImpactPage: React.FC = () => {
   const animatedText = useTypeText(['Impact', 'Kindness', 'Care', 'Action'], 1500, 100);
+  const [featuredPhotos, setFeaturedPhotos] = useState<FeaturedPhoto[]>([]);
+  const [marqueeSpeed, setMarqueeSpeed] = useState(60);
+  const MIN_SPEED = 1.5; // Faster (lower number = faster animation) - 3.5 seconds
+  const MAX_SPEED = 120; // Slower (higher number = slower animation) - 120 seconds (2 minutes)
+  const SPEED_STEP = 5;
+
+  useEffect(() => {
+    async function fetchFeaturedPhotos() {
+      try {
+        const response = await fetch('/api/photos/featured');
+        const data = await response.json();
+        if (data.photos && data.photos.length > 0) {
+          setFeaturedPhotos(data.photos);
+        }
+      } catch (error) {
+        console.error('Error fetching featured photos:', error);
+      }
+    }
+
+    fetchFeaturedPhotos();
+  }, []);
+
+  const increaseSpeed = () => {
+    setMarqueeSpeed(prev => Math.max(MIN_SPEED, prev - SPEED_STEP));
+  };
+
+  const decreaseSpeed = () => {
+    setMarqueeSpeed(prev => Math.min(MAX_SPEED, prev + SPEED_STEP));
+  };
+
+  // Combine featured photos (both admin and user) with static images
+  // Memoize to prevent Marquee re-renders when animatedText changes
+  const allMarqueeImages = useMemo(() => [
+    ...featuredPhotos.map(p => ({
+      src: p.imageUrl,
+      userName: p.userName || 'Anonymous',
+      isUser: true // Show name for all uploaded photos (admin and user)
+    })),
+    ...marqueeImages.map(src => ({ src, userName: '', isUser: false })),
+  ], [featuredPhotos]);
+
+  // Memoize marquee content to prevent re-renders
+  const marqueeContent = useMemo(() =>
+    allMarqueeImages.map((image, index) => (
+      <figure key={index} className="relative group flex-shrink-0 m-0">
+        <img
+          src={image.src}
+          alt={image.isUser ? `Photo by ${image.userName}` : `Stray animal ${index + 1}`}
+          className="w-64 h-48 object-cover rounded-lg shadow-md flex-shrink-0"
+          style={{ minWidth: '256px', width: '256px', height: '192px' }}
+        />
+        {image.isUser && image.userName && (
+          <figcaption className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent text-white text-xs rounded-b-lg">
+            Posted by {image.userName}
+          </figcaption>
+        )}
+      </figure>
+    ))
+  , [allMarqueeImages]);
 
   return (
     <>
@@ -72,11 +141,35 @@ const ImpactPage: React.FC = () => {
         </AnimatedSection>
 
         <AnimatedSection>
-          <div className="mt-20 -mx-4 sm:-mx-6 lg:-mx-8">
-            <Marquee>
-              {marqueeImages.map((src, index) => (
-                <img key={index} src={src} alt={`Stray animal ${index + 1}`} className="w-64 h-48 object-cover rounded-lg shadow-md mx-4" />
-              ))}
+          <div className="mt-20 -mx-4 sm:-mx-6 lg:-mx-8 relative">
+            {/* Speed Controls */}
+            <div className="absolute -top-12 right-4 sm:right-6 lg:right-8 flex gap-2 z-10">
+              <button
+                onClick={decreaseSpeed}
+                disabled={marqueeSpeed >= MAX_SPEED}
+                className="group relative w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition-all duration-200 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--color-border)] disabled:hover:bg-[var(--color-card-bg)]"
+                aria-label="Decrease speed"
+              >
+                <span className="text-lg font-bold leading-none">−</span>
+                <span className="absolute -bottom-8 right-0 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  Decrease speed
+                </span>
+              </button>
+              <button
+                onClick={increaseSpeed}
+                disabled={marqueeSpeed <= MIN_SPEED}
+                className="group relative w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition-all duration-200 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--color-border)] disabled:hover:bg-[var(--color-card-bg)]"
+                aria-label="Increase speed"
+              >
+                <span className="text-lg font-bold leading-none">+</span>
+                <span className="absolute -bottom-8 right-0 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  Increase speed
+                </span>
+              </button>
+            </div>
+
+            <Marquee speed={marqueeSpeed}>
+              {marqueeContent}
             </Marquee>
           </div>
         </AnimatedSection>

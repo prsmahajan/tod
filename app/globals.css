@@ -1,6 +1,77 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Super Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+@supports (scroll-behavior: smooth) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom smooth scroll for better performance */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Smooth scroll container */
+html, body {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Lenis-like smooth scroll feel */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Smooth button hover transitions */
+button, a, [role="button"] {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Toast styles */
+.themed-toast {
+  font-family: var(--font-body) !important;
+}
+
+[data-sonner-toast] {
+  --normal-bg: var(--color-card-bg) !important;
+  --normal-border: var(--color-border) !important;
+  --normal-text: var(--color-text-primary) !important;
+  font-family: var(--font-body) !important;
+  border-radius: 12px !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  --success-bg: var(--color-card-bg) !important;
+  border-color: rgb(34 197 94 / 0.3) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  --error-bg: var(--color-card-bg) !important;
+  border-color: rgb(239 68 68 / 0.3) !important;
+}
+
 /* Eden Theme System - 3 Themes: off-white, lavender, black */
 
 :root,
@@ -391,12 +462,12 @@ html.black {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-100%);
+    transform: translateX(-33.333%);
   }
 }
 
-.marquee-content {
-  animation: marquee-scroll 40s linear infinite;
+.marquee-animated {
+  animation: marquee-scroll var(--marquee-duration, 60s) linear infinite;
 }
 
 /* Theme transition smoothness */
@@ -415,4 +486,339 @@ html {
 
 .font-nav {
   font-family: var(--font-nav, var(--font-inter), sans-serif);
+}
+
+/* ========================================
+   CMS Theme System - Light & Dark Modes
+   ======================================== */
+
+/* CMS Layout Base */
+.cms-layout {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* CMS Light Theme */
+.cms-theme-light {
+  --cms-bg: #f8f9fa;
+  --cms-card-bg: #ffffff;
+  --cms-text-primary: #1f2937;
+  --cms-text-secondary: #6b7280;
+  --cms-text-muted: #9ca3af;
+  --cms-border: #e5e7eb;
+  --cms-border-light: #f3f4f6;
+  --cms-hover-bg: #f3f4f6;
+  --cms-accent: #4f46e5;
+  --cms-accent-light: #eef2ff;
+}
+
+.cms-theme-light .cms-main {
+  background-color: var(--cms-bg);
+}
+
+.cms-theme-light .cms-main h1,
+.cms-theme-light .cms-main h2,
+.cms-theme-light .cms-main h3,
+.cms-theme-light .cms-main h4,
+.cms-theme-light .cms-main h5,
+.cms-theme-light .cms-main h6 {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-light .cms-main p {
+  color: var(--cms-text-secondary);
+}
+
+/* Light theme table styles */
+.cms-theme-light table {
+  background-color: var(--cms-card-bg);
+}
+
+.cms-theme-light thead {
+  background-color: #f9fafb;
+}
+
+.cms-theme-light th {
+  color: var(--cms-text-secondary);
+}
+
+.cms-theme-light td {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-light tbody tr:hover {
+  background-color: var(--cms-hover-bg);
+}
+
+.cms-theme-light .cms-main .bg-white {
+  background-color: var(--cms-card-bg);
+}
+
+.cms-theme-light .cms-main .border-gray-200 {
+  border-color: var(--cms-border);
+}
+
+.cms-theme-light .cms-main .text-gray-900 {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-light .cms-main .text-gray-700 {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-light .cms-main .text-gray-600 {
+  color: var(--cms-text-secondary);
+}
+
+.cms-theme-light .cms-main .text-gray-500 {
+  color: var(--cms-text-muted);
+}
+
+.cms-theme-light .cms-main .text-gray-400 {
+  color: var(--cms-text-muted);
+}
+
+.cms-theme-light .cms-main .bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.cms-theme-light .cms-main .bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.cms-theme-light .cms-main .hover\:bg-gray-50:hover {
+  background-color: var(--cms-hover-bg);
+}
+
+.cms-theme-light .cms-main input,
+.cms-theme-light .cms-main select,
+.cms-theme-light .cms-main textarea {
+  background-color: var(--cms-card-bg);
+  border-color: var(--cms-border);
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-light .cms-main input::placeholder,
+.cms-theme-light .cms-main textarea::placeholder {
+  color: var(--cms-text-muted);
+}
+
+/* CMS Dark Theme */
+.cms-theme-dark {
+  --cms-bg: #0f0f0f;
+  --cms-card-bg: #1a1a1a;
+  --cms-text-primary: #ffffff;
+  --cms-text-secondary: #a1a1a1;
+  --cms-text-muted: #666666;
+  --cms-border: #2a2a2a;
+  --cms-border-light: #333333;
+  --cms-hover-bg: #222222;
+  --cms-accent: #4f46e5;
+  --cms-accent-light: #312e81;
+}
+
+.cms-theme-dark .cms-main {
+  background-color: var(--cms-bg);
+}
+
+.cms-theme-dark .cms-main h1,
+.cms-theme-dark .cms-main h2,
+.cms-theme-dark .cms-main h3,
+.cms-theme-dark .cms-main h4,
+.cms-theme-dark .cms-main h5,
+.cms-theme-dark .cms-main h6 {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-dark .cms-main p {
+  color: var(--cms-text-secondary);
+}
+
+/* Dark theme table styles */
+.cms-theme-dark table {
+  background-color: var(--cms-card-bg);
+}
+
+.cms-theme-dark thead {
+  background-color: #141414;
+}
+
+.cms-theme-dark th {
+  color: var(--cms-text-secondary);
+}
+
+.cms-theme-dark td {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-dark tbody tr {
+  border-color: var(--cms-border);
+}
+
+.cms-theme-dark tbody tr:hover {
+  background-color: var(--cms-hover-bg);
+}
+
+/* Override default Tailwind colors in dark mode */
+.cms-theme-dark .cms-main .bg-white {
+  background-color: var(--cms-card-bg);
+}
+
+.cms-theme-dark .cms-main .border-gray-200 {
+  border-color: var(--cms-border);
+}
+
+.cms-theme-dark .cms-main .divide-gray-200 > * + * {
+  border-color: var(--cms-border);
+}
+
+.cms-theme-dark .cms-main .text-gray-900 {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-dark .cms-main .text-gray-700 {
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-dark .cms-main .text-gray-600 {
+  color: var(--cms-text-secondary);
+}
+
+.cms-theme-dark .cms-main .text-gray-500 {
+  color: var(--cms-text-secondary);
+}
+
+.cms-theme-dark .cms-main .text-gray-400 {
+  color: var(--cms-text-muted);
+}
+
+.cms-theme-dark .cms-main .bg-gray-50 {
+  background-color: #141414;
+}
+
+.cms-theme-dark .cms-main .bg-gray-100 {
+  background-color: #1f1f1f;
+}
+
+.cms-theme-dark .cms-main .hover\:bg-gray-50:hover {
+  background-color: var(--cms-hover-bg);
+}
+
+.cms-theme-dark .cms-main .hover\:bg-gray-100:hover {
+  background-color: var(--cms-hover-bg);
+}
+
+/* Form elements in dark mode */
+.cms-theme-dark .cms-main input,
+.cms-theme-dark .cms-main select,
+.cms-theme-dark .cms-main textarea {
+  background-color: #141414;
+  border-color: var(--cms-border);
+  color: var(--cms-text-primary);
+}
+
+.cms-theme-dark .cms-main input::placeholder,
+.cms-theme-dark .cms-main textarea::placeholder {
+  color: var(--cms-text-muted);
+}
+
+.cms-theme-dark .cms-main input:focus,
+.cms-theme-dark .cms-main select:focus,
+.cms-theme-dark .cms-main textarea:focus {
+  border-color: var(--cms-accent);
+}
+
+/* Button overrides in dark mode */
+.cms-theme-dark .cms-main .bg-gray-900 {
+  background-color: var(--cms-card-bg);
+}
+
+/* Card/panel shadows in dark mode */
+.cms-theme-dark .cms-main .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.cms-theme-dark .cms-main .shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+.cms-theme-dark .cms-main .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* Role badges in dark mode */
+.cms-theme-dark .cms-main .bg-purple-100 {
+  background-color: rgba(168, 85, 247, 0.2);
+}
+
+.cms-theme-dark .cms-main .text-purple-700 {
+  color: #a78bfa;
+}
+
+.cms-theme-dark .cms-main .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+.cms-theme-dark .cms-main .text-blue-700 {
+  color: #93c5fd;
+}
+
+.cms-theme-dark .cms-main .bg-green-100 {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+.cms-theme-dark .cms-main .text-green-700 {
+  color: #86efac;
+}
+
+.cms-theme-dark .cms-main .text-green-600 {
+  color: #86efac;
+}
+
+/* Status badges */
+.cms-theme-dark .cms-main .bg-yellow-100 {
+  background-color: rgba(234, 179, 8, 0.2);
+}
+
+.cms-theme-dark .cms-main .text-yellow-700 {
+  color: #fde047;
+}
+
+.cms-theme-dark .cms-main .text-yellow-600 {
+  color: #fde047;
+}
+
+/* Icons in dark mode */
+.cms-theme-dark .cms-main .text-purple-600 {
+  color: #a78bfa;
+}
+
+.cms-theme-dark .cms-main .text-purple-500 {
+  color: #a78bfa;
+}
+
+/* Focus rings in dark mode */
+.cms-theme-dark .cms-main .focus\:ring-purple-500:focus {
+  --tw-ring-color: rgba(139, 92, 246, 0.5);
+}
+
+.cms-theme-dark .cms-main .focus\:ring-2:focus {
+  --tw-ring-color: rgba(79, 70, 229, 0.5);
+}
+
+/* Border purple in dark mode */
+.cms-theme-dark .cms-main .border-purple-500 {
+  border-color: #7c3aed;
+}
+
+/* Hover states for buttons in dark mode */
+.cms-theme-dark .cms-main .hover\:text-purple-600:hover {
+  color: #a78bfa;
+}
+
+.cms-theme-dark .cms-main .hover\:bg-purple-50:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+.cms-theme-dark .cms-main .hover\:bg-green-50:hover {
+  background-color: rgba(34, 197, 94, 0.1);
 }
