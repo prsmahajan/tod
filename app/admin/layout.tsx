@@ -1,30 +1,28 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminAuthWrapper } from "@/components/admin/AdminAuthWrapper";
+import { AdminHeader } from "@/components/admin/AdminHeader";
+import { CMSThemeProvider } from "@/components/admin/CMSThemeProvider";
+import { DM_Sans } from "next/font/google";
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
-  if (!session?.user?.email) {
-    redirect("/login");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  });
-
-  if (!user || !["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
-    redirect("/dashboard");
-  }
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
-      <AdminNav />
-      <main className="flex-1 bg-gray-50">
-        <div className="p-8">{children}</div>
-      </main>
-    </div>
+    <AdminAuthWrapper>
+      <CMSThemeProvider>
+        <div className={`${dmSans.className} flex min-h-screen cms-layout`}>
+          <AdminNav />
+          <div className="flex-1 flex flex-col">
+            <AdminHeader />
+            <main className="flex-1 cms-main overflow-auto">
+              <div className="p-6">{children}</div>
+            </main>
+          </div>
+        </div>
+      </CMSThemeProvider>
+    </AdminAuthWrapper>
   );
 }

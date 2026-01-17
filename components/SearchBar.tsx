@@ -111,7 +111,7 @@ export function SearchBar() {
               {results.map((post) => (
                 <Link
                   key={post.id}
-                  href={`/newsletter/${post.slug}`}
+                  href={`/articles/${post.slug}`}
                   onClick={() => setShowResults(false)}
                   className="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
                 >

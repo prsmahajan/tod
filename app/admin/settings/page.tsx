@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/lib/appwrite/auth";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState({
     siteName: "",
     siteDescription: "",
@@ -21,13 +22,18 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  const getAuthHeaders = useCallback(() => ({
+    "Content-Type": "application/json",
+    "x-user-email": user?.email || "",
+  }), [user?.email]);
 
-  async function fetchSettings() {
+  const fetchSettings = useCallback(async () => {
+    if (!user?.email) return;
+
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/settings", {
+        headers: { "x-user-email": user.email },
+      });
       if (res.ok) {
         const data = await res.json();
         setSettings((prev) => ({ ...prev, ...data }));
@@ -37,7 +43,11 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user?.email]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +57,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(settings),
       });
 
@@ -66,139 +76,135 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="animate-spin" size={32} />
+        <div className="w-8 h-8 border-2 border-[#3a3a3a] border-t-white rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-gray-600">Manage your site configuration and preferences</p>
+        <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
+        <p className="text-[#888]">Manage your site configuration and preferences</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* General Settings */}
-        <div className="bg-white rounded-lg border p-6 space-y-4">
-          <h2 className="text-xl font-semibold mb-4">General Settings</h2>
+        <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-6 space-y-5">
+          <h2 className="text-lg font-semibold text-white mb-4">General Settings</h2>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Site Name</label>
+            <label className="block text-sm font-medium text-white mb-2">Site Name</label>
             <input
               type="text"
               value={settings.siteName}
               onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="The Open Draft"
             />
-            <p className="text-xs text-gray-500 mt-1">The name of your publication</p>
+            <p className="text-xs text-[#666] mt-1.5">The name of your publication</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Site Description</label>
+            <label className="block text-sm font-medium text-white mb-2">Site Description</label>
             <textarea
               value={settings.siteDescription}
               onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
               rows={3}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20 resize-none"
               placeholder="Helping you understand the technology that runs your systems."
             />
-            <p className="text-xs text-gray-500 mt-1">A brief description of your site</p>
+            <p className="text-xs text-[#666] mt-1.5">A brief description of your site</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Site URL</label>
+            <label className="block text-sm font-medium text-white mb-2">Site URL</label>
             <input
               type="url"
               value={settings.siteUrl}
               onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="https://yourdomain.com"
             />
-            <p className="text-xs text-gray-500 mt-1">Your site's primary URL</p>
+            <p className="text-xs text-[#666] mt-1.5">Your site's primary URL</p>
           </div>
         </div>
 
         {/* Email Settings */}
-        <div className="bg-white rounded-lg border p-6 space-y-4">
-          <h2 className="text-xl font-semibold mb-4">Email Settings</h2>
+        <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-6 space-y-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Email Settings</h2>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">From Email Address</label>
+            <label className="block text-sm font-medium text-white mb-2">From Email Address</label>
             <input
               type="email"
               value={settings.emailFrom}
               onChange={(e) => setSettings({ ...settings, emailFrom: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="newsletter@yourdomain.com"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Email address used for sending newsletters (configured in environment variables)
-            </p>
+            <p className="text-xs text-[#666] mt-1.5">Email address used for sending newsletters</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Contact Email</label>
+            <label className="block text-sm font-medium text-white mb-2">Contact Email</label>
             <input
               type="email"
               value={settings.contactEmail}
               onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="contact@yourdomain.com"
             />
-            <p className="text-xs text-gray-500 mt-1">Public email address for contact inquiries</p>
+            <p className="text-xs text-[#666] mt-1.5">Public email address for contact inquiries</p>
           </div>
         </div>
 
         {/* Social Media */}
-        <div className="bg-white rounded-lg border p-6 space-y-4">
-          <h2 className="text-xl font-semibold mb-4">Social Media</h2>
+        <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-6 space-y-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Social Media</h2>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Twitter/X Handle</label>
+            <label className="block text-sm font-medium text-white mb-2">Twitter/X Handle</label>
             <input
               type="text"
               value={settings.twitterHandle}
               onChange={(e) => setSettings({ ...settings, twitterHandle: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="@yourhandle"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">LinkedIn URL</label>
+            <label className="block text-sm font-medium text-white mb-2">LinkedIn URL</label>
             <input
               type="url"
               value={settings.linkedinUrl}
               onChange={(e) => setSettings({ ...settings, linkedinUrl: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="https://linkedin.com/in/yourprofile"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">GitHub URL</label>
+            <label className="block text-sm font-medium text-white mb-2">GitHub URL</label>
             <input
               type="url"
               value={settings.githubUrl}
               onChange={(e) => setSettings({ ...settings, githubUrl: e.target.value })}
-              className="w-full border rounded-lg p-3"
+              className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-white/20"
               placeholder="https://github.com/yourusername"
             />
           </div>
         </div>
 
         {/* Feature Toggles */}
-        <div className="bg-white rounded-lg border p-6 space-y-4">
-          <h2 className="text-xl font-semibold mb-4">Features</h2>
+        <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-6 space-y-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Features</h2>
 
           <div className="flex items-center justify-between">
             <div>
-              <label className="block text-sm font-semibold">Newsletter</label>
-              <p className="text-xs text-gray-500 mt-1">
-                Enable or disable newsletter subscriptions
-              </p>
+              <label className="block text-sm font-medium text-white">Newsletter</label>
+              <p className="text-xs text-[#666] mt-1">Enable or disable newsletter subscriptions</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -209,16 +215,14 @@ export default function SettingsPage() {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-[#3a3a3a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#666] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
             </label>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <label className="block text-sm font-semibold">Comments</label>
-              <p className="text-xs text-gray-500 mt-1">
-                Enable comments on posts (feature coming soon)
-              </p>
+              <label className="block text-sm font-medium text-white">Comments</label>
+              <p className="text-xs text-[#666] mt-1">Enable comments on posts (coming soon)</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -229,7 +233,7 @@ export default function SettingsPage() {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-[#3a3a3a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#666] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
             </label>
           </div>
         </div>
@@ -238,8 +242,8 @@ export default function SettingsPage() {
           <div
             className={`p-4 rounded-lg ${
               message.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-600"
-                : "bg-red-50 border border-red-200 text-red-600"
+                ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                : "bg-red-500/10 border border-red-500/30 text-red-400"
             }`}
           >
             {message.text}
@@ -250,16 +254,18 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+            className="flex items-center gap-2 bg-white text-[#fff] px-6 py-3 rounded-lg hover:bg-[#f0f0f0] disabled:opacity-50 font-medium transition-colors"
           >
             {saving ? (
               <>
-                <Loader2 className="animate-spin" size={18} />
+                <div className="w-4 h-4 border-2 border-[#1a1a1a]/30 border-t-[#1a1a1a] rounded-full animate-spin" />
                 Saving...
               </>
             ) : (
               <>
-                <Save size={18} />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
                 Save Settings
               </>
             )}

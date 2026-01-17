@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { User, Mail, Calendar, FileText, Trash2, Check, X } from "lucide-react";
 
 interface UserData {
@@ -68,7 +69,7 @@ export default function UsersPage() {
       setEditingUserId(null);
       setEditRole("");
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message);
     }
   }
 
@@ -89,7 +90,7 @@ export default function UsersPage() {
 
       setUsers(users.filter((u) => u.id !== userId));
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message);
     }
   }
 

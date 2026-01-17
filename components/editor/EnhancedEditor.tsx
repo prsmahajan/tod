@@ -18,6 +18,7 @@ import {
   Link as LinkIcon, AlignLeft, AlignCenter, AlignRight,
   Image as ImageIcon, Minus, Upload, FileCode
 } from "lucide-react";
+import { toast } from "sonner";
 import { useRef } from "react";
 
 interface EditorProps {
@@ -92,7 +93,7 @@ export function EnhancedEditor({ content, onChange }: EditorProps) {
         editor.chain().focus().setImage({ src: data.url }).run();
       }
     } catch (error) {
-      alert("Failed to upload image");
+      toast.error("Failed to upload image");
     }
 
     if (fileInputRef.current) fileInputRef.current.value = "";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { Bookmark, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -57,7 +58,7 @@ export function SavePostButton({ postId, className = "", showText = false }: Sav
           setSaved(false);
         } else {
           const data = await res.json();
-          alert(data.error || "Failed to unsave post");
+          toast.error(data.error || "Failed to unsave post");
         }
       } else {
         // Save
@@ -71,12 +72,12 @@ export function SavePostButton({ postId, className = "", showText = false }: Sav
           setSaved(true);
         } else {
           const data = await res.json();
-          alert(data.error || "Failed to save post");
+          toast.error(data.error || "Failed to save post");
         }
       }
     } catch (error) {
       console.error("Failed to toggle save:", error);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }

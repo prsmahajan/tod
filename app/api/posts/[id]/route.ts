@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { createAuditLog, createPostVersion } from "@/lib/audit";
 
 // GET single post
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -69,7 +70,30 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       status,
       scheduledFor,
       categoryIds,
+      changeNote,
+      // SEO fields
+      metaTitle,
+      metaDescription,
+      keywords,
+      ogImage,
+      canonicalUrl,
+      noIndex,
     } = body;
+
+    // Create a version snapshot before updating (if content changed)
+    const hasContentChanges =
+      title !== existingPost.title ||
+      content !== existingPost.content ||
+      excerpt !== existingPost.excerpt;
+
+    if (hasContentChanges) {
+      await createPostVersion({
+        postId: params.id,
+        post: existingPost,
+        userId: user.id,
+        changeNote: changeNote || "Manual save",
+      });
+    }
 
     const updateData: any = {
       title,
@@ -80,6 +104,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       coverImage,
       status,
       scheduledFor,
+      metaTitle,
+      metaDescription,
+      keywords,
+      ogImage,
+      canonicalUrl,
+      noIndex,
     };
 
     // Set publishedAt when status changes to PUBLISHED
@@ -131,6 +161,27 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       revalidatePath(`/newsletter/${post.slug}`);
     }
 
+    // Create audit log
+    const auditAction = status === "PUBLISHED" && existingPost.status !== "PUBLISHED"
+      ? "PUBLISH"
+      : "UPDATE";
+
+    await createAuditLog({
+      action: auditAction,
+      entityType: "Post",
+      entityId: params.id,
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      details: {
+        title: post.title,
+        status: post.status,
+        previousStatus: existingPost.status,
+        hasContentChanges,
+      },
+      req,
+    });
+
     return NextResponse.json(post);
   } catch (error: any) {
     console.error("Post update error:", error);
@@ -157,8 +208,30 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return NextResponse.json({ error: "Only admins and editors can delete posts" }, { status: 403 });
     }
 
+    // Get post info before deletion for audit log
+    const postToDelete = await prisma.post.findUnique({
+      where: { id: params.id },
+      select: { title: true, slug: true, status: true },
+    });
+
     const deletedPost = await prisma.post.delete({
       where: { id: params.id },
+    });
+
+    // Create audit log for deletion
+    await createAuditLog({
+      action: "DELETE",
+      entityType: "Post",
+      entityId: params.id,
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      details: {
+        deletedTitle: postToDelete?.title,
+        deletedSlug: postToDelete?.slug,
+        previousStatus: postToDelete?.status,
+      },
+      req,
     });
 
     // Revalidate pages after deletion

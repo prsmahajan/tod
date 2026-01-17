@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Plus, Trash2, Eye, EyeOff, Upload, X } from "lucide-react";
 import Image from "next/image";
 
@@ -44,14 +45,14 @@ export default function AnimalPhotosPage() {
       // Check file size (3MB max)
       const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB in bytes
       if (file.size > MAX_FILE_SIZE) {
-        alert("File size exceeds 3MB limit. Please choose a smaller image.");
+        toast.error("File size exceeds 3MB limit. Please choose a smaller image.");
         e.target.value = ""; // Clear the input
         return;
       }
 
       // Check file type
       if (!file.type.startsWith("image/")) {
-        alert("Only image files are allowed.");
+        toast.error("Only image files are allowed.");
         e.target.value = ""; // Clear the input
         return;
       }
@@ -89,7 +90,7 @@ export default function AnimalPhotosPage() {
       fetchPhotos();
     } else {
       const error = await res.json();
-      alert(error.error || "Upload failed");
+      toast.error(error.error || "Upload failed");
     }
 
     setUploading(false);

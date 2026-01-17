@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import { Plus, Edit, Trash2 } from "lucide-react";
 
@@ -40,7 +41,7 @@ export default function AnimalsPage() {
     if (res.ok) {
       fetchAnimals();
     } else {
-      alert("Failed to delete animal");
+      toast.error("Failed to delete animal");
     }
   }
 

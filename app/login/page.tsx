@@ -1,220 +1,180 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
-import Link from "next/link";
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/lib/appwrite/auth';
+import AnimatedSection from '@/components/AnimatedSection';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [emailChecked, setEmailChecked] = useState(false);
-  const [emailExists, setEmailExists] = useState(false);
-  const [email, setEmail] = useState("");
+  const { user, loading, login, loginWithGoogle } = useAuth();
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const redirectTo = searchParams.get('redirect') || '/app';
+
+  // Redirect if already logged in
   useEffect(() => {
-    const error = searchParams.get('error');
-    const callbackUrl = searchParams.get('callbackUrl');
+    if (!loading && user) {
+      router.push(redirectTo);
+    }
+  }, [user, loading, router, redirectTo]);
 
-    if (error === 'auth_error') {
-      setErr("Authentication error. Please try logging in again. If the problem persists, check the deployment configuration.");
-    } else if (callbackUrl) {
-      setErr(`You must be logged in to access ${callbackUrl}`);
+  // Check for OAuth errors
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'oauth_failed') {
+      setError('Google sign-in failed. Please try again.');
     }
   }, [searchParams]);
 
-  async function checkEmail(e: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErr(null);
-    setLoading(true);
-
-    const fd = new FormData(e.currentTarget);
-    const emailValue = String(fd.get("email") || "").trim();
-
-    if (!emailValue) {
-      setErr("Email is required");
-      setLoading(false);
-      return;
-    }
+    setError('');
+    setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/auth/check-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailValue }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoading(false);
-        setErr(data.error || "Failed to check email");
-        return;
-      }
-
-      setEmail(emailValue);
-      setEmailExists(data.exists);
-      setEmailChecked(true);
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      setErr("Failed to check email. Please try again.");
+      await login(email, password);
+      router.push(redirectTo);
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password');
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setErr(null);
-    setLoading(true);
-
-    const fd = new FormData(e.currentTarget);
-    const emailValue = email || String(fd.get("email") || "");
-    const password = String(fd.get("password") || "");
-
-    if (emailExists) {
-      // Login flow
-      const res = await signIn("credentials", { email: emailValue, password, redirect: false });
-
-      if (res?.ok) {
-        const callbackUrl = searchParams.get('callbackUrl');
-        if (callbackUrl) {
-          router.replace(callbackUrl);
-        } else {
-          router.replace("/admin");
-        }
-      } else {
-        setLoading(false);
-        const errorMessage = res?.error || "Invalid email or password";
-        setErr(errorMessage);
-      }
-    } else {
-      // Signup flow
-      const name = String(fd.get("name") || "");
-
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: emailValue, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoading(false);
-        setErr(data.error || "Signup failed");
-        return;
-      }
-
-      const result = await signIn("credentials", { email: emailValue, password, redirect: false });
-
-      if (result?.ok) {
-        const callbackUrl = searchParams.get('callbackUrl');
-        if (callbackUrl) {
-          router.replace(callbackUrl);
-        } else {
-          router.replace("/admin");
-        }
-      } else {
-        setLoading(false);
-        setErr("Auto-login failed. Please log in manually.");
-      }
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle(redirectTo);
+    } catch (err: any) {
+      setError(err.message || 'Google sign-in failed');
     }
-  }
+  };
 
-  function handleBack() {
-    setEmailChecked(false);
-    setEmailExists(false);
-    setEmail("");
-    setErr(null);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
+        <p className="text-[var(--color-text-secondary)]">Loading...</p>
+      </div>
+    );
   }
 
   return (
-    <main className="min-h-screen bg-white flex items-center justify-center py-16">
-      <div className="max-w-md w-full px-4">
-        <h1 className="text-3xl font-semibold mb-8 text-black">
-          {emailChecked ? (emailExists ? "Log in" : "Sign up") : "Enter your email"}
-        </h1>
-        
-        {!emailChecked ? (
-          <form className="space-y-6" onSubmit={checkEmail}>
-            <div>
-              <input 
-                name="email" 
-                type="email" 
-                placeholder="Email" 
-                required 
-                className="w-full border-b border-[#E5E5E5] px-0 py-3 bg-transparent focus:outline-none focus:border-[#212121] text-[#212121]" 
-              />
-            </div>
-            {err && <p className="text-[#DC2626] text-sm">{err}</p>}
-            <button 
-              disabled={loading} 
-              className="w-full bg-black text-white py-3 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
-            >
-              {loading ? "Checking..." : "Continue"}
-            </button>
-          </form>
-        ) : (
-          <form className="space-y-6" onSubmit={onSubmit}>
-            <div>
-              <input 
-                type="email" 
-                value={email}
-                disabled
-                className="w-full border-b border-[#E5E5E5] px-0 py-3 bg-transparent focus:outline-none focus:border-[#212121] text-[#212121] opacity-60 cursor-not-allowed" 
-              />
-            </div>
-            
-            {!emailExists && (
-              <div>
-                <input 
-                  name="name" 
-                  placeholder="Full Name" 
-                  required 
-                  className="w-full border-b border-[#E5E5E5] px-0 py-3 bg-transparent focus:outline-none focus:border-[#212121] text-[#212121]" 
-                />
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] px-4 pt-20">
+      <AnimatedSection>
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="font-heading text-3xl font-bold text-[var(--color-text-primary)]">
+              Welcome Back
+            </h1>
+            <p className="mt-2 text-[var(--color-text-secondary)]">
+              Sign in to your account to continue
+            </p>
+          </div>
+
+          <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-8">
+            {error && (
+              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500">
+                {error}
               </div>
             )}
-            
-            <div>
-              <input 
-                name="password" 
-                type="password" 
-                placeholder={emailExists ? "Password" : "Password (≥8, 1 uppercase, 1 symbol)"} 
-                required 
-                className="w-full border-b border-[#E5E5E5] px-0 py-3 bg-transparent focus:outline-none focus:border-[#212121] text-[#212121]" 
-              />
-            </div>
-            
-            {err && <p className="text-[#DC2626] text-sm">{err}</p>}
-            
-            <button 
-              disabled={loading} 
-              className="w-full bg-black text-white py-3 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
-            >
-              {loading 
-                ? (emailExists ? "Signing in..." : "Creating...") 
-                : (emailExists ? "Log in" : "Sign up")
-              }
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleBack}
-              className="w-full text-sm text-[#212121] underline hover:opacity-70 transition-opacity"
-            >
-              Use a different email
-            </button>
-          </form>
-        )}
 
-        <p className="mt-6 text-sm text-[#212121]">
-          <Link href="/reset" className="underline hover:opacity-70 transition-opacity">
-            Forgot your password?
-          </Link>
-        </p>
-      </div>
-    </main>
+            {/* Google Sign In */}
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="my-6 flex items-center gap-4">
+              <div className="flex-1 h-px bg-[var(--color-border)]" />
+              <span className="text-xs text-[var(--color-text-secondary)]">or</span>
+              <div className="flex-1 h-px bg-[var(--color-border)]" />
+            </div>
+
+            {/* Email/Password Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full px-4 py-3 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-text-secondary)]"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text-primary)]">
+                    Password
+                  </label>
+                  <Link
+                    href="/reset"
+                    className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full px-4 py-3 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-text-secondary)]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-[var(--color-text-secondary)]">
+              Don&apos;t have an account?{' '}
+              <Link
+                href={`/signup${redirectTo !== '/app' ? `?redirect=${redirectTo}` : ''}`}
+                className="text-[var(--color-text-primary)] hover:underline"
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
+      </AnimatedSection>
+    </div>
   );
 }

@@ -16,8 +16,35 @@ enum UserRole {
 
 enum PostStatus {
   DRAFT
+  PENDING_REVIEW
   PUBLISHED
   SCHEDULED
+  ARCHIVED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  UNPUBLISH
+  APPROVE
+  REJECT
+  LOGIN
+  LOGOUT
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
 }
 
 enum AnimalSpecies {
@@ -64,9 +91,13 @@ model User {
   animalsFed             Int               @default(0)
 
   passwordResetTokens PasswordResetToken[]
-  posts               Post[]
+  posts               Post[]              @relation("PostAuthor")
+  reviewedPosts       Post[]              @relation("PostReviewer")
   savedPosts          SavedPost[]
   animalPhotos        AnimalPhoto[]
+  auditLogs           AuditLog[]
+  uploadedMedia       MediaLibrary[]
+  approvalsMade       WorkflowApproval[]
 
   @@index([razorpaySubscriptionId])
   @@index([subscriptionStatus])
@@ -128,14 +159,38 @@ model Post {
   updatedAt       DateTime   @updatedAt
   emailSent       Boolean    @default(false)
 
-  author     User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // SEO fields
+  metaTitle       String?
+  metaDescription String?    @db.VarChar(320)
+  keywords        String[]
+  ogImage         String?
+  canonicalUrl    String?
+  noIndex         Boolean    @default(false)
+
+  // Enterprise fields
+  readingTime     Int?       // Calculated reading time in minutes
+  wordCount       Int?
+  featured        Boolean    @default(false)
+  priority        Int        @default(0) // For ordering featured posts
+
+  // Workflow fields
+  reviewerId      String?
+  reviewedAt      DateTime?
+  reviewNotes     String?    @db.Text
+
+  author     User                @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewer   User?               @relation("PostReviewer", fields: [reviewerId], references: [id])
   categories PostCategory[]
   savedBy    SavedPost[]
+  versions   PostVersion[]
+  approvals  WorkflowApproval[]
 
   @@index([authorId])
   @@index([status])
   @@index([publishedAt])
   @@index([slug])
+  @@index([featured])
+  @@index([priority])
 }
 
 model Category {
@@ -295,4 +350,139 @@ model Waitlist {
   @@index([referredBy])
   @@index([position])
   @@index([joinedAt])
+}
+
+// ============================================
+// ENTERPRISE CMS MODELS
+// ============================================
+
+// Post Version History - tracks all changes to posts
+model PostVersion {
+  id              String   @id @default(cuid())
+  postId          String
+  versionNumber   Int
+  title           String
+  content         String   @db.Text
+  contentMarkdown String?  @db.Text
+  excerpt         String?
+  coverImage      String?
+  metaTitle       String?
+  metaDescription String?  @db.VarChar(320)
+  keywords        String[]
+  changeNote      String?  // Brief description of changes
+  createdAt       DateTime @default(now())
+  createdById     String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, versionNumber])
+  @@index([postId])
+  @@index([createdAt])
+}
+
+// Audit Log - tracks all admin actions for compliance
+model AuditLog {
+  id          String      @id @default(cuid())
+  action      AuditAction
+  entityType  String      // 'Post', 'User', 'Category', etc.
+  entityId    String
+  userId      String
+  userEmail   String
+  userRole    UserRole
+  details     Json?       // Additional context
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Workflow Approval - content approval workflow
+model WorkflowApproval {
+  id          String         @id @default(cuid())
+  postId      String
+  approverId  String
+  status      ApprovalStatus
+  notes       String?        @db.Text
+  createdAt   DateTime       @default(now())
+
+  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  approver User @relation(fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([approverId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Media Library - centralized media management
+model MediaLibrary {
+  id          String    @id @default(cuid())
+  filename    String
+  originalName String
+  url         String
+  type        MediaType
+  mimeType    String
+  size        Int       // File size in bytes
+  width       Int?      // For images/videos
+  height      Int?      // For images/videos
+  alt         String?   // Alt text for images
+  caption     String?
+  tags        String[]
+  folderId    String?
+  uploadedById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  uploader User         @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  folder   MediaFolder? @relation(fields: [folderId], references: [id])
+
+  @@index([type])
+  @@index([uploadedById])
+  @@index([folderId])
+  @@index([tags])
+  @@index([createdAt])
+}
+
+// Media Folders - organize media assets
+model MediaFolder {
+  id          String   @id @default(cuid())
+  name        String
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   MediaFolder?   @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children MediaFolder[]  @relation("FolderHierarchy")
+  media    MediaLibrary[]
+
+  @@index([parentId])
+  @@index([name])
+}
+
+// Photo Moderation Queue - AI-powered moderation
+model PhotoModerationQueue {
+  id            String   @id @default(cuid())
+  imageUrl      String
+  uploadedById  String
+  aiScore       Float?   // AI moderation confidence score (0-1)
+  aiLabels      Json?    // Detected labels from AI
+  aiSafe        Boolean? // AI determination of safety
+  humanReviewed Boolean  @default(false)
+  humanApproved Boolean?
+  reviewedById  String?
+  reviewNotes   String?
+  status        String   @default("pending") // pending, approved, rejected
+  createdAt     DateTime @default(now())
+  reviewedAt    DateTime?
+
+  @@index([status])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@index([humanReviewed])
 }

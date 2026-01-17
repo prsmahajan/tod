@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Bookmark, Calendar, Loader2, Trash2 } from "lucide-react";
@@ -73,11 +74,11 @@ export default function SavedPostsPage() {
       if (res.ok) {
         setSavedPosts(savedPosts.filter((sp) => sp.post.id !== postId));
       } else {
-        alert("Failed to remove post");
+        toast.error("Failed to remove post");
       }
     } catch (error) {
       console.error("Failed to remove saved post:", error);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
     } finally {
       setRemovingId(null);
     }

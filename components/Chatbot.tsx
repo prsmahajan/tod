@@ -83,13 +83,13 @@ const Chatbot: React.FC = () => {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
         aria-label="Toggle chatbot"
       >
-        <Icon name={isOpen ? 'close' : 'logo'} className={`w-9 h-9 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+        <Icon name={isOpen ? 'close' : 'logo'} className={`w-6 h-6 md:w-7 md:h-7 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
       </button>
 
-      <div className={`fixed bottom-24 right-6 z-50 w-full max-w-sm h-[60vh] bg-[var(--color-card-bg)] rounded-lg shadow-2xl border border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+      <div className={`fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100%-2rem)] max-w-sm h-[60vh] md:h-[60vh] bg-[var(--color-card-bg)] rounded-lg shadow-2xl border border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
         <header className="p-4 border-b border-[var(--color-border)]">
           <h2 className="font-heading font-bold text-lg">Chat with tod;</h2>
           <p className="text-xs text-[var(--color-text-secondary)]">tod; will guide you</p>
