@@ -57,10 +57,6 @@ const marqueeImages = [
 const ImpactPage: React.FC = () => {
   const animatedText = useTypeText(['Impact', 'Kindness', 'Care', 'Action'], 1500, 100);
   const [featuredPhotos, setFeaturedPhotos] = useState<FeaturedPhoto[]>([]);
-  const [marqueeSpeed, setMarqueeSpeed] = useState(60);
-  const MIN_SPEED = 1.5; // Faster (lower number = faster animation) - 3.5 seconds
-  const MAX_SPEED = 120; // Slower (higher number = slower animation) - 120 seconds (2 minutes)
-  const SPEED_STEP = 5;
 
   useEffect(() => {
     async function fetchFeaturedPhotos() {
@@ -77,14 +73,6 @@ const ImpactPage: React.FC = () => {
 
     fetchFeaturedPhotos();
   }, []);
-
-  const increaseSpeed = () => {
-    setMarqueeSpeed(prev => Math.max(MIN_SPEED, prev - SPEED_STEP));
-  };
-
-  const decreaseSpeed = () => {
-    setMarqueeSpeed(prev => Math.min(MAX_SPEED, prev + SPEED_STEP));
-  };
 
   // Combine featured photos (both admin and user) with static images
   // Memoize to prevent Marquee re-renders when animatedText changes
@@ -131,34 +119,8 @@ const ImpactPage: React.FC = () => {
         </AnimatedSection>
 
         <AnimatedSection>
-          <div className="mt-20 -mx-4 sm:-mx-6 lg:-mx-8 relative">
-            {/* Speed Controls */}
-            <div className="absolute -top-12 right-4 sm:right-6 lg:right-8 flex gap-2 z-10">
-              <button
-                onClick={decreaseSpeed}
-                disabled={marqueeSpeed >= MAX_SPEED}
-                className="group relative w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition-all duration-200 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--color-border)] disabled:hover:bg-[var(--color-card-bg)]"
-                aria-label="Decrease speed"
-              >
-                <span className="text-lg font-bold leading-none">−</span>
-                <span className="absolute -bottom-8 right-0 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Decrease speed
-                </span>
-              </button>
-              <button
-                onClick={increaseSpeed}
-                disabled={marqueeSpeed <= MIN_SPEED}
-                className="group relative w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition-all duration-200 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--color-border)] disabled:hover:bg-[var(--color-card-bg)]"
-                aria-label="Increase speed"
-              >
-                <span className="text-lg font-bold leading-none">+</span>
-                <span className="absolute -bottom-8 right-0 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Increase speed
-                </span>
-              </button>
-            </div>
-
-            <Marquee speed={marqueeSpeed}>
+          <div className="mt-20 -mx-4 sm:-mx-6 lg:-mx-8">
+            <Marquee speed={5}>
               {marqueeContent}
             </Marquee>
           </div>
