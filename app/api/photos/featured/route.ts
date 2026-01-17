@@ -69,10 +69,18 @@ export async function GET() {
       console.error('Error fetching admin photos from Prisma:', error);
     }
 
-    // Combine both sources
+    // Combine both sources and deduplicate by imageUrl
     const allPhotos = [...adminPhotos, ...userPhotos];
 
-    return NextResponse.json({ photos: allPhotos });
+    // Remove duplicates based on imageUrl
+    const uniquePhotos = allPhotos.reduce((acc: any[], photo) => {
+      if (!acc.find(p => p.imageUrl === photo.imageUrl)) {
+        acc.push(photo);
+      }
+      return acc;
+    }, []);
+
+    return NextResponse.json({ photos: uniquePhotos });
   } catch (error: any) {
     console.error('Error fetching featured photos:', error);
     return NextResponse.json({ photos: [] });

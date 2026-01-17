@@ -76,14 +76,25 @@ const ImpactPage: React.FC = () => {
 
   // Combine featured photos (both admin and user) with static images
   // Memoize to prevent Marquee re-renders when animatedText changes
-  const allMarqueeImages = useMemo(() => [
-    ...featuredPhotos.map(p => ({
-      src: p.imageUrl,
-      userName: p.userName || 'Anonymous',
-      isUser: true // Show name for all uploaded photos (admin and user)
-    })),
-    ...marqueeImages.map(src => ({ src, userName: '', isUser: false })),
-  ], [featuredPhotos]);
+  const allMarqueeImages = useMemo(() => {
+    // Deduplicate featured photos by image URL
+    const uniqueFeaturedPhotos = featuredPhotos.reduce((acc: any[], photo) => {
+      // Only add if we haven't seen this image URL before
+      if (!acc.find(p => p.src === photo.imageUrl)) {
+        acc.push({
+          src: photo.imageUrl,
+          userName: photo.userName || 'Anonymous',
+          isUser: true
+        });
+      }
+      return acc;
+    }, []);
+
+    return [
+      ...uniqueFeaturedPhotos,
+      ...marqueeImages.map(src => ({ src, userName: '', isUser: false })),
+    ];
+  }, [featuredPhotos]);
 
   // Memoize marquee content to prevent re-renders
   const marqueeContent = useMemo(() =>
