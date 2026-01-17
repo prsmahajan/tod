@@ -52,16 +52,6 @@ const marqueeImages = [
   "https://images.unsplash.com/photo-1684937992798-ee66babd7e3a?w=600&h=400&fit=crop",
   "https://images.unsplash.com/photo-1651040618420-adb8081160e0?w=600&h=400&fit=crop",
   "https://plus.unsplash.com/premium_photo-1691031428727-3b8c7adfad37?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1679390974280-3899379f1c65?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1622905840442-47d9a953fec2?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1674802401345-4e6ec9fc2146?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1684937992798-ee66babd7e3a?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1651040618420-adb8081160e0?w=600&h=400&fit=crop",
-  "https://plus.unsplash.com/premium_photo-1691031428727-3b8c7adfad37?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1679390974280-3899379f1c65?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1622905840442-47d9a953fec2?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1674802401345-4e6ec9fc2146?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1684937992798-ee66babd7e3a?w=600&h=400&fit=crop",
 ];
 
 const ImpactPage: React.FC = () => {
