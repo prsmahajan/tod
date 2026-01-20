@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 
-type Theme = "dark"; // CMS is always dark
+type Theme = "light"; // CMS is always light
 
 interface CMSThemeContextType {
   theme: Theme;
@@ -13,20 +13,20 @@ interface CMSThemeContextType {
 const CMSThemeContext = createContext<CMSThemeContextType | null>(null);
 
 export function CMSThemeProvider({ children }: { children: React.ReactNode }) {
-  // CMS is always dark theme - no toggle needed
-  const [theme] = useState<Theme>("dark");
+  // CMS is always light theme - no toggle needed
+  const [theme] = useState<Theme>("light");
 
   const setTheme = () => {
-    // No-op - CMS is always dark
+    // No-op - CMS is always light
   };
 
   const toggleTheme = () => {
-    // No-op - CMS is always dark
+    // No-op - CMS is always light
   };
 
   return (
     <CMSThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
-      <div className="cms-theme-dark" data-cms-theme="dark">
+      <div className="cms-theme-light" data-cms-theme="light">
         {children}
       </div>
     </CMSThemeContext.Provider>

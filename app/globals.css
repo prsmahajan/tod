@@ -501,9 +501,9 @@ html {
 .cms-theme-light {
   --cms-bg: #f8f9fa;
   --cms-card-bg: #ffffff;
-  --cms-text-primary: #1f2937;
-  --cms-text-secondary: #6b7280;
-  --cms-text-muted: #9ca3af;
+  --cms-text-primary: #000000;
+  --cms-text-secondary: #000000;
+  --cms-text-muted: #6b7280;
   --cms-border: #e5e7eb;
   --cms-border-light: #f3f4f6;
   --cms-hover-bg: #f3f4f6;
@@ -521,11 +521,17 @@ html {
 .cms-theme-light .cms-main h4,
 .cms-theme-light .cms-main h5,
 .cms-theme-light .cms-main h6 {
-  color: var(--cms-text-primary);
+  color: #000000 !important;
 }
 
 .cms-theme-light .cms-main p {
-  color: var(--cms-text-secondary);
+  color: #000000 !important;
+}
+
+.cms-theme-light .cms-main label,
+.cms-theme-light .cms-main span,
+.cms-theme-light .cms-main div {
+  color: #000000;
 }
 
 /* Light theme table styles */
@@ -538,11 +544,11 @@ html {
 }
 
 .cms-theme-light th {
-  color: var(--cms-text-secondary);
+  color: #000000 !important;
 }
 
 .cms-theme-light td {
-  color: var(--cms-text-primary);
+  color: #000000 !important;
 }
 
 .cms-theme-light tbody tr:hover {
@@ -558,19 +564,19 @@ html {
 }
 
 .cms-theme-light .cms-main .text-gray-900 {
-  color: var(--cms-text-primary);
+  color: #000000 !important;
 }
 
 .cms-theme-light .cms-main .text-gray-700 {
-  color: var(--cms-text-primary);
+  color: #000000 !important;
 }
 
 .cms-theme-light .cms-main .text-gray-600 {
-  color: var(--cms-text-secondary);
+  color: #000000 !important;
 }
 
 .cms-theme-light .cms-main .text-gray-500 {
-  color: var(--cms-text-muted);
+  color: #000000 !important;
 }
 
 .cms-theme-light .cms-main .text-gray-400 {
