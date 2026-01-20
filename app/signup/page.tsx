@@ -46,6 +46,19 @@ export default function SignupPage() {
 
     try {
       await signup(email, password, name);
+
+      // Auto-add user to subscriber list
+      try {
+        await fetch('/api/subscribers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name }),
+        });
+      } catch (subError) {
+        console.error('Failed to add to subscriber list:', subError);
+        // Don't block signup if subscriber addition fails
+      }
+
       router.push(redirectTo);
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');

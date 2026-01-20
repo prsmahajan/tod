@@ -3,17 +3,26 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Icon from "./Icon";
+import { useAuth } from "@/lib/appwrite/auth";
 
 export function ExitIntentPopup() {
+  const { user, loading: authLoading } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Don't show popup if user is signed in
+    if (user) return;
+
     // Check if user has already seen the popup
     const hasSeenPopup = localStorage.getItem("exitIntentShown");
     if (hasSeenPopup) return;
+
+    // Check if user has subscribed to newsletter
+    const hasSubscribed = localStorage.getItem("newsletterSubscribed");
+    if (hasSubscribed) return;
 
     let hasShownPopup = false;
 
@@ -63,6 +72,9 @@ export function ExitIntentPopup() {
       const data = await res.json();
 
       if (res.ok) {
+        // Mark as subscribed in localStorage
+        localStorage.setItem("newsletterSubscribed", "true");
+
         toast.success("Welcome aboard!", {
           description: `You're #${data.position} on the waitlist. Check your email!`
         });
@@ -82,7 +94,7 @@ export function ExitIntentPopup() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 py-10 md:py-20">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
@@ -102,7 +114,7 @@ export function ExitIntentPopup() {
           </svg>
         </button>
 
-        <div className="p-8">
+        <div className="p-6 md:p-10">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl mb-5">

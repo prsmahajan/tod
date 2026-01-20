@@ -608,6 +608,99 @@ html {
   color: var(--cms-text-muted);
 }
 
+/* Override hardcoded dark theme colors for light mode */
+.cms-theme-light .bg-\[\#1e1e1e\],
+.cms-theme-light .bg-\[\#1a1a1a\] {
+  background-color: #ffffff !important;
+}
+
+.cms-theme-light .bg-\[\#2a2a2a\] {
+  background-color: #f3f4f6 !important;
+}
+
+.cms-theme-light .bg-\[\#252525\]:hover {
+  background-color: #f9fafb !important;
+}
+
+.cms-theme-light .border-\[\#2a2a2a\],
+.cms-theme-light .border-\[\#3a3a3a\] {
+  border-color: #e5e7eb !important;
+}
+
+.cms-theme-light .text-white {
+  color: #000000 !important;
+}
+
+.cms-theme-light .text-\[\#666\],
+.cms-theme-light .text-\[\#555\],
+.cms-theme-light .text-\[\#888\] {
+  color: #000000 !important;
+}
+
+.cms-theme-light .text-\[\#3a3a3a\] {
+  color: #9ca3af !important;
+}
+
+.cms-theme-light .placeholder-\[\#666\]::placeholder {
+  color: #9ca3af !important;
+}
+
+.cms-theme-light .divide-\[\#2a2a2a\] > * + * {
+  border-color: #e5e7eb !important;
+}
+
+.cms-theme-light .hover\:bg-\[\#2a2a2a\]:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.cms-theme-light .hover\:bg-\[\#f0f0f0\]:hover {
+  background-color: #e5e7eb !important;
+}
+
+.cms-theme-light .text-\[11px\] {
+  color: #6b7280 !important;
+}
+
+/* Override AdminNav colors for light mode */
+.cms-theme-light nav.bg-\[\#1a1a1a\] {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e5e7eb;
+}
+
+.cms-theme-light nav .border-\[\#2a2a2a\] {
+  border-color: #e5e7eb !important;
+}
+
+.cms-theme-light nav .text-white {
+  color: #000000 !important;
+}
+
+.cms-theme-light nav .text-\[\#888\],
+.cms-theme-light nav .text-\[\#666\],
+.cms-theme-light nav .text-\[\#999\] {
+  color: #000000 !important;
+}
+
+.cms-theme-light nav .bg-\[\#2a2a2a\] {
+  background-color: #f3f4f6 !important;
+}
+
+.cms-theme-light nav .hover\:bg-\[\#252525\]:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.cms-theme-light nav .group-hover\:text-\[\#a5b4fc\] {
+  color: #000000 !important;
+}
+
+.cms-theme-light nav span.text-\[\#666\] {
+  color: #6b7280 !important;
+}
+
+.cms-theme-light nav span.text-\[10px\] {
+  color: #6b7280 !important;
+}
+
 /* CMS Dark Theme */
 .cms-theme-dark {
   --cms-bg: #0f0f0f;

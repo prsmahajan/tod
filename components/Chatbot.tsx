@@ -14,7 +14,10 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -29,6 +32,32 @@ const Chatbot: React.FC = () => {
       ]);
     }
   }, [isOpen, messages.length]);
+
+  // Initialize audio context on first user interaction
+  useEffect(() => {
+    const initAudio = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+    };
+
+    // Initialize on any user interaction
+    document.addEventListener('click', initAudio, { once: true });
+    return () => document.removeEventListener('click', initAudio);
+  }, []);
+
+  // Handle scroll to hide tooltip
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setHasScrolled(true);
+        setShowTooltip(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSend = async () => {
     if (input.trim() === '' || isLoading) return;
@@ -79,15 +108,70 @@ const Chatbot: React.FC = () => {
     }
   };
 
+  const playClinkSound = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      const audioContext = audioContextRef.current;
+
+      // Create two tones for a "clink" effect
+      const playTone = (frequency: number, startTime: number, duration: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'triangle';
+
+        // Envelope for natural sound
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.005);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+
+      const currentTime = audioContext.currentTime;
+      playTone(1200, currentTime, 0.08);
+      playTone(1800, currentTime + 0.04, 0.08);
+    } catch (error) {
+      console.log('Audio play failed:', error);
+    }
+  };
+
+  const handleToggleChatbot = () => {
+    playClinkSound();
+    setIsOpen(!isOpen);
+  };
+
   return (
     <>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-        aria-label="Toggle chatbot"
-      >
-        <Icon name={isOpen ? 'close' : 'logo'} className={`w-6 h-6 md:w-7 md:h-7 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
-      </button>
+      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
+        {/* Tooltip */}
+        {!hasScrolled && (
+          <div
+            className={`absolute bottom-full right-0 mb-2 px-3 py-2 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-sm rounded-lg shadow-lg whitespace-nowrap transition-all duration-300 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}
+          >
+            confused? ask me here
+            <div className="absolute top-full right-4 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-[var(--color-text-primary)]"></div>
+          </div>
+        )}
+
+        <button
+          onClick={handleToggleChatbot}
+          onMouseEnter={() => !hasScrolled && setShowTooltip(true)}
+          onMouseLeave={() => !hasScrolled && setShowTooltip(false)}
+          className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+          aria-label="Toggle chatbot"
+        >
+          <Icon name={isOpen ? 'close' : 'logo'} className={`w-6 h-6 md:w-7 md:h-7 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+        </button>
+      </div>
 
       <div className={`fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100%-2rem)] max-w-sm h-[60vh] md:h-[60vh] bg-[var(--color-card-bg)] rounded-lg shadow-2xl border border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
         <header className="p-4 border-b border-[var(--color-border)]">
