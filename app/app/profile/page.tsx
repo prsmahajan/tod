@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { useAuth } from '@/lib/appwrite/auth';
+import { useAuth, account } from '@/lib/appwrite/auth';
 import { toast } from 'sonner';
 import { Upload, User as UserIcon } from 'lucide-react';
 
@@ -59,13 +59,10 @@ export default function ProfilePage() {
 
       const data = await response.json();
 
-      // Update user preferences with avatar URL
-      await fetch('/api/user/preferences', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          avatar: data.url,
-        }),
+      // Update user preferences with avatar URL directly using Appwrite
+      await account.updatePrefs({
+        ...user.prefs,
+        avatar: data.url,
       });
 
       // Refresh user data

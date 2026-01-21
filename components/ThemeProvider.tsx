@@ -47,6 +47,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, mounted]);
 
   const setTheme = (newTheme: Theme) => {
+    if (newTheme === theme) return;
+
+    const root = document.documentElement;
+
+    // Add theme-transition class for smooth background transition
+    root.classList.add("theme-transition");
+
+    // Remove it after transition completes
+    setTimeout(() => {
+      root.classList.remove("theme-transition");
+    }, 2000);
+
+    // Change theme
     setThemeState(newTheme);
   };
 

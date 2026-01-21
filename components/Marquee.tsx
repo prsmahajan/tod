@@ -4,37 +4,32 @@ import React from 'react';
 
 interface MarqueeProps {
   children: React.ReactNode;
-  speed?: number; // Duration in seconds
+  speed?: number; // Duration in seconds for one complete loop
   direction?: 'left' | 'right';
 }
 
-const Marquee: React.FC<MarqueeProps> = React.memo(({ children, speed = 40, direction = 'left' }) => {
+const Marquee: React.FC<MarqueeProps> = ({ children, speed = 4, direction = 'left' }) => {
   return (
-    <div className="overflow-hidden relative">
+    <div className="relative overflow-hidden w-full">
       <div
-        className="flex gap-4 marquee-animated"
+        className="flex gap-2"
         style={{
-          '--marquee-duration': `${speed}s`,
+          animation: `marquee-scroll ${speed}s linear infinite`,
           animationDirection: direction === 'right' ? 'reverse' : 'normal',
-          willChange: 'transform',
-        } as React.CSSProperties}
+        }}
       >
-        {/* First set of items */}
-        <div className="flex gap-4 flex-shrink-0">
+        {/* First set */}
+        <div className="flex gap-2 flex-shrink-0">
           {children}
         </div>
         {/* Duplicate for seamless loop */}
-        <div className="flex gap-4 flex-shrink-0">
-          {children}
-        </div>
-        {/* Third duplicate to ensure no gaps */}
-        <div className="flex gap-4 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0">
           {children}
         </div>
       </div>
     </div>
   );
-});
+};
 
 Marquee.displayName = 'Marquee';
 

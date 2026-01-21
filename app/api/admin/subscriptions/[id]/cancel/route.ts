@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { syncStatusFromPostgres } from "@/lib/subscription-sync";
 
 // POST /api/admin/subscriptions/[id]/cancel - Cancel a subscription
 export async function POST(
@@ -25,7 +26,7 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (user.subscriptionStatus !== "active") {
+    if (user.subscriptionStatus !== "ACTIVE") {
       return NextResponse.json(
         { error: "Subscription is not active" },
         { status: 400 }
@@ -33,12 +34,12 @@ export async function POST(
     }
 
     // If there's a Razorpay subscription, cancel it via API
-    if (user.razorpaySubscriptionId && process.env.RAZORPAY_KEY_SECRET) {
+    if (user.razorpaySubscriptionId && process.env.RAZORPAY_TEST_KEY) {
       try {
         const Razorpay = require("razorpay");
         const razorpay = new Razorpay({
-          key_id: process.env.RAZORPAY_KEY_ID,
-          key_secret: process.env.RAZORPAY_KEY_SECRET,
+          key_id: process.env.RAZORPAY_TEST_ID,
+          key_secret: process.env.RAZORPAY_TEST_KEY,
         });
 
         // Cancel at end of billing period
@@ -55,7 +56,7 @@ export async function POST(
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        subscriptionStatus: "cancelled",
+        subscriptionStatus: "CANCELLED",
         subscriptionEndsAt: user.nextBillingDate || new Date(),
       },
     });
@@ -74,6 +75,14 @@ export async function POST(
     //     },
     //   },
     // });
+
+    // Sync changes to Appwrite
+    try {
+      await syncStatusFromPostgres(updatedUser.email);
+    } catch (syncError) {
+      console.error('Error syncing to Appwrite:', syncError);
+      // Don't fail the request if sync fails
+    }
 
     return NextResponse.json({
       success: true,

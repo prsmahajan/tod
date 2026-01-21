@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         // Log the action
         await prisma.auditLog.create({
           data: {
-            action: "VOLUNTEER_PROMOTED",
+            action: "UPDATE" as any,
             entityType: "User",
             entityId: existingUser.id,
             userId: session.user.email || "admin",
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     // Store invitation in database (using a simple approach with AuditLog)
     await prisma.auditLog.create({
       data: {
-        action: "VOLUNTEER_INVITATION_SENT",
+        action: "CREATE" as any,
         entityType: "Invitation",
         entityId: email.toLowerCase(),
         userId: session.user.email || "admin",

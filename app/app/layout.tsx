@@ -100,6 +100,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </svg>
       ),
     },
+    {
+      href: '/app/profile',
+      label: 'Profile',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+    },
   ];
 
   const handleLogout = async () => {
@@ -118,12 +127,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside className="w-64 min-h-[calc(100vh-5rem)] border-r border-[var(--color-border)] p-4 hidden md:block">
           {/* User Info */}
           <div className="mb-6 p-4 bg-[var(--color-card-bg)] rounded-lg">
-            <p className="font-medium text-[var(--color-text-primary)] truncate">
-              {user.name || 'Supporter'}
-            </p>
-            <p className="text-xs text-[var(--color-text-secondary)] truncate">
-              {user.email}
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-[var(--color-bg)] border-2 border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
+                {user.prefs?.avatar ? (
+                  <img
+                    src={user.prefs.avatar}
+                    alt={user.name || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-lg font-semibold text-[var(--color-text-primary)]">
+                    {(user.name || user.email || 'U')[0].toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-[var(--color-text-primary)] truncate">
+                  {user.name || 'Supporter'}
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)] truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Navigation */}

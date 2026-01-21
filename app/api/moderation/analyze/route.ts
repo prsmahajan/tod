@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     // Check x-user-email header fallback
     if (!isAuthorized && userEmail) {
       const user = await prisma.user.findUnique({
-        where: { email: userEmail },
+        where: { email: userEmail.toLowerCase() },
       });
       isAuthorized = user ? ["ADMIN", "EDITOR"].includes(user.role) : false;
     }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const decision = getModerationDecision(analysis);
 
     // Determine the new status based on AI decision
-    let newStatus = MODERATION_STATUS.HUMAN_REVIEW;
+    let newStatus: string = MODERATION_STATUS.HUMAN_REVIEW;
     if (decision.autoApprove) {
       newStatus = MODERATION_STATUS.AI_APPROVED;
     } else if (decision.autoReject) {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
             flags: analysis.contentFlags,
             description: analysis.description,
             confidence: analysis.confidence,
-            decision: decision,
+            decision: JSON.parse(JSON.stringify(decision)),
           },
           aiSafe: analysis.isSafe,
           status: newStatus,

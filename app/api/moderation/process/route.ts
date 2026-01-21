@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // Also allow authenticated admin/editor users
     if (!isAuthorized && userEmail) {
       const user = await prisma.user.findUnique({
-        where: { email: userEmail },
+        where: { email: userEmail.toLowerCase() },
       });
       isAuthorized = user ? ["ADMIN", "EDITOR"].includes(user.role) : false;
     }
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         const decision = getModerationDecision(analysis);
 
         // Determine new status
-        let newStatus = MODERATION_STATUS.HUMAN_REVIEW;
+        let newStatus: string = MODERATION_STATUS.HUMAN_REVIEW;
         if (decision.autoApprove) {
           newStatus = MODERATION_STATUS.AI_APPROVED;
           results.autoApproved++;
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     try {
       await prisma.auditLog.create({
         data: {
-          action: "MODERATION_BATCH_PROCESS",
+          action: "UPDATE" as any,
           entityType: "PhotoModerationQueue",
           entityId: "batch",
           userId: "system",
@@ -170,7 +170,7 @@ export async function GET(req: NextRequest) {
     // Get recent processing logs
     const recentLogs = await prisma.auditLog.findMany({
       where: {
-        action: "MODERATION_BATCH_PROCESS",
+        action: "UPDATE" as any,
       },
       orderBy: { createdAt: "desc" },
       take: 5,

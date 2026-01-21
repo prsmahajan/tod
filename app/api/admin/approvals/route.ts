@@ -22,10 +22,10 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status") || "PENDING_REVIEW";
+    const statusParam = searchParams.get("status") || "PENDING_REVIEW";
 
     const posts = await prisma.post.findMany({
-      where: { status },
+      where: { status: statusParam as any },
       include: {
         author: {
           select: { id: true, name: true, email: true, avatar: true },

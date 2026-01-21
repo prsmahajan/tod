@@ -45,7 +45,7 @@ export default function MyPhotosPage() {
   }, [user?.$id, filter]);
 
   const getImageUrl = (imageId: string) => {
-    return storage.getFilePreview(BUCKETS.USER_UPLOADS, imageId, 400, 300).href;
+    return storage.getFilePreview(BUCKETS.USER_UPLOADS, imageId, 400, 300).toString();
   };
 
   const getStatusBadge = (status: UserPhoto['status']) => {

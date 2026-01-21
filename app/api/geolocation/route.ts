@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     // Try to get country from Vercel Edge headers (production)
-    const vercelCountry = request.headers.get('x-vercel-ip-country') || request.geo?.country;
+    const vercelCountry = request.headers.get('x-vercel-ip-country') || (request as any).geo?.country;
 
     if (vercelCountry) {
       console.log('[Geolocation] Detected from Vercel headers:', vercelCountry);

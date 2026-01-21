@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('authRedirect', redirectTo);
       }
       account.createOAuth2Session(
-        'google',
+        'google' as any,
         `${window.location.origin}/auth/callback`,
         `${window.location.origin}/login?error=oauth_failed`
       );

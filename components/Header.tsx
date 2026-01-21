@@ -98,8 +98,16 @@ function Header() {
         onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
         className="flex items-center gap-2 focus:outline-none cursor-pointer"
       >
-        <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center font-medium text-sm`}>
-          {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+        <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center font-medium text-sm overflow-hidden border-2 border-[var(--color-border)]`}>
+          {user?.prefs?.avatar ? (
+            <img
+              src={user.prefs.avatar}
+              alt={user.name || 'Profile'}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'
+          )}
         </div>
         {!compact && (
           <span className="text-sm font-medium text-[var(--color-text-primary)]">
@@ -303,8 +311,16 @@ function Header() {
             {isLoaded && isSignedIn ? (
               <div className="px-5 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center font-medium">
-                    {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center font-medium overflow-hidden border-2 border-[var(--color-border)]">
+                    {user?.prefs?.avatar ? (
+                      <img
+                        src={user.prefs.avatar}
+                        alt={user.name || 'Profile'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-[var(--color-text-primary)]">

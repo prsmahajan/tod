@@ -121,7 +121,7 @@ export async function PATCH(
     // Log the action
     await prisma.auditLog.create({
       data: {
-        action: "USER_ROLE_CHANGE",
+        action: "UPDATE" as any,
         entityType: "User",
         entityId: id,
         userId: session.user.email || "admin",
@@ -165,7 +165,7 @@ export async function DELETE(
     // Log the action
     await prisma.auditLog.create({
       data: {
-        action: "VOLUNTEER_REMOVED",
+        action: "DELETE" as any,
         entityType: "User",
         entityId: id,
         userId: session.user.email || "admin",

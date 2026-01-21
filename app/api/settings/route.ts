@@ -15,7 +15,7 @@ async function getAuthenticatedUser(req: NextRequest) {
   const userEmail = req.headers.get("x-user-email");
   if (userEmail) {
     return await prisma.user.findUnique({
-      where: { email: userEmail },
+      where: { email: userEmail.toLowerCase() },
     });
   }
 

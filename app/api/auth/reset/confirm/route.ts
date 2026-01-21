@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const pwd = passwordPolicy.parse(password);
 
     const tokenHash = hashToken(String(token));
-    const rec = await prisma.passResetToken.findUnique({ where: { tokenHash } });
+    const rec = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
     if (!rec || rec.usedAt || rec.expiresAt < new Date()) {
       return NextResponse.json({ error: "Invalid or expired token." }, { status: 400 });
     }
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(pwd, 12);
     await prisma.$transaction([
       prisma.user.update({ where: { id: rec.userId }, data: { passwordHash } }),
-      prisma.passResetToken.update({ where: { tokenHash }, data: { usedAt: new Date() } }),
+      prisma.passwordResetToken.update({ where: { tokenHash }, data: { usedAt: new Date() } }),
     ]);
 
     return NextResponse.json({ ok: true });

@@ -25,13 +25,13 @@ export async function GET(req: NextRequest) {
     // Apply status filter
     switch (filter) {
       case "active":
-        whereClause.subscriptionStatus = "active";
+        whereClause.subscriptionStatus = "ACTIVE";
         break;
       case "cancelled":
-        whereClause.subscriptionStatus = "cancelled";
+        whereClause.subscriptionStatus = "CANCELLED";
         break;
       case "paused":
-        whereClause.subscriptionStatus = "paused";
+        whereClause.subscriptionStatus = "PAUSED";
         break;
     }
 
@@ -47,8 +47,17 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Fetch subscriptions
-    const [subscriptions, total] = await Promise.all([
+    // OPTIMIZATION: Use aggregate queries instead of loading all subscribers
+    const baseWhere = {
+      OR: [
+        { razorpaySubscriptionId: { not: null } },
+        { subscriptionStatus: { not: null } },
+      ],
+    };
+
+    // Run all queries in parallel for better performance
+    const [subscriptions, total, totalSubscribers, activeCount, cancelledCount, pausedCount, animalsFedSum] = await Promise.all([
+      // Paginated subscriptions
       prisma.user.findMany({
         where: whereClause,
         select: {
@@ -67,33 +76,29 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
       }),
+      // Total count for pagination
       prisma.user.count({ where: whereClause }),
+      // Stats using efficient aggregate queries
+      prisma.user.count({ where: baseWhere }),
+      prisma.user.count({ where: { ...baseWhere, subscriptionStatus: "ACTIVE" } }),
+      prisma.user.count({ where: { ...baseWhere, subscriptionStatus: "CANCELLED" } }),
+      prisma.user.count({ where: { ...baseWhere, subscriptionStatus: "PAUSED" } }),
+      prisma.user.aggregate({
+        where: baseWhere,
+        _sum: { animalsFed: true },
+      }),
     ]);
 
-    // Calculate stats
-    const allSubscribers = await prisma.user.findMany({
-      where: {
-        OR: [
-          { razorpaySubscriptionId: { not: null } },
-          { subscriptionStatus: { not: null } },
-        ],
-      },
-      select: {
-        subscriptionStatus: true,
-        animalsFed: true,
-      },
-    });
-
     const stats = {
-      totalSubscribers: allSubscribers.length,
-      activeSubscriptions: allSubscribers.filter((s) => s.subscriptionStatus === "active").length,
-      cancelledSubscriptions: allSubscribers.filter((s) => s.subscriptionStatus === "cancelled").length,
-      pausedSubscriptions: allSubscribers.filter((s) => s.subscriptionStatus === "paused").length,
-      totalAnimalsFed: allSubscribers.reduce((sum, s) => sum + s.animalsFed, 0),
+      totalSubscribers,
+      activeSubscriptions: activeCount,
+      cancelledSubscriptions: cancelledCount,
+      pausedSubscriptions: pausedCount,
+      totalAnimalsFed: animalsFedSum._sum.animalsFed || 0,
       // MRR calculation (assuming Rs. 199/month per active subscriber)
-      mrr: allSubscribers.filter((s) => s.subscriptionStatus === "active").length * 199,
+      mrr: activeCount * 199,
       // Estimated total revenue (basic calculation)
-      totalRevenue: allSubscribers.length * 199 * 6, // Rough estimate
+      totalRevenue: totalSubscribers * 199 * 6, // Rough estimate
     };
 
     return NextResponse.json({

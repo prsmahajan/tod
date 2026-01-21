@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, RefObject } from 'react';
 import { useOnScreen } from '@/hooks/useOnScreen';
 
 interface AnimatedSectionProps {
@@ -15,7 +15,7 @@ const AnimatedSection: React.FC<AnimatedSectionProps> = ({
   direction = 'up'
 }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useOnScreen(ref, { threshold: 0.1, triggerOnce: true });
+  const isVisible = useOnScreen(ref as RefObject<HTMLElement>, { threshold: 0.1, triggerOnce: true });
 
   const getDirectionClass = () => {
     if (!isVisible) {

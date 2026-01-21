@@ -4,9 +4,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import AnimatedSection from '@/components/AnimatedSection';
 import { useTypeText } from '@/hooks/useTypeText';
 import Icon from '@/components/Icon';
-import Marquee from '@/components/Marquee';
+// REMOVED: import Marquee from '@/components/Marquee';  <-- We don't need this anymore
 import Footer from '@/components/Footer';
 
+// --- Types ---
 interface FeaturedPhoto {
   id: string;
   imageUrl: string;
@@ -17,6 +18,25 @@ interface FeaturedPhoto {
   animalCount?: number;
 }
 
+// --- Sub-Components ---
+
+// 1. HeroHeader: Isolated to prevent the typing animation from lagging the whole page
+const HeroHeader = () => {
+  const animatedText = useTypeText(['Impact', 'Kindness', 'Care', 'Action'], 1500, 100);
+
+  return (
+    <header className="text-center max-w-3xl mx-auto">
+      <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">
+        Real-World <span className="text-[var(--color-accent)]">{animatedText}</span>
+      </h1>
+      <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
+        This isn't about grand gestures, but the consistent, daily effort of a community. Here's a look at the tangible differences being made every day.
+      </p>
+    </header>
+  );
+};
+
+// 2. Static Cards
 const ImpactCard = ({ imageUrl, title, description, delay = 0 }: { imageUrl: string, title: string, description: string, delay?: number }) => (
   <div className="bg-[var(--color-card-bg)] rounded-lg overflow-hidden border border-[var(--color-border)] transition-shadow duration-300 hover:shadow-xl h-full animate-float" style={{ animationDelay: `${delay}s` }}>
     <img src={imageUrl} alt={title} className="w-full h-64 object-cover" />
@@ -55,7 +75,6 @@ const marqueeImages = [
 ];
 
 const ImpactPage: React.FC = () => {
-  const animatedText = useTypeText(['Impact', 'Kindness', 'Care', 'Action'], 1500, 100);
   const [featuredPhotos, setFeaturedPhotos] = useState<FeaturedPhoto[]>([]);
 
   useEffect(() => {
@@ -70,17 +89,13 @@ const ImpactPage: React.FC = () => {
         console.error('Error fetching featured photos:', error);
       }
     }
-
     fetchFeaturedPhotos();
   }, []);
 
-  // Combine featured photos (both admin and user) with static images
-  // Memoize to prevent Marquee re-renders when animatedText changes
-  const allMarqueeImages = useMemo(() => {
-    // Deduplicate featured photos by image URL
+  // Prepare the base list of images
+  const baseImageList = useMemo(() => {
     const uniqueFeaturedPhotos = featuredPhotos.reduce((acc: any[], photo) => {
-      // Only add if we haven't seen this image URL before
-      if (!acc.find(p => p.src === photo.imageUrl)) {
+      if (!acc.find((p: any) => p.src === photo.imageUrl)) {
         acc.push({
           src: photo.imageUrl,
           userName: photo.userName || 'Anonymous',
@@ -90,52 +105,80 @@ const ImpactPage: React.FC = () => {
       return acc;
     }, []);
 
-    return [
+    // Combine user photos + static photos
+    const combined = [
       ...uniqueFeaturedPhotos,
       ...marqueeImages.map(src => ({ src, userName: '', isUser: false })),
     ];
+    
+    // If we don't have enough images (less than 10), duplicate them so the strip is long enough
+    if (combined.length < 10) {
+      return [...combined, ...combined, ...combined];
+    }
+    return combined;
   }, [featuredPhotos]);
 
-  // Memoize marquee content to prevent re-renders
-  const marqueeContent = useMemo(() =>
-    allMarqueeImages.map((image, index) => (
-      <figure key={index} className="relative group flex-shrink-0 m-0">
-        <img
-          src={image.src}
-          alt={image.isUser ? `Photo by ${image.userName}` : `Stray animal ${index + 1}`}
-          className="w-64 h-48 object-cover rounded-lg shadow-md flex-shrink-0"
-          style={{ minWidth: '256px', width: '256px', height: '192px' }}
-        />
-        {image.isUser && image.userName && (
-          <figcaption className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent text-white text-xs rounded-b-lg">
-            Posted by {image.userName}
-          </figcaption>
-        )}
-      </figure>
-    ))
-  , [allMarqueeImages]);
+  // Helper to render a strip of images
+  const renderImageStrip = (keyPrefix: string) => (
+    <div className="flex shrink-0 gap-4 px-2">
+      {baseImageList.map((image, index) => (
+        <figure 
+          key={`${keyPrefix}-${index}`} 
+          className="relative group flex-shrink-0 m-0"
+        >
+          <img
+            src={image.src}
+            alt={image.isUser ? `Photo by ${image.userName}` : "Stray animal"}
+            loading="eager"
+            decoding="async"
+            // Fixed width/height ensures layout doesn't jump when image loads
+            className="w-64 h-48 object-cover rounded-lg shadow-md bg-[var(--color-card-bg)]"
+            style={{ width: '256px', height: '192px' }} 
+          />
+          {image.isUser && image.userName && (
+            <figcaption className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent text-white text-xs rounded-b-lg">
+              Posted by {image.userName}
+            </figcaption>
+          )}
+        </figure>
+      ))}
+    </div>
+  );
 
   return (
     <>
+      {/* Inject CSS Keyframes directly here to avoid external file dependencies.
+         This creates a smooth -50% translation loop.
+      */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes scroll-smooth {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .scrolling-wrapper {
+          display: flex;
+          width: max-content;
+          animation: scroll-smooth 20s linear infinite; /* 60s is the speed, adjust if needed */
+        }
+      `}} />
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-24">
         <AnimatedSection>
-          <header className="text-center max-w-3xl mx-auto">
-            <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">
-              Real-World <span className="text-[var(--color-accent)]">{animatedText}</span>
-            </h1>
-            <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
-              This isn't about grand gestures, but the consistent, daily effort of a community. Here's a look at the tangible differences being made every day.
-            </p>
-          </header>
+          <HeroHeader />
         </AnimatedSection>
 
         <AnimatedSection>
-          <div className="mt-20 -mx-4 sm:-mx-6 lg:-mx-8">
-            <Marquee speed={5}>
-              {marqueeContent}
-            </Marquee>
+          {/* Custom CSS Marquee Container */}
+          <div className="mt-20 -mx-8 sm:-mx-16 lg:-mx-32 overflow-hidden select-none pointer-events-auto">
+            <div className="scrolling-wrapper">
+              {/* We render the strip TWICE. The animation slides exactly 50% (one strip length) and snaps back. */}
+              {renderImageStrip('set1')}
+              {renderImageStrip('set2')}
+            </div>
           </div>
         </AnimatedSection>
+
+        {/* --- The rest of your sections remain unchanged --- */}
 
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           <AnimatedSection direction="left">

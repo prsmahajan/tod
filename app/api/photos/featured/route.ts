@@ -20,7 +20,7 @@ export async function GET() {
 
       userPhotos = response.documents.map((doc: any) => {
         const imageUrl = doc.imageIds && doc.imageIds.length > 0
-          ? storage.getFilePreview(BUCKETS.USER_UPLOADS, doc.imageIds[0], 400, 300).href
+          ? storage.getFilePreview(BUCKETS.USER_UPLOADS, doc.imageIds[0], 400, 300).toString()
           : null;
 
         return {

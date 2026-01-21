@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { databases, DATABASE_ID, COLLECTIONS, ID, Query } from '@/lib/appwrite/server';
+import { syncSubscriptionToPostgres, getSubscriptionByEmail } from '@/lib/subscription-sync';
 
 // Verify Razorpay webhook signature
 function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
@@ -17,13 +18,21 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get('x-razorpay-signature');
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    // Verify signature if webhook secret is configured
-    if (webhookSecret && signature) {
-      const isValid = verifyWebhookSignature(body, signature, webhookSecret);
-      if (!isValid) {
-        console.error('Invalid webhook signature');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
+    // Webhook signature verification is REQUIRED for security
+    if (!webhookSecret) {
+      console.error('RAZORPAY_WEBHOOK_SECRET not configured');
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+    }
+
+    if (!signature) {
+      console.error('Missing webhook signature');
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+    }
+
+    const isValid = verifyWebhookSignature(body, signature, webhookSecret);
+    if (!isValid) {
+      console.error('Invalid webhook signature');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const event = JSON.parse(body);
@@ -186,6 +195,17 @@ async function handleSubscriptionActivated(subscription: any) {
       );
     }
     console.log('Subscription activated:', subscription.id);
+
+    // Sync to PostgreSQL
+    try {
+      const appwriteSubscription = await getSubscriptionByEmail(notes.customerEmail || '');
+      if (appwriteSubscription) {
+        await syncSubscriptionToPostgres(appwriteSubscription);
+      }
+    } catch (syncError) {
+      console.error('Error syncing to PostgreSQL:', syncError);
+      // Don't fail the webhook if sync fails
+    }
   } catch (error) {
     console.error('Error handling subscription activation:', error);
   }
@@ -284,6 +304,14 @@ async function updateSubscriptionStatus(subscriptionId: string, status: string) 
         existing.documents[0].$id,
         { status }
       );
+
+      // Sync to PostgreSQL
+      try {
+        const appwriteSub = existing.documents[0] as any;
+        await syncSubscriptionToPostgres(appwriteSub);
+      } catch (syncError) {
+        console.error('Error syncing status update to PostgreSQL:', syncError);
+      }
     }
     console.log(`Subscription ${subscriptionId} status updated to: ${status}`);
   } catch (error) {

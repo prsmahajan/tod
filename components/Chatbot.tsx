@@ -14,8 +14,9 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [hasPlayedSound, setHasPlayedSound] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -33,18 +34,69 @@ const Chatbot: React.FC = () => {
     }
   }, [isOpen, messages.length]);
 
-  // Initialize audio context on first user interaction
-  useEffect(() => {
-    const initAudio = () => {
+  const playClinkSound = () => {
+    try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
+
+      const audioContext = audioContextRef.current;
+
+      // Create two tones for a "clink" effect
+      const playTone = (frequency: number, startTime: number, duration: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'triangle';
+
+        // Envelope for natural sound
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.005);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+
+      const currentTime = audioContext.currentTime;
+      playTone(1200, currentTime, 0.08);
+      playTone(1800, currentTime + 0.04, 0.08);
+    } catch (error) {
+      console.log('Audio play failed:', error);
+    }
+  };
+
+  // Initialize audio and play sound on mount
+  useEffect(() => {
+    const initAndPlayAudio = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      // Play sound after a short delay
+      setTimeout(() => {
+        if (!hasPlayedSound) {
+          playClinkSound();
+          setHasPlayedSound(true);
+          // Show tooltip after sound
+          setShowTooltip(true);
+        }
+      }, 1500);
     };
 
     // Initialize on any user interaction
-    document.addEventListener('click', initAudio, { once: true });
-    return () => document.removeEventListener('click', initAudio);
-  }, []);
+    document.addEventListener('click', initAndPlayAudio, { once: true });
+    document.addEventListener('touchstart', initAndPlayAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', initAndPlayAudio);
+      document.removeEventListener('touchstart', initAndPlayAudio);
+    };
+  }, [hasPlayedSound]);
 
   // Handle scroll to hide tooltip
   useEffect(() => {
@@ -108,42 +160,6 @@ const Chatbot: React.FC = () => {
     }
   };
 
-  const playClinkSound = () => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-
-      const audioContext = audioContextRef.current;
-
-      // Create two tones for a "clink" effect
-      const playTone = (frequency: number, startTime: number, duration: number) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'triangle';
-
-        // Envelope for natural sound
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.005);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-      };
-
-      const currentTime = audioContext.currentTime;
-      playTone(1200, currentTime, 0.08);
-      playTone(1800, currentTime + 0.04, 0.08);
-    } catch (error) {
-      console.log('Audio play failed:', error);
-    }
-  };
-
   const handleToggleChatbot = () => {
     playClinkSound();
     setIsOpen(!isOpen);
@@ -155,7 +171,7 @@ const Chatbot: React.FC = () => {
         {/* Tooltip */}
         {!hasScrolled && (
           <div
-            className={`absolute bottom-full right-0 mb-2 px-3 py-2 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-sm rounded-lg shadow-lg whitespace-nowrap transition-all duration-300 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}
+            className={`absolute bottom-full right-0 mb-2 px-3 py-2 bg-[var(--color-text-primary)] text-[var(--color-bg)] text-sm rounded-lg shadow-lg whitespace-nowrap transition-all duration-500 ease-out ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
           >
             confused? ask me here
             <div className="absolute top-full right-4 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-[var(--color-text-primary)]"></div>

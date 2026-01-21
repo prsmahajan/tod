@@ -1,3 +1,60 @@
+Ah! You're asking about the final migration step I recommended. Looking at the work we completed, the last thing I told you to do was:  
+                                                                                                                                          
+  Run the One-Time Database Sync                                                                                                          
+                                                                                                                                          
+  After all the optimizations, you need to sync all existing Appwrite subscriptions into PostgreSQL:                                      
+                                                                                                                                          
+  # Run this command once to migrate all data                                                                                             
+  curl -X POST http://localhost:3000/api/admin/sync-subscriptions                                                                         
+                                                                                                                                          
+  # Or if deployed:                                                                                                                       
+  curl -X POST https://theopendraft.com/api/admin/sync-subscriptions                                                                      
+                                                                                                                                          
+  This command will:                                                                                                                      
+  1. Fetch all subscription data from Appwrite                                                                                            
+  2. Sync it into your PostgreSQL database                                                                                                
+  3. Ensure both databases are in sync going forward                                                                                      
+                                                                                                                                          
+  ---                                                                                                                                     
+  Why This Was Important                                                                                                                  
+                                                                                                                                          
+  Before the optimization, you had:                                                                                                       
+  - Subscription data in Appwrite (from Razorpay webhooks)                                                                                
+  - User data in PostgreSQL (from admin dashboard)                                                                                        
+  - They were NOT synced properly                                                                                                         
+                                                                                                                                          
+  After the optimization, I created:                                                                                                      
+  - /lib/subscription-sync.ts - Sync functions                                                                                            
+  - /app/api/admin/sync-subscriptions/route.ts - Sync endpoint                                                                            
+  - Automatic bi-directional sync on every webhook                                                                                        
+                                                                                                                                          
+  So the final step was to run that sync command once to migrate all existing data.                                                       
+                                                                                                                                          
+  ---                                                                                                                                     
+  Verification Steps                                                                                                                      
+                                                                                                                                          
+  After running the sync, check:                                                                                                          
+                                                                                                                                          
+  # 1. Run the sync                                                                                                                       
+  curl -X POST http://localhost:3000/api/admin/sync-subscriptions                                                                         
+                                                                                                                                          
+  # 2. Check the response - should show how many records synced                                                                           
+  # Example response:                                                                                                                     
+  # {                                                                                                                                     
+  #   "success": true,                                                                                                                    
+  #   "synced": 45,                                                                                                                       
+  #   "message": "Successfully synced 45 subscriptions"                                                                                   
+  # }                                                                                                                                     
+                                                                                                                                          
+  # 3. Verify in admin dashboard                                                                                                          
+  # Go to: http://localhost:3000/cms/admin/subscriptions                                                                                  
+  # All subscriptions should now be visible                                                                                               
+                                                                                                                                          
+  # 4. Test that new subscriptions auto-sync                                                                                              
+  # Make a test payment → Should appear in PostgreSQL automatically                                                                       
+                                                                                                                                          
+  Is this what you were looking for? The one-time database migration sync?    
+
 # Google Sheets Integration Setup
 
 This guide will help you connect your newsletter subscription form to Google Sheets.

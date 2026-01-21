@@ -42,7 +42,7 @@ export default function AdminPhotosPage() {
   }
 
   const getImageUrl = (imageId: string) => {
-    return storage.getFilePreview(BUCKETS.USER_UPLOADS, imageId, 800, 600).href;
+    return storage.getFilePreview(BUCKETS.USER_UPLOADS, imageId, 800, 600).toString();
   };
 
   const handleApprove = async (photo: UserPhoto, featured: boolean = false) => {

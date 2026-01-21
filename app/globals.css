@@ -74,6 +74,12 @@ button, a, [role="button"] {
 
 /* Eden Theme System - 3 Themes: off-white, lavender, black */
 
+/* Theme transition - lavdaji style (background-only) */
+.theme-transition,
+.theme-transition * {
+  transition: background-color 0.7s ease-in-out;
+}
+
 :root,
 html.off-white {
   /* Off-White Theme (Default) */
@@ -458,21 +464,12 @@ html.black {
 }
 
 @keyframes marquee-scroll {
-  from {
+  0% {
     transform: translateX(0);
   }
-  to {
-    transform: translateX(-33.333%);
+  100% {
+    transform: translateX(-50%);
   }
-}
-
-.marquee-animated {
-  animation: marquee-scroll var(--marquee-duration, 60s) linear infinite;
-}
-
-/* Theme transition smoothness */
-html {
-  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
 }
 
 /* Font family classes for Eden typography */
