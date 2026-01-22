@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/appwrite/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronDown, ExternalLink, LogOut, User, Settings } from "lucide-react";
 
 interface AdminHeaderProps {
@@ -15,7 +16,31 @@ export function AdminHeader({ title, itemCount }: AdminHeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user avatar from database
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      if (!user?.email) return;
+
+      try {
+        const res = await fetch("/api/user/profile", {
+          headers: { "x-user-email": user.email },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserAvatar(data.avatar || user.prefs?.avatar || null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user avatar:", error);
+        // Fallback to Appwrite prefs
+        setUserAvatar(user.prefs?.avatar || null);
+      }
+    };
+
+    fetchUserAvatar();
+  }, [user?.email, user?.prefs?.avatar]);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -70,9 +95,17 @@ export function AdminHeader({ title, itemCount }: AdminHeaderProps) {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#2a2a2a] rounded transition-colors"
           >
-            <div className="w-7 h-7 bg-[#4f46e5] rounded-full flex items-center justify-center text-xs font-medium">
-              {user?.name?.charAt(0).toUpperCase() || "U"}
-            </div>
+            {userAvatar ? (
+              <Image
+                src={userAvatar}
+                alt={user?.name || "User"}
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-7 h-7 bg-[#000000] rounded-full"></div>
+            )}
             <span className="text-sm">{user?.name || "User"}</span>
             <ChevronDown size={16} className={`text-[#666] transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
           </button>

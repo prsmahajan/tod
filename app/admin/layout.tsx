@@ -13,9 +13,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminAuthWrapper>
       <CMSThemeProvider>
-        <div className={`${dmSans.className} flex min-h-screen cms-layout`}>
+        <div className={`${dmSans.className} flex h-screen overflow-hidden cms-layout`}>
           <AdminNav />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <AdminHeader />
             <main className="flex-1 cms-main overflow-auto">
               <div className="p-6">{children}</div>

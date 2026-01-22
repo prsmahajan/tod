@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/appwrite/auth";
 import { toast } from "sonner";
 import { Plus, Trash2, Eye, EyeOff, Upload, X } from "lucide-react";
 import Image from "next/image";
@@ -20,6 +21,7 @@ interface AnimalPhoto {
 }
 
 export default function AnimalPhotosPage() {
+  const { user } = useAuth();
   const [photos, setPhotos] = useState<AnimalPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -27,6 +29,8 @@ export default function AnimalPhotosPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; photoId: string | null }>({ show: false, photoId: null });
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchPhotos();
@@ -97,9 +101,14 @@ export default function AnimalPhotosPage() {
   }
 
   async function toggleActive(id: string, currentStatus: boolean) {
+    if (!user?.email) return;
+
     const res = await fetch(`/api/animal-photos/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-email": user.email,
+      },
       body: JSON.stringify({ isActive: !currentStatus }),
     });
 
@@ -108,22 +117,47 @@ export default function AnimalPhotosPage() {
     }
   }
 
-  async function deletePhoto(id: string) {
-    if (!confirm("Are you sure you want to delete this photo?")) return;
+  function showDeleteModal(id: string) {
+    setDeleteModal({ show: true, photoId: id });
+  }
 
-    const res = await fetch(`/api/animal-photos/${id}`, {
-      method: "DELETE",
-    });
+  function closeDeleteModal() {
+    setDeleteModal({ show: false, photoId: null });
+  }
 
-    if (res.ok) {
-      fetchPhotos();
+  async function confirmDelete() {
+    if (!deleteModal.photoId || !user?.email) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/animal-photos/${deleteModal.photoId}`, {
+        method: "DELETE",
+        headers: { "x-user-email": user.email },
+      });
+
+      if (res.ok) {
+        toast.success("Photo deleted");
+        fetchPhotos();
+        closeDeleteModal();
+      } else {
+        toast.error("Failed to delete photo");
+      }
+    } catch (error) {
+      toast.error("Failed to delete photo");
+    } finally {
+      setDeleting(false);
     }
   }
 
   async function updateOrder(id: string, newOrder: number) {
+    if (!user?.email) return;
+
     const res = await fetch(`/api/animal-photos/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-email": user.email,
+      },
       body: JSON.stringify({ order: newOrder }),
     });
 
@@ -143,7 +177,7 @@ export default function AnimalPhotosPage() {
         </div>
         <button
           onClick={() => setShowUploadForm(!showUploadForm)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-black text-[#fff] px-4 py-2 border-2 border-black hover:bg-white hover:text-[#000]"
         >
           <Plus size={20} />
           Upload Photo
@@ -316,7 +350,7 @@ export default function AnimalPhotosPage() {
                     </button>
 
                     <button
-                      onClick={() => deletePhoto(photo.id)}
+                      onClick={() => showDeleteModal(photo.id)}
                       className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
                     >
                       <Trash2 size={16} />
@@ -332,6 +366,40 @@ export default function AnimalPhotosPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+          <div className="bg-[#1e1e1e] border-2 border-[#2a2a2a] w-full max-w-md mx-4">
+            <div className="p-6 border-b border-[#2a2a2a]">
+              <h3 className="text-lg font-semibold text-white">Delete Photo</h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-[#888]">
+                Are you sure you want to delete this photo? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-[#2a2a2a] flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-white text-black border-2 border-black hover:bg-[#f5f5f5] disabled:opacity-50 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white border-2 border-red-600 hover:bg-red-700 disabled:opacity-50 font-medium transition-colors"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

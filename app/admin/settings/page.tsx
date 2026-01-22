@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/appwrite/auth";
+import Image from "next/image";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [settings, setSettings] = useState({
     siteName: "",
     siteDescription: "",
@@ -31,12 +33,24 @@ export default function SettingsPage() {
     if (!user?.email) return;
 
     try {
-      const res = await fetch("/api/settings", {
+      // Fetch site settings
+      const settingsRes = await fetch("/api/settings", {
         headers: { "x-user-email": user.email },
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (settingsRes.ok) {
+        const data = await settingsRes.json();
         setSettings((prev) => ({ ...prev, ...data }));
+      }
+
+      // Fetch user profile
+      const profileRes = await fetch("/api/user/profile", {
+        headers: { "x-user-email": user.email },
+      });
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        // Fallback to Appwrite prefs if PostgreSQL doesn't have avatar
+        const avatarUrl = profileData.avatar || user.prefs?.avatar || null;
+        setUserProfile({ ...profileData, avatar: avatarUrl });
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error);
@@ -86,6 +100,45 @@ export default function SettingsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
         <p className="text-[#888]">Manage your site configuration and preferences</p>
+      </div>
+
+      {/* Profile Section - Read Only */}
+      <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-6 mb-6">
+        <h2 className="text-lg font-semibold text-white mb-6">Profile</h2>
+
+        <div className="flex items-start gap-6">
+          {/* Avatar Display */}
+          <div className="flex-shrink-0">
+            {userProfile?.avatar ? (
+              <Image
+                src={userProfile.avatar}
+                alt={userProfile.name || "Profile"}
+                width={96}
+                height={96}
+                className="w-24 h-24 rounded-full object-cover border-2 border-[#3a3a3a]"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-[#000000] border-2 border-[#3a3a3a]"></div>
+            )}
+          </div>
+
+          {/* User Info */}
+          <div className="flex-1">
+            <div className="mb-3">
+              <p className="text-sm font-medium text-white mb-1">{userProfile?.name || user?.name || "User"}</p>
+              <p className="text-sm text-[#666]">{userProfile?.email || user?.email}</p>
+            </div>
+
+            <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg p-3">
+              <p className="text-xs text-[#888]">
+                <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                To update your profile picture, go to <a href="/app/profile" className="text-[#a5b4fc] hover:underline">Profile Settings</a>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -254,7 +307,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 bg-white text-[#fff] px-6 py-3 rounded-lg hover:bg-[#f0f0f0] disabled:opacity-50 font-medium transition-colors"
+            className="flex items-center gap-2 bg-black text-[#fff] px-6 py-3 rounded-lg hover:bg-[#333] disabled:opacity-50 font-medium transition-colors"
           >
             {saving ? (
               <>

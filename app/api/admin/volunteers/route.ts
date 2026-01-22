@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
 
 // GET /api/admin/volunteers - Get all volunteers (users with non-subscriber roles)
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    // Check authentication (support both Appwrite and NextAuth)
+    const userEmail = req.headers.get("x-user-email");
 
-    if (!session?.user) {
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify user has admin access
+    const currentUser = await prisma.user.findUnique({
+      where: { email: userEmail.toLowerCase() },
+      select: { role: true },
+    });
+
+    if (!currentUser || !["ADMIN", "EDITOR"].includes(currentUser.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);

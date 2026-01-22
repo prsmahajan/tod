@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/lib/appwrite/auth";
 import { toast } from "sonner";
 
 interface Volunteer {
@@ -49,6 +50,7 @@ const ROLE_OPTIONS = [
 ];
 
 export default function VolunteersPage() {
+  const { user } = useAuth();
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,9 +67,18 @@ export default function VolunteersPage() {
   const [sendingInvite, setSendingInvite] = useState(false);
 
   const fetchVolunteers = useCallback(async () => {
+    if (!user?.email) return;
+
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/volunteers?filter=${filter}&search=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(
+        `/api/admin/volunteers?filter=${filter}&search=${encodeURIComponent(searchQuery)}`,
+        {
+          headers: {
+            "x-user-email": user.email,
+          },
+        }
+      );
       if (!res.ok) throw new Error("Failed to fetch volunteers");
       const data = await res.json();
       setVolunteers(data.volunteers);
@@ -77,7 +88,7 @@ export default function VolunteersPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, searchQuery]);
+  }, [filter, searchQuery, user?.email]);
 
   useEffect(() => {
     fetchVolunteers();
@@ -85,12 +96,17 @@ export default function VolunteersPage() {
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.email) return;
+
     setSendingInvite(true);
 
     try {
       const res = await fetch("/api/admin/volunteers/invite", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-email": user.email,
+        },
         body: JSON.stringify(inviteForm),
       });
 
@@ -112,10 +128,15 @@ export default function VolunteersPage() {
   };
 
   const handleRoleChange = async (volunteerId: string, newRole: string) => {
+    if (!user?.email) return;
+
     try {
       const res = await fetch(`/api/admin/volunteers/${volunteerId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-email": user.email,
+        },
         body: JSON.stringify({ role: newRole }),
       });
 
@@ -136,10 +157,15 @@ export default function VolunteersPage() {
       return;
     }
 
+    if (!user?.email) return;
+
     try {
       const res = await fetch(`/api/admin/volunteers/${volunteer.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-email": user.email,
+        },
         body: JSON.stringify({ role: "SUBSCRIBER" }),
       });
 
@@ -178,7 +204,7 @@ export default function VolunteersPage() {
         </div>
         <button
           onClick={() => setShowInviteModal(true)}
-          className="px-4 py-2 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg text-sm font-medium hover:opacity-90 cursor-pointer flex items-center gap-2"
+          className="bg-black text-[#fff] px-4 py-2 border-2 border-black hover:bg-white hover:text-[#000] text-sm font-medium hover:opacity-90 cursor-pointer flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -277,13 +303,15 @@ export default function VolunteersPage() {
                 <tr key={volunteer.id} className="hover:bg-[var(--color-bg)] transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center font-medium">
-                        {volunteer.avatar ? (
-                          <img src={volunteer.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          volunteer.name.charAt(0).toUpperCase()
-                        )}
-                      </div>
+                      {volunteer.avatar ? (
+                        <img
+                          src={volunteer.avatar}
+                          alt={volunteer.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#000000]"></div>
+                      )}
                       <div>
                         <p className="font-medium text-[var(--color-text-primary)]">{volunteer.name}</p>
                         <p className="text-sm text-[var(--color-text-secondary)]">{volunteer.email}</p>

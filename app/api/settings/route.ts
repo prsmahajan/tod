@@ -1,25 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.email) {
-    return await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-  }
-
   const userEmail = req.headers.get("x-user-email");
-  if (userEmail) {
-    return await prisma.user.findUnique({
-      where: { email: userEmail.toLowerCase() },
-    });
-  }
+  if (!userEmail) return null;
 
-  return null;
+  return await prisma.user.findUnique({
+    where: { email: userEmail.toLowerCase() },
+  });
 }
 
 // GET all settings

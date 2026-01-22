@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
 
 // GET /api/admin/volunteers/[id] - Get a specific volunteer
 export async function GET(
@@ -8,10 +7,20 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const userEmail = req.headers.get("x-user-email");
 
-    if (!session?.user) {
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify user has admin access
+    const currentUser = await prisma.user.findUnique({
+      where: { email: userEmail.toLowerCase() },
+      select: { role: true },
+    });
+
+    if (!currentUser || !["ADMIN", "EDITOR"].includes(currentUser.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -90,10 +99,20 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const userEmail = req.headers.get("x-user-email");
 
-    if (!session?.user) {
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify user has admin access
+    const currentUser = await prisma.user.findUnique({
+      where: { email: userEmail.toLowerCase() },
+      select: { id: true, role: true },
+    });
+
+    if (!currentUser || !["ADMIN", "EDITOR"].includes(currentUser.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -124,10 +143,10 @@ export async function PATCH(
         action: "UPDATE" as any,
         entityType: "User",
         entityId: id,
-        userId: session.user.email || "admin",
+        userId: currentUser.id,
         details: {
           newRole: role,
-          updatedBy: session.user.email,
+          updatedBy: userEmail,
         },
       },
     });
@@ -148,10 +167,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const userEmail = req.headers.get("x-user-email");
 
-    if (!session?.user) {
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify user has admin access
+    const currentUser = await prisma.user.findUnique({
+      where: { email: userEmail.toLowerCase() },
+      select: { id: true, role: true },
+    });
+
+    if (!currentUser || !["ADMIN", "EDITOR"].includes(currentUser.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -168,9 +197,9 @@ export async function DELETE(
         action: "DELETE" as any,
         entityType: "User",
         entityId: id,
-        userId: session.user.email || "admin",
+        userId: currentUser.id,
         details: {
-          removedBy: session.user.email,
+          removedBy: userEmail,
         },
       },
     });

@@ -67,6 +67,8 @@ export default function MediaLibraryPage() {
   });
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; mediaId: string | null }>({ show: false, mediaId: null });
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -135,21 +137,33 @@ export default function MediaLibraryPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this file?")) return;
+  function showDeleteModal(id: string) {
+    setDeleteModal({ show: true, mediaId: id });
+  }
 
+  function closeDeleteModal() {
+    setDeleteModal({ show: false, mediaId: null });
+  }
+
+  async function confirmDelete() {
+    if (!deleteModal.mediaId) return;
+
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/media?id=${id}`, {
+      const res = await fetch(`/api/admin/media?id=${deleteModal.mediaId}`, {
         method: "DELETE",
       });
 
       if (!res.ok) throw new Error("Failed to delete");
 
       toast.success("File deleted");
-      setMedia((prev) => prev.filter((m) => m.id !== id));
+      setMedia((prev) => prev.filter((m) => m.id !== deleteModal.mediaId));
       setSelectedMedia(null);
+      closeDeleteModal();
     } catch (error) {
       toast.error("Failed to delete file");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -200,7 +214,7 @@ export default function MediaLibraryPage() {
           />
           <label
             htmlFor="media-upload"
-            className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 bg-[#fff] border-2 border-black cursor-pointer ${
               uploading ? "opacity-50 pointer-events-none" : ""
             }`}
           >
@@ -364,7 +378,7 @@ export default function MediaLibraryPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(item.id);
+                          showDeleteModal(item.id);
                         }}
                         className="p-2 hover:bg-red-50 text-red-600 rounded"
                         title="Delete"
@@ -521,12 +535,46 @@ export default function MediaLibraryPage() {
 
           <div className="p-4 border-t">
             <button
-              onClick={() => handleDelete(selectedMedia.id)}
+              onClick={() => showDeleteModal(selectedMedia.id)}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50"
             >
               <Trash2 size={18} />
               Delete File
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+          <div className="bg-[#1e1e1e] border-2 border-[#2a2a2a] w-full max-w-md mx-4">
+            <div className="p-6 border-b border-[#2a2a2a]">
+              <h3 className="text-lg font-semibold text-white">Delete File</h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-[#888]">
+                Are you sure you want to delete this file? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-[#2a2a2a] flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-white text-black border-2 border-black hover:bg-[#f5f5f5] disabled:opacity-50 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white border-2 border-red-600 hover:bg-red-700 disabled:opacity-50 font-medium transition-colors"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/appwrite/auth";
 import { toast } from "sonner";
 import { User, Mail, Calendar, FileText, Trash2, Check, X } from "lucide-react";
 
@@ -28,6 +29,7 @@ const ROLE_COLORS = {
 const ROLE_OPTIONS = ["ADMIN", "EDITOR", "AUTHOR", "SUBSCRIBER"] as const;
 
 export default function UsersPage() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -35,12 +37,18 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (user?.email) {
+      fetchUsers();
+    }
+  }, [user?.email]);
 
   async function fetchUsers() {
+    if (!user?.email) return;
+
     try {
-      const res = await fetch("/api/users");
+      const res = await fetch("/api/users", {
+        headers: { "x-user-email": user.email },
+      });
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
@@ -55,7 +63,10 @@ export default function UsersPage() {
     try {
       const res = await fetch(`/api/users/${userId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-email": user?.email || "",
+        },
         body: JSON.stringify({ role: editRole }),
       });
 
@@ -81,6 +92,7 @@ export default function UsersPage() {
     try {
       const res = await fetch(`/api/users/${userId}`, {
         method: "DELETE",
+        headers: { "x-user-email": user?.email || "" },
       });
 
       if (!res.ok) {
@@ -153,9 +165,15 @@ export default function UsersPage() {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <User size={18} className="text-gray-600" />
-                      </div>
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#000000]"></div>
+                      )}
                       <div>
                         <div className="font-medium text-gray-900">{user.name}</div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">

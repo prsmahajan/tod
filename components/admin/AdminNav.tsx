@@ -81,9 +81,9 @@ export function AdminNav() {
   };
 
   return (
-    <nav className="bg-[#1a1a1a] text-white w-60 min-h-screen flex flex-col">
+    <nav className="bg-[#1a1a1a] text-white w-60 h-screen flex flex-col">
       {/* Logo/Brand */}
-      <div className="p-4 border-b border-[#2a2a2a]">
+      <div className="p-4 border-b border-[#2a2a2a] flex-shrink-0">
         <Link href="/admin" className="flex items-center gap-3 group">
           <img
             src="/images/logo-dark.png"
@@ -123,7 +123,7 @@ export function AdminNav() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors relative ${
+                      className={`nav-item flex items-center gap-3 px-4 py-2 text-sm transition-colors relative ${
                         active
                           ? "bg-[#2a2a2a] text-white"
                           : "text-[#999] hover:text-white hover:bg-[#222]"
@@ -145,7 +145,7 @@ export function AdminNav() {
       </div>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-[#2a2a2a]">
+      <div className="p-4 border-t border-[#2a2a2a] flex-shrink-0">
         <Link
           href="/app"
           className="flex items-center gap-2 text-sm text-[#999] hover:text-white transition-colors"

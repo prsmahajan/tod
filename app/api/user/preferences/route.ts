@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Account, Client } from 'node-appwrite';
+import { prisma } from '@/lib/db';
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -26,10 +27,36 @@ export async function PATCH(request: NextRequest) {
 
     const account = new Account(client);
 
-    // Update user preferences
+    // Get current user to get their email
+    const currentUser = await account.get();
+
+    // Update user preferences in Appwrite
     await account.updatePrefs({
       avatar,
     });
+
+    // SYNC TO POSTGRESQL - Save avatar to database so CMS can see it
+    if (currentUser.email) {
+      try {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: currentUser.email.toLowerCase() },
+        });
+
+        if (dbUser) {
+          await prisma.user.update({
+            where: { email: currentUser.email.toLowerCase() },
+            data: { avatar },
+          });
+          console.log('✅ Avatar synced to PostgreSQL for:', currentUser.email);
+        } else {
+          console.warn('⚠️ User not found in PostgreSQL database:', currentUser.email);
+          console.log('Avatar saved to Appwrite prefs only');
+        }
+      } catch (dbError) {
+        console.error('❌ Failed to sync avatar to PostgreSQL:', dbError);
+        // Don't fail the request if DB sync fails - Appwrite update succeeded
+      }
+    }
 
     return NextResponse.json({
       success: true,

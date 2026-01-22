@@ -81,7 +81,7 @@ export default function AnimalsPage() {
         <h1 className="text-3xl font-bold">Animals</h1>
         <Link
           href="/admin/animals/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-black text-[#fff] px-4 py-2 border-2 border-black hover:bg-white hover:text-[#000]"
         >
           <Plus size={20} />
           Add Animal

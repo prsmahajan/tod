@@ -1,18 +1,18 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 // UPDATE user
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const userEmail = req.headers.get("x-user-email");
+
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail.toLowerCase() },
+      select: { id: true, role: true },
     });
 
     if (!currentUser || currentUser.role !== "ADMIN") {
@@ -60,15 +60,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 // DELETE user
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const userEmail = req.headers.get("x-user-email");
+
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail.toLowerCase() },
+      select: { id: true, role: true },
     });
 
     if (!currentUser || currentUser.role !== "ADMIN") {
