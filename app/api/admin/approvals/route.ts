@@ -1,23 +1,18 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextResponse, NextRequest } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { createAuditLog } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 
 // GET - fetch posts pending approval
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR"].includes(user.role)) {
       return NextResponse.json({ error: "Only admins and editors can view pending approvals" }, { status: 403 });
     }
 
@@ -51,18 +46,14 @@ export async function GET(req: Request) {
 }
 
 // POST - approve or reject a post
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR"].includes(user.role)) {
       return NextResponse.json({ error: "Only admins and editors can approve posts" }, { status: 403 });
     }
 

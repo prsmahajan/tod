@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 import Link from "next/link";
 import {
   Popover,
@@ -15,6 +15,7 @@ interface LoginModalProps {
 
 export function LoginModal({ children }: LoginModalProps) {
   const router = useRouter();
+  const { login, signup } = useAuth();
   const [open, setOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -125,45 +126,22 @@ export function LoginModal({ children }: LoginModalProps) {
     const emailValue = email || String(fd.get("email") || "");
     const password = String(fd.get("password") || "");
 
-    if (emailExists) {
-      // Login flow
-      const res = await signIn("credentials", { email: emailValue, password, redirect: false });
-
-      if (res?.ok) {
+    try {
+      if (emailExists) {
+        // Login flow
+        await login(emailValue, password);
         handleOpenChange(false);
         router.refresh();
       } else {
-        setLoading(false);
-        const errorMessage = res?.error || "Invalid email or password";
-        setErr(errorMessage);
-      }
-    } else {
-      // Signup flow
-      const name = String(fd.get("name") || "");
-
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: emailValue, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoading(false);
-        setErr(data.error || "Signup failed");
-        return;
-      }
-
-      const result = await signIn("credentials", { email: emailValue, password, redirect: false });
-
-      if (result?.ok) {
+        // Signup flow
+        const name = String(fd.get("name") || "");
+        await signup(emailValue, password, name);
         handleOpenChange(false);
         router.refresh();
-      } else {
-        setLoading(false);
-        setErr("Auto-login failed. Please log in manually.");
       }
+    } catch (error: any) {
+      setLoading(false);
+      setErr(error.message || (emailExists ? "Invalid email or password" : "Signup failed"));
     }
   }
 

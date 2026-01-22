@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextResponse, NextRequest } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 
 // GET single animal by slug (public)
@@ -32,18 +31,14 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
 }
 
 // PUT update animal (admin only)
-export async function PUT(req: Request, { params }: { params: { slug: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
@@ -99,18 +94,14 @@ export async function PUT(req: Request, { params }: { params: { slug: string } }
 }
 
 // DELETE animal (admin only)
-export async function DELETE(req: Request, { params }: { params: { slug: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR"].includes(user.role)) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 

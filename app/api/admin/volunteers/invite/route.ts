@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -8,9 +8,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // POST /api/admin/volunteers/invite - Send invitation to become a volunteer
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
-
-    if (!session?.user) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -1,24 +1,19 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextResponse, NextRequest } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { put } from "@vercel/blob";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     // Authentication check
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
       return NextResponse.json(
         { error: "Insufficient permissions" },
         { status: 403 }

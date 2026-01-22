@@ -3,12 +3,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 import { useState } from "react";
 import { LoginModal } from "@/components/LoginModal";
 
 export function SiteHeader() {
-    const { data: session, status } = useSession();
+    const { user, loading: authLoading, logout } = useAuth();
     const [open, setOpen] = useState(false);
 
     function getFirstName(name?: string) {
@@ -16,6 +16,15 @@ export function SiteHeader() {
   const first = name.trim().split(" ")[0];
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
+
+    const handleSignOut = async () => {
+      try {
+        await logout();
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
+    };
     
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
@@ -43,10 +52,10 @@ export function SiteHeader() {
         </div>
 
         <nav className="flex items-center gap-2">
-          {status === "authenticated" ? (
+          {!authLoading && user ? (
         <div className="relative">
           <button onClick={() => setOpen((x) => !x)} className="flex items-center gap-3">
-            <span className="hidden sm:inline">Hi, {getFirstName(session?.user?.name ?? "User")}</span>
+            <span className="hidden sm:inline">Hi, {getFirstName(user.name ?? "User")}</span>
             <div className="w-8 h-8 rounded-md border grid place-items-center">
               {/* simple hamburger icon */}
               <div className="space-y-1">
@@ -60,7 +69,7 @@ export function SiteHeader() {
           {open && (
             <div className="absolute right-0 mt-2 w-40 rounded-md border bg-white shadow">
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={handleSignOut}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100"
               >
                 Log out
@@ -68,13 +77,13 @@ export function SiteHeader() {
             </div>
           )}
         </div>
-      ) : (
+      ) : !authLoading ? (
         <LoginModal>
           <button className="border px-3 py-1.5 rounded bg-black text-white hover:bg-gray-900">
             Log in
           </button>
         </LoginModal>
-      )}
+      ) : null}
         </nav>
       </div>
     </header>

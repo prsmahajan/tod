@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { MODERATION_STATUS } from "@/lib/moderation/constants";
-
-// Helper to get authenticated user (supports both NextAuth and Appwrite via header)
-async function getAuthenticatedUser(req: NextRequest) {
-  // First try NextAuth session
-  const session = await getServerSession(authOptions);
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-    return user;
-  }
-
-  // Fallback: Check x-user-email header (set by client when using Appwrite)
-  const userEmail = req.headers.get("x-user-email");
-  if (userEmail) {
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail.toLowerCase() },
-    });
-    return user;
-  }
-
-  return null;
-}
 
 // GET /api/moderation/queue - Get items from the moderation queue
 export async function GET(req: NextRequest) {
@@ -135,9 +111,8 @@ export async function GET(req: NextRequest) {
 // POST /api/moderation/queue - Add a new item to the moderation queue
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

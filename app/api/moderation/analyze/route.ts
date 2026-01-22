@@ -2,26 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { analyzeImage, getModerationDecision } from "@/lib/services/vision";
 import { MODERATION_STATUS } from "@/lib/moderation/constants";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 
 // POST /api/moderation/analyze - Analyze an image with AI
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
     // Allow authenticated users, system calls, or x-user-email header
     const apiKey = req.headers.get("x-api-key");
-    const userEmail = req.headers.get("x-user-email");
     const isSystemCall = apiKey === process.env.CRON_SECRET;
 
-    let isAuthorized = isSystemCall || !!session?.user?.email;
+    let isAuthorized = isSystemCall;
 
-    // Check x-user-email header fallback
-    if (!isAuthorized && userEmail) {
-      const user = await prisma.user.findUnique({
-        where: { email: userEmail.toLowerCase() },
-      });
+    // Check for authenticated user
+    if (!isAuthorized) {
+      const user = await getAuthenticatedUser(req);
       isAuthorized = user ? ["ADMIN", "EDITOR"].includes(user.role) : false;
     }
 

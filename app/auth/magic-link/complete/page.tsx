@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 
 export default function MagicLinkCompletePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +23,7 @@ export default function MagicLinkCompletePage() {
       }
 
       try {
-        // First, verify the code is valid via API
+        // Verify the code and get email
         const verifyRes = await fetch("/api/auth/magic-link/check-verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -39,19 +40,10 @@ export default function MagicLinkCompletePage() {
 
         const email = verifyData.email;
 
-        // Now sign in using NextAuth with magic link authentication
-        const result = await signIn("credentials", {
-          email,
-          password: "__MAGIC_LINK__",
-          redirect: false,
-        });
-
-        if (result?.ok) {
-          router.replace(callbackUrl);
-        } else {
-          setError("Sign in failed. Please try again.");
-          setLoading(false);
-        }
+        // Appwrite requires password for email/password authentication
+        // Since magic links don't provide a password, we'll redirect to login
+        // with the email pre-filled so the user can enter their password
+        router.replace(`/login?email=${encodeURIComponent(email)}&magicLinkVerified=true`);
       } catch (err) {
         console.error("Magic link sign in error:", err);
         setError("An error occurred. Please try again.");
@@ -60,7 +52,7 @@ export default function MagicLinkCompletePage() {
     }
 
     completeSignIn();
-  }, [router, searchParams]);
+  }, [router, searchParams, refreshUser]);
 
   if (loading) {
     return (

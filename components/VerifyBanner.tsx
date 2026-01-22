@@ -1,9 +1,9 @@
 "use client";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 
 export default function VerifyBanner() {
-  const { data: session } = useSession();
-  const verified = !!(session as any)?.emailVerified;
+  const { user } = useAuth();
+  const verified = user?.emailVerification || false;
 
   if (verified) return null;
   return (

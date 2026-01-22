@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 import { Bookmark, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -13,23 +13,29 @@ interface SavePostButtonProps {
 }
 
 export function SavePostButton({ postId, className = "", showText = false }: SavePostButtonProps) {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      checkSavedStatus();
-    } else {
-      setChecking(false);
+    if (!authLoading) {
+      if (user) {
+        checkSavedStatus();
+      } else {
+        setChecking(false);
+      }
     }
-  }, [postId, status]);
+  }, [postId, user, authLoading]);
 
   async function checkSavedStatus() {
     try {
-      const res = await fetch(`/api/saved-posts/check?postId=${postId}`);
+      const res = await fetch(`/api/saved-posts/check?postId=${postId}`, {
+        headers: {
+          "x-user-email": user?.email || "",
+        },
+      });
       const data = await res.json();
       setSaved(data.saved);
     } catch (error) {
@@ -40,7 +46,7 @@ export function SavePostButton({ postId, className = "", showText = false }: Sav
   }
 
   async function toggleSave() {
-    if (status !== "authenticated") {
+    if (!user) {
       router.push("/login");
       return;
     }
@@ -48,10 +54,16 @@ export function SavePostButton({ postId, className = "", showText = false }: Sav
     setLoading(true);
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-user-email": user.email,
+      };
+
       if (saved) {
         // Unsave
         const res = await fetch(`/api/saved-posts?postId=${postId}`, {
           method: "DELETE",
+          headers,
         });
 
         if (res.ok) {
@@ -64,7 +76,7 @@ export function SavePostButton({ postId, className = "", showText = false }: Sav
         // Save
         const res = await fetch("/api/saved-posts", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ postId }),
         });
 
@@ -83,7 +95,7 @@ export function SavePostButton({ postId, className = "", showText = false }: Sav
     }
   }
 
-  if (checking) {
+  if (checking || authLoading) {
     return (
       <button
         disabled

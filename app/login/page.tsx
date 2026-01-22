@@ -25,6 +25,20 @@ export default function LoginPage() {
     }
   }, [user, loading, router, redirectTo]);
 
+  // Handle email from URL params (e.g., from magic link)
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+    
+    const magicLinkVerified = searchParams.get('magicLinkVerified');
+    if (magicLinkVerified === 'true') {
+      // Show a message that they need to enter password
+      // The email is already pre-filled
+    }
+  }, [searchParams]);
+
   // Check for OAuth errors
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -78,6 +92,11 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-8">
+            {searchParams.get('magicLinkVerified') === 'true' && (
+              <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm text-blue-500">
+                Magic link verified! Please enter your password to complete sign in.
+              </div>
+            )}
             {error && (
               <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500">
                 {error}

@@ -3,15 +3,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 import { User, LogOut, LayoutDashboard, Bookmark, Menu, X } from "lucide-react";
 import { LoginModal } from "@/components/LoginModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function Navbar() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,14 +25,37 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch user role from API
+  useEffect(() => {
+    if (user?.email) {
+      fetch(`/api/auth/check-role?email=${encodeURIComponent(user.email)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.role) {
+            setUserRole(data.role);
+          }
+        })
+        .catch(() => {
+          // Ignore errors
+        });
+    } else {
+      setUserRole(null);
+    }
+  }, [user]);
+
   const isAdmin = useMemo(
-    () => session?.user && ["ADMIN", "EDITOR", "AUTHOR"].includes((session.user as any).role),
-    [session]
+    () => userRole && ["ADMIN", "EDITOR", "AUTHOR"].includes(userRole),
+    [userRole]
   );
 
-  const handleSignOut = useCallback(() => {
-    signOut({ callbackUrl: "/" });
-  }, []);
+  const handleSignOut = useCallback(async () => {
+    try {
+      await logout();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  }, [logout]);
 
   const toggleDropdown = useCallback(() => {
     setOpen((x) => !x);
@@ -109,14 +133,14 @@ function Navbar() {
               )}
             </button>
             <ThemeToggle />
-            {status === "authenticated" ? (
+            {!authLoading && user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={toggleDropdown}
                   className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
                   <span className="hidden sm:inline text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {session?.user?.name ?? session?.user?.email ?? "User"}
+                    {user.name ?? user.email ?? "User"}
                   </span>
                   <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-full flex items-center justify-center">
                     <User size={16} className="text-slate-600 dark:text-slate-400" />
@@ -153,13 +177,13 @@ function Navbar() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : !authLoading ? (
               <LoginModal>
                 <button className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                   Log in
                 </button>
               </LoginModal>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

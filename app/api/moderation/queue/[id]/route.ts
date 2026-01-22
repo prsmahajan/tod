@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { MODERATION_STATUS } from "@/lib/moderation/constants";
-
-// Helper to get authenticated user
-async function getAuthenticatedUser(req: NextRequest) {
-  // First try NextAuth session
-  const session = await getServerSession(authOptions);
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-    return user;
-  }
-
-  // Fallback: Check x-user-email header
-  const userEmail = req.headers.get("x-user-email");
-  if (userEmail) {
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail.toLowerCase() },
-    });
-    return user;
-  }
-
-  return null;
-}
 
 // GET /api/moderation/queue/[id] - Get a specific queue item
 export async function GET(

@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextResponse, NextRequest } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { createAuditLog, createPostVersion } from "@/lib/audit";
@@ -31,18 +30,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // UPDATE post
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR", "AUTHOR"].includes(user.role)) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
@@ -193,18 +188,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 // DELETE post
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user || !["ADMIN", "EDITOR"].includes(user.role)) {
+    if (!["ADMIN", "EDITOR"].includes(user.role)) {
       return NextResponse.json({ error: "Only admins and editors can delete posts" }, { status: 403 });
     }
 

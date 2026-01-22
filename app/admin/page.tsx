@@ -1,10 +1,7 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
 import { FileText, Users, Mail, Eye } from "lucide-react";
 
 export default async function AdminDashboard() {
-  const session = await getServerSession(authOptions);
 
   const [postsCount, subscribersCount, publishedCount] = await Promise.all([
     prisma.post.count(),

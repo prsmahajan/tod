@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/lib/appwrite/auth";
 import Link from "next/link";
 import { Bookmark, Calendar, Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -34,23 +34,29 @@ interface SavedPostData {
 }
 
 export default function SavedPostsPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [savedPosts, setSavedPosts] = useState<SavedPostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
-      fetchSavedPosts();
+    if (!authLoading) {
+      if (!user) {
+        router.push("/login");
+      } else {
+        fetchSavedPosts();
+      }
     }
-  }, [status, router]);
+  }, [user, authLoading, router]);
 
   async function fetchSavedPosts() {
     try {
-      const res = await fetch("/api/saved-posts");
+      const res = await fetch("/api/saved-posts", {
+        headers: {
+          "x-user-email": user?.email || "",
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setSavedPosts(data);
@@ -69,6 +75,9 @@ export default function SavedPostsPage() {
     try {
       const res = await fetch(`/api/saved-posts?postId=${postId}`, {
         method: "DELETE",
+        headers: {
+          "x-user-email": user?.email || "",
+        },
       });
 
       if (res.ok) {
@@ -84,7 +93,7 @@ export default function SavedPostsPage() {
     }
   }
 
-  if (status === "loading" || loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-[#212121]" size={48} />
