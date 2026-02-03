@@ -28,9 +28,10 @@ interface SupportCardProps {
   isProcessing: boolean;
   paymentMode: PaymentMode;
   currencySymbol?: string;
+  isInternational?: boolean;
 }
 
-const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description, popular, onSupport, isProcessing, paymentMode, currencySymbol = '₹' }) => {
+const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description, popular, onSupport, isProcessing, paymentMode, currencySymbol = '₹', isInternational = false }) => {
   const [displayAmount, setDisplayAmount] = React.useState(amount);
   const [isAnimating, setIsAnimating] = React.useState(false);
 
@@ -67,7 +68,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
         disabled={isProcessing}
         className={`mt-6 w-full px-6 py-3 font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${popular ? 'bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90' : 'bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)]'}`}
       >
-        {isProcessing ? 'Processing...' : paymentMode === 'subscribe' ? 'Subscribe' : 'Support Now'}
+        {isProcessing ? 'Processing...' : isInternational ? 'Donate via Ko-fi' : paymentMode === 'subscribe' ? 'Subscribe' : 'Support Now'}
       </button>
     </div>
   );
@@ -290,7 +291,31 @@ const SupportPage: React.FC = () => {
     }
   };
 
+  // Handle Ko-fi payment for international users
+  const handleKofiPayment = (amount: number, planType: PlanType) => {
+    // Ko-fi page URL - user needs to set this up
+    const kofiUsername = process.env.NEXT_PUBLIC_KOFI_USERNAME || 'theopendraft';
+    
+    // Open Ko-fi page in new tab
+    // Ko-fi will handle the payment, user can choose their amount there
+    const kofiUrl = `https://ko-fi.com/${kofiUsername}`;
+    
+    toast.info(`Redirecting to Ko-fi for international payment...`, {
+      description: `You'll be able to donate $${amount} or any amount you choose.`,
+    });
+    
+    window.open(kofiUrl, '_blank');
+    setIsProcessing(false);
+  };
+
   const handleSupport = (amount: number, planType: PlanType) => {
+    // For international users (USD), use Ko-fi
+    if (!isIndia) {
+      handleKofiPayment(amount, planType);
+      return;
+    }
+
+    // For Indian users (INR), use Razorpay
     if (!razorpayLoaded) {
       toast.warning('Payment gateway is loading. Please try again.');
       return;
@@ -325,31 +350,47 @@ const SupportPage: React.FC = () => {
           </header>
         </AnimatedSection>
 
-        {/* Payment Mode Toggle: One-time vs Subscribe */}
-        <AnimatedSection>
-          <div className="mt-10 max-w-md mx-auto relative p-1 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)]">
-            <div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--color-text-primary)] rounded-full transition-all duration-500 ease-out"
-              style={{ left: paymentMode === 'one-time' ? '4px' : 'calc(50%)' }}
-            />
-            <div className="relative flex">
-              <button
-                onClick={() => setPaymentMode('one-time')}
-                disabled={isProcessing}
-                className={`w-1/2 py-3 text-sm font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${paymentMode === 'one-time' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
-              >
-                One-time Donation
-              </button>
-              <button
-                onClick={() => setPaymentMode('subscribe')}
-                disabled={isProcessing}
-                className={`w-1/2 py-3 text-sm font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${paymentMode === 'subscribe' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
-              >
-                Subscribe (Auto-pay)
-              </button>
+        {/* Payment Mode Toggle: One-time vs Subscribe (only for Indian users) */}
+        {isIndia ? (
+          <AnimatedSection>
+            <div className="mt-10 max-w-md mx-auto relative p-1 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)]">
+              <div
+                className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--color-text-primary)] rounded-full transition-all duration-500 ease-out"
+                style={{ left: paymentMode === 'one-time' ? '4px' : 'calc(50%)' }}
+              />
+              <div className="relative flex">
+                <button
+                  onClick={() => setPaymentMode('one-time')}
+                  disabled={isProcessing}
+                  className={`w-1/2 py-3 text-sm font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${paymentMode === 'one-time' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+                >
+                  One-time Donation
+                </button>
+                <button
+                  onClick={() => setPaymentMode('subscribe')}
+                  disabled={isProcessing}
+                  className={`w-1/2 py-3 text-sm font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${paymentMode === 'subscribe' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+                >
+                  Subscribe (Auto-pay)
+                </button>
+              </div>
             </div>
-          </div>
-        </AnimatedSection>
+          </AnimatedSection>
+        ) : (
+          <AnimatedSection>
+            <div className="mt-10 max-w-md mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-border)]">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311z"/>
+                </svg>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">Powered by Ko-fi</span>
+              </div>
+              <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
+                International payments are processed securely via Ko-fi (0% platform fee)
+              </p>
+            </div>
+          </AnimatedSection>
+        )}
 
         {/* Billing Cycle Toggle (only for subscriptions) */}
         {paymentMode === 'subscribe' && (
@@ -390,8 +431,9 @@ const SupportPage: React.FC = () => {
               description="Feeds one animal for a week. A small act with a big impact."
               onSupport={handleSupport}
               isProcessing={isProcessing}
-              paymentMode={paymentMode}
+              paymentMode={isIndia ? paymentMode : 'one-time'}
               currencySymbol={currencySymbol}
+              isInternational={!isIndia}
             />
             <SupportCard
               amount={currentAmounts.sprout}
@@ -400,8 +442,9 @@ const SupportPage: React.FC = () => {
               popular
               onSupport={handleSupport}
               isProcessing={isProcessing}
-              paymentMode={paymentMode}
+              paymentMode={isIndia ? paymentMode : 'one-time'}
               currencySymbol={currencySymbol}
+              isInternational={!isIndia}
             />
             <SupportCard
               amount={currentAmounts.tree}
@@ -409,8 +452,9 @@ const SupportPage: React.FC = () => {
               description="Contributes to a temporary shelter or a vet visit."
               onSupport={handleSupport}
               isProcessing={isProcessing}
-              paymentMode={paymentMode}
+              paymentMode={isIndia ? paymentMode : 'one-time'}
               currencySymbol={currencySymbol}
+              isInternational={!isIndia}
             />
           </div>
         </AnimatedSection>
