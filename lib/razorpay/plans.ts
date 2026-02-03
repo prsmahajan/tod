@@ -1,12 +1,12 @@
 // Razorpay Subscription Plan Configuration
 // These plans need to be created in Razorpay Dashboard or via API
 
+// Plans with amounts for both INR and USD
 export const SUBSCRIPTION_PLANS = {
   // Weekly Plans
   seedling_weekly: {
     name: 'Seedling Weekly',
-    amount: 29,
-    currency: 'INR',
+    amounts: { INR: 29, USD: 1 },
     interval: 1,
     period: 'weekly',
     planType: 'seedling' as const,
@@ -14,8 +14,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   sprout_weekly: {
     name: 'Sprout Weekly',
-    amount: 99,
-    currency: 'INR',
+    amounts: { INR: 99, USD: 2 },
     interval: 1,
     period: 'weekly',
     planType: 'sprout' as const,
@@ -23,8 +22,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   tree_weekly: {
     name: 'Tree Weekly',
-    amount: 199,
-    currency: 'INR',
+    amounts: { INR: 199, USD: 3 },
     interval: 1,
     period: 'weekly',
     planType: 'tree' as const,
@@ -33,8 +31,7 @@ export const SUBSCRIPTION_PLANS = {
   // Monthly Plans
   seedling_monthly: {
     name: 'Seedling Monthly',
-    amount: 79,
-    currency: 'INR',
+    amounts: { INR: 79, USD: 1 },
     interval: 1,
     period: 'monthly',
     planType: 'seedling' as const,
@@ -42,8 +39,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   sprout_monthly: {
     name: 'Sprout Monthly',
-    amount: 499,
-    currency: 'INR',
+    amounts: { INR: 499, USD: 6 },
     interval: 1,
     period: 'monthly',
     planType: 'sprout' as const,
@@ -51,14 +47,15 @@ export const SUBSCRIPTION_PLANS = {
   },
   tree_monthly: {
     name: 'Tree Monthly',
-    amount: 999,
-    currency: 'INR',
+    amounts: { INR: 999, USD: 12 },
     interval: 1,
     period: 'monthly',
     planType: 'tree' as const,
     description: 'Feed 10 stray animals monthly',
   },
 } as const;
+
+export type Currency = 'INR' | 'USD';
 
 export type PlanKey = keyof typeof SUBSCRIPTION_PLANS;
 export type PlanType = 'seedling' | 'sprout' | 'tree';
@@ -68,7 +65,12 @@ export function getPlanKey(planType: PlanType, billingCycle: BillingCycle): Plan
   return `${planType}_${billingCycle}` as PlanKey;
 }
 
-export function getPlanDetails(planType: PlanType, billingCycle: BillingCycle) {
+export function getPlanDetails(planType: PlanType, billingCycle: BillingCycle, currency: Currency = 'INR') {
   const key = getPlanKey(planType, billingCycle);
-  return SUBSCRIPTION_PLANS[key];
+  const plan = SUBSCRIPTION_PLANS[key];
+  return {
+    ...plan,
+    amount: plan.amounts[currency],
+    currency,
+  };
 }

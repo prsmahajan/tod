@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const keySecret = process.env.RAZORPAY_TEST_KEY;
+    const keySecret = process.env.RAZORPAY_LIVE_KEY;
 
     if (!keySecret) {
       console.error('Razorpay key secret not configured');

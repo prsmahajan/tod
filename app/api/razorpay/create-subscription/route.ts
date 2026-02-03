@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { SUBSCRIPTION_PLANS, getPlanKey, PlanType, BillingCycle } from '@/lib/razorpay/plans';
+import { getPlanDetails, PlanType, BillingCycle, Currency } from '@/lib/razorpay/plans';
 
 export async function POST(req: NextRequest) {
   try {
-    const { planType, billingCycle, customerEmail, customerName, customerContact } = await req.json();
+    const { planType, billingCycle, currency, customerEmail, customerName, customerContact } = await req.json();
 
     // Validate inputs
     if (!planType || !billingCycle) {
@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate and default currency
+    const validCurrency: Currency = currency === 'USD' ? 'USD' : 'INR';
 
     const keyId = process.env.RAZORPAY_LIVE_ID;
     const keySecret = process.env.RAZORPAY_LIVE_KEY;
@@ -29,9 +32,8 @@ export async function POST(req: NextRequest) {
       key_secret: keySecret,
     });
 
-    // Get plan details
-    const planKey = getPlanKey(planType as PlanType, billingCycle as BillingCycle);
-    const planDetails = SUBSCRIPTION_PLANS[planKey];
+    // Get plan details with the specified currency
+    const planDetails = getPlanDetails(planType as PlanType, billingCycle as BillingCycle, validCurrency);
 
     if (!planDetails) {
       return NextResponse.json(
@@ -42,6 +44,8 @@ export async function POST(req: NextRequest) {
 
     // First, create or get the plan in Razorpay
     let planId: string;
+    // Include currency in plan name to differentiate INR vs USD plans
+    const planName = `${planDetails.name} (${validCurrency})`;
 
     try {
       // Try to create the plan (will fail if already exists with same name)
@@ -49,9 +53,9 @@ export async function POST(req: NextRequest) {
         period: planDetails.period,
         interval: planDetails.interval,
         item: {
-          name: planDetails.name,
-          amount: planDetails.amount * 100, // Convert to paise
-          currency: planDetails.currency,
+          name: planName,
+          amount: planDetails.amount * 100, // Convert to smallest unit (paise/cents)
+          currency: validCurrency,
           description: planDetails.description,
         },
       });
@@ -63,9 +67,9 @@ export async function POST(req: NextRequest) {
         period: planDetails.period,
         interval: planDetails.interval,
         item: {
-          name: `${planDetails.name}_${Date.now()}`,
+          name: `${planName}_${Date.now()}`,
           amount: planDetails.amount * 100,
-          currency: planDetails.currency,
+          currency: validCurrency,
           description: planDetails.description,
         },
       });
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
       subscriptionId: subscription.id,
       planId: planId,
       amount: planDetails.amount,
-      currency: planDetails.currency,
+      currency: validCurrency,
       planType,
       billingCycle,
       shortUrl: subscription.short_url,
