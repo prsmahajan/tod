@@ -2,11 +2,12 @@
 // These plans need to be created in Razorpay Dashboard or via API
 
 // Plans with amounts for both INR and USD
+// USD prices are higher to cover payment processing fees and provide meaningful support
 export const SUBSCRIPTION_PLANS = {
   // Weekly Plans
   seedling_weekly: {
     name: 'Seedling Weekly',
-    amounts: { INR: 29, USD: 1 },
+    amounts: { INR: 29, USD: 3 },
     interval: 1,
     period: 'weekly',
     planType: 'seedling' as const,
@@ -14,7 +15,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   sprout_weekly: {
     name: 'Sprout Weekly',
-    amounts: { INR: 99, USD: 2 },
+    amounts: { INR: 99, USD: 5 },
     interval: 1,
     period: 'weekly',
     planType: 'sprout' as const,
@@ -22,7 +23,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   tree_weekly: {
     name: 'Tree Weekly',
-    amounts: { INR: 199, USD: 3 },
+    amounts: { INR: 199, USD: 10 },
     interval: 1,
     period: 'weekly',
     planType: 'tree' as const,
@@ -31,7 +32,7 @@ export const SUBSCRIPTION_PLANS = {
   // Monthly Plans
   seedling_monthly: {
     name: 'Seedling Monthly',
-    amounts: { INR: 79, USD: 1 },
+    amounts: { INR: 79, USD: 5 },
     interval: 1,
     period: 'monthly',
     planType: 'seedling' as const,
@@ -39,7 +40,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   sprout_monthly: {
     name: 'Sprout Monthly',
-    amounts: { INR: 499, USD: 6 },
+    amounts: { INR: 499, USD: 10 },
     interval: 1,
     period: 'monthly',
     planType: 'sprout' as const,
@@ -47,7 +48,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   tree_monthly: {
     name: 'Tree Monthly',
-    amounts: { INR: 999, USD: 12 },
+    amounts: { INR: 999, USD: 25 },
     interval: 1,
     period: 'monthly',
     planType: 'tree' as const,

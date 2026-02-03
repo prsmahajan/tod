@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/lib/appwrite/auth';
 import Script from 'next/script';
 import { toast } from 'sonner';
-import { detectUserLocationClient, getPriceForLocation } from '@/lib/geolocation';
+import { detectUserLocationClient } from '@/lib/geolocation';
 
 declare global {
   interface Window {
@@ -74,6 +74,60 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
   );
 };
 
+// Ko-fi Modal Component
+const KofiModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  kofiUsername: string;
+}> = ({ isOpen, onClose, kofiUsername }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div className="relative w-full max-w-lg mx-4 bg-[var(--color-bg)] rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
+          <div className="flex items-center gap-2">
+            <svg className="w-6 h-6 text-[#ff5e5b]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311z"/>
+            </svg>
+            <span className="font-medium text-[var(--color-text-primary)]">Support via Ko-fi</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-[var(--color-card-bg)] transition-colors"
+          >
+            <svg className="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {/* Iframe */}
+        <div className="relative" style={{ height: '500px' }}>
+          <iframe
+            src={`https://ko-fi.com/${kofiUsername}/?hidefeed=true&widget=true&embed=true`}
+            style={{ border: 'none', width: '100%', height: '100%', background: '#f9f9f9' }}
+            title="Ko-fi Donation"
+            allow="payment"
+          />
+        </div>
+        {/* Footer */}
+        <div className="p-3 border-t border-[var(--color-border)] text-center">
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            Secure payment via PayPal • 0% platform fee
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SupportPage: React.FC = () => {
   const { user, loading } = useAuth();
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('one-time');
@@ -83,6 +137,9 @@ const SupportPage: React.FC = () => {
   const [isIndia, setIsIndia] = useState(true);
   const [currencySymbol, setCurrencySymbol] = useState('₹');
   const [locationDetected, setLocationDetected] = useState(false);
+  const [showKofiModal, setShowKofiModal] = useState(false);
+  
+  const kofiUsername = process.env.NEXT_PUBLIC_KOFI_USERNAME || 'theopendraft';
 
   // Detect user location on mount
   useEffect(() => {
@@ -102,23 +159,28 @@ const SupportPage: React.FC = () => {
     detectLocation();
   }, []);
 
-  // Base amounts in INR
+  // Base amounts in INR and USD
   const oneTimeAmountsINR = { seedling: 99, sprout: 499, tree: 999 };
+  const oneTimeAmountsUSD = { seedling: 5, sprout: 10, tree: 25 };
   const subscriptionAmountsINR: Record<BillingCycle, Record<PlanType, number>> = {
     weekly: { seedling: 29, sprout: 99, tree: 199 },
     monthly: { seedling: 79, sprout: 499, tree: 999 },
   };
+  const subscriptionAmountsUSD: Record<BillingCycle, Record<PlanType, number>> = {
+    weekly: { seedling: 3, sprout: 5, tree: 10 },
+    monthly: { seedling: 5, sprout: 10, tree: 25 },
+  };
 
-  // Get base amounts
+  // Get base amounts based on location and payment mode
   const baseAmounts = paymentMode === 'one-time'
-    ? oneTimeAmountsINR
-    : subscriptionAmountsINR[billingCycle];
+    ? (isIndia ? oneTimeAmountsINR : oneTimeAmountsUSD)
+    : (isIndia ? subscriptionAmountsINR[billingCycle] : subscriptionAmountsUSD[billingCycle]);
 
-  // Convert amounts based on location
+  // Current amounts to display
   const currentAmounts = {
-    seedling: getPriceForLocation(baseAmounts.seedling, isIndia).amount,
-    sprout: getPriceForLocation(baseAmounts.sprout, isIndia).amount,
-    tree: getPriceForLocation(baseAmounts.tree, isIndia).amount,
+    seedling: baseAmounts.seedling,
+    sprout: baseAmounts.sprout,
+    tree: baseAmounts.tree,
   };
 
   // Handle one-time payment
@@ -293,19 +355,8 @@ const SupportPage: React.FC = () => {
 
   // Handle Ko-fi payment for international users
   const handleKofiPayment = (amount: number, planType: PlanType) => {
-    // Ko-fi page URL - user needs to set this up
-    const kofiUsername = process.env.NEXT_PUBLIC_KOFI_USERNAME || 'theopendraft';
-    
-    // Open Ko-fi page in new tab
-    // Ko-fi will handle the payment, user can choose their amount there
-    const kofiUrl = `https://ko-fi.com/${kofiUsername}`;
-    
-    toast.info(`Redirecting to Ko-fi for international payment...`, {
-      description: `You'll be able to donate $${amount} or any amount you choose.`,
-    });
-    
-    window.open(kofiUrl, '_blank');
-    setIsProcessing(false);
+    // Open Ko-fi modal overlay
+    setShowKofiModal(true);
   };
 
   const handleSupport = (amount: number, planType: PlanType) => {
@@ -334,6 +385,13 @@ const SupportPage: React.FC = () => {
         src="https://checkout.razorpay.com/v1/checkout.js"
         onLoad={() => setRazorpayLoaded(true)}
         onError={() => toast.error('Payment gateway failed to load. Please refresh.')}
+      />
+      
+      {/* Ko-fi Modal for international payments */}
+      <KofiModal
+        isOpen={showKofiModal}
+        onClose={() => setShowKofiModal(false)}
+        kofiUsername={kofiUsername}
       />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32">
         <AnimatedSection>
@@ -481,7 +539,7 @@ const SupportPage: React.FC = () => {
           </AnimatedSection>
         )}
 
-        {!loading && !user && (
+        {!loading && !user && isIndia && (
           <AnimatedSection>
             <div className="mt-8 text-center bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-6 max-w-2xl mx-auto">
               <p className="text-sm text-[var(--color-text-secondary)]">
