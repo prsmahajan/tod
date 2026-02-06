@@ -11,6 +11,10 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/api/'],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: [
+      `${baseUrl}/sitemap.xml`,
+      'https://todr.in/sitemap.xml',
+    ],
+    host: 'https://theopendraft.com',
   };
 }

@@ -9,7 +9,7 @@ import AnimatedSection from '@/components/AnimatedSection';
 export default function SignupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading, signup, loginWithGoogle } = useAuth();
+  const { user, loading, signup, loginWithGoogle, sendVerificationEmail } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
 
   const redirectTo = searchParams.get('redirect') || '/app';
 
@@ -59,7 +60,15 @@ export default function SignupPage() {
         // Don't block signup if subscriber addition fails
       }
 
-      router.push(redirectTo);
+      // Send verification email
+      try {
+        await sendVerificationEmail();
+        setShowVerificationPrompt(true);
+      } catch (verifyError) {
+        console.error('Failed to send verification email:', verifyError);
+        // Still redirect even if verification email fails
+        router.push(redirectTo);
+      }
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -79,6 +88,43 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
         <p className="text-[var(--color-text-secondary)]">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show verification prompt after successful signup
+  if (showVerificationPrompt) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] px-4 pt-20 pb-10">
+        <AnimatedSection>
+          <div className="w-full max-w-md text-center">
+            <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-8">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-green-500/10 flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h1 className="font-heading text-2xl font-bold text-[var(--color-text-primary)] mb-2">
+                Check Your Email
+              </h1>
+              <p className="text-[var(--color-text-secondary)] mb-6">
+                We've sent a verification link to <strong className="text-[var(--color-text-primary)]">{email}</strong>. 
+                Click the link to verify your account.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push(redirectTo)}
+                  className="w-full px-6 py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg font-medium hover:opacity-90 transition-opacity"
+                >
+                  Continue to Dashboard
+                </button>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Didn't receive the email? Check your spam folder or request a new one from your dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
       </div>
     );
   }

@@ -8,6 +8,7 @@ import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import { RelatedPosts } from "@/components/RelatedPosts";
 import { TableOfContents } from "@/components/TableOfContents";
 import { PostViews } from "@/components/PostViews";
+import ArticleContent from "@/components/ArticleContent";
 import { Clock } from "lucide-react";
 
 export async function generateStaticParams() {
@@ -78,19 +79,19 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
 
   return (
     <>
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-[var(--color-bg)]">
         <div className="max-w-[1200px] mx-auto px-4 py-16">
           <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8">
             <article className="max-w-3xl">
               <Link
                 href="/articles"
-                className="inline-block mb-8 text-[#212121] underline hover:opacity-70 transition-opacity"
+                className="inline-block mb-8 text-[var(--color-text-secondary)] underline hover:text-[var(--color-text-primary)] transition-colors"
               >
                 ← Back to all posts
               </Link>
 
               {post.coverImage && (
-                <div className="mb-8 overflow-hidden">
+                <div className="mb-8 overflow-hidden rounded-lg">
                   <img
                     src={post.coverImage}
                     alt={post.title}
@@ -100,13 +101,13 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
               )}
 
               <header className="mb-8">
-                <h1 className="text-4xl font-semibold mb-4 text-black">{post.title}</h1>
+                <h1 className="text-4xl font-semibold mb-4 text-[var(--color-text-primary)]">{post.title}</h1>
 
                 {post.excerpt && (
-                  <p className="text-base text-[#212121] mb-6 leading-relaxed">{post.excerpt}</p>
+                  <p className="text-base text-[var(--color-text-secondary)] mb-6 leading-relaxed">{post.excerpt}</p>
                 )}
 
-                <div className="flex items-center gap-4 text-[#212121] mb-6">
+                <div className="flex items-center gap-4 text-[var(--color-text-secondary)] mb-6">
                   {post.author.avatar && (
                     <img
                       src={post.author.avatar}
@@ -115,7 +116,7 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
                     />
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold text-black">{post.author.name}</p>
+                    <p className="font-semibold text-[var(--color-text-primary)]">{post.author.name}</p>
                     <div className="flex items-center gap-3 text-sm">
                       <time>
                         {post.publishedAt
@@ -142,7 +143,7 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
                     {post.categories.map(({ category }) => (
                       <span
                         key={category.id}
-                        className="px-3 py-1 bg-[#FAFAFA] text-[#212121] border border-[#E5E5E5] text-sm"
+                        className="px-3 py-1 bg-[var(--color-card-bg)] text-[var(--color-text-secondary)] border border-[var(--color-border)] text-sm rounded"
                       >
                         {category.name}
                       </span>
@@ -155,13 +156,15 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
                 </div>
               </header>
 
-              <div
-                className="prose prose-lg max-w-none bg-white"
-                dangerouslySetInnerHTML={{ __html: post.content }}
+              <ArticleContent
+                slug={post.slug}
+                title={post.title}
+                content={post.content}
+                excerpt={post.excerpt}
               />
 
               {/* Social Sharing */}
-              <div className="mt-8 p-6 bg-[#FAFAFA] border border-[#E5E5E5]">
+              <div className="mt-8 p-6 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg">
                 <SocialShare
                   url={`/articles/${post.slug}`}
                   title={post.title}
@@ -170,9 +173,9 @@ export default async function NewsletterPostPage({ params }: { params: { slug: s
               </div>
 
               {post.author.bio && (
-                <div className="mt-12 p-6 bg-[#FAFAFA] border border-[#E5E5E5]">
-                  <h3 className="font-semibold text-lg mb-2 text-black">About the Author</h3>
-                  <p className="text-[#212121]">{post.author.bio}</p>
+                <div className="mt-12 p-6 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2 text-[var(--color-text-primary)]">About the Author</h3>
+                  <p className="text-[var(--color-text-secondary)]">{post.author.bio}</p>
                 </div>
               )}
 

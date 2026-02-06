@@ -87,7 +87,9 @@ export async function POST(req: NextRequest) {
 
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       // Production: Upload to Vercel Blob
-      const blob = await put(filename, file, {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const blob = await put(filename, buffer, {
         access: "public",
         addRandomSuffix: false,
       });

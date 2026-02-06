@@ -4,7 +4,16 @@ import { getPlanDetails, PlanType, BillingCycle, Currency } from '@/lib/razorpay
 
 export async function POST(req: NextRequest) {
   try {
-    const { planType, billingCycle, currency, customerEmail, customerName, customerContact } = await req.json();
+    const {
+      planType,
+      billingCycle,
+      currency,
+      customerEmail,
+      customerName,
+      customerContact,
+      displayAmount,
+      displayCurrency,
+    } = await req.json();
 
     // Validate inputs
     if (!planType || !billingCycle) {
@@ -86,6 +95,9 @@ export async function POST(req: NextRequest) {
         billingCycle,
         customerEmail,
         customerName,
+        // Store what the user actually sees/chooses on the frontend
+        displayAmount,
+        displayCurrency,
       },
     };
 

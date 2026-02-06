@@ -19,7 +19,7 @@ export function generateSEO({
   publishedTime,
   author,
 }: SEOProps): Metadata {
-  const siteName = 'The Open Draft';
+  const siteName = 'The Open Draft (TODR)';
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theopendraft.com';
   const fullUrl = url ? `${baseUrl}${url}` : baseUrl;

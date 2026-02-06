@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useAuth } from "@/lib/appwrite/auth";
 import {
   CheckCircle,
   XCircle,
@@ -43,6 +44,7 @@ interface Post {
 }
 
 export default function ApprovalsPage() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -50,13 +52,19 @@ export default function ApprovalsPage() {
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetchPendingPosts();
-  }, []);
+    if (user?.email) {
+      fetchPendingPosts();
+    }
+  }, [user?.email]);
 
   async function fetchPendingPosts() {
+    if (!user?.email) return;
+    
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/approvals");
+      const res = await fetch("/api/admin/approvals", {
+        headers: { "x-user-email": user.email },
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -75,6 +83,8 @@ export default function ApprovalsPage() {
   }
 
   async function handleAction(postId: string, action: "approve" | "reject") {
+    if (!user?.email) return;
+    
     const confirmMessage =
       action === "approve"
         ? "Are you sure you want to approve and publish this post?"
@@ -86,7 +96,10 @@ export default function ApprovalsPage() {
     try {
       const res = await fetch("/api/admin/approvals", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-user-email": user.email,
+        },
         body: JSON.stringify({
           postId,
           action,

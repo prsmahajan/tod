@@ -14,11 +14,12 @@ export default function ContributionsPage() {
 
   useEffect(() => {
     async function fetchTransactions() {
-      if (!user?.$id) return;
+      if (!user?.email) return;
 
       try {
         const queries = [
-          Query.equal('userId', user.$id),
+          // Query by email since transactions are recorded with userEmail from webhooks
+          Query.equal('userEmail', user.email),
           Query.orderDesc('$createdAt'),
         ];
 
@@ -41,7 +42,7 @@ export default function ContributionsPage() {
     }
 
     fetchTransactions();
-  }, [user?.$id, filter]);
+  }, [user?.email, filter]);
 
   const totalContributed = transactions
     .filter((t) => t.status === 'success')

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
+
+// Explicitly use the Node.js runtime here so that any
+// Node built-ins used by @vercel/blob (like `fs`) are supported.
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,13 +29,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload to Vercel Blob
-    const blob = await put(`profile-pictures/${Date.now()}-${file.name}`, file, {
-      access: 'public',
-    });
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const filename = `profile-pictures/${Date.now()}-${file.name}`;
+
+    let url: string;
+
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      // Production / Vercel: upload to Vercel Blob
+      const blob = await put(filename, buffer, {
+        access: 'public',
+      });
+      url = blob.url;
+    } else {
+      // Local dev: save to /public/uploads so no Blob dev server is needed
+      const outputPath = join(process.cwd(), 'public', 'uploads', filename);
+      await writeFile(outputPath, buffer);
+      url = `/uploads/${filename}`;
+    }
 
     return NextResponse.json({
-      url: blob.url,
+      url,
       message: 'Profile picture uploaded successfully',
     });
   } catch (error: any) {

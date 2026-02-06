@@ -4,7 +4,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import AnimatedSection from '@/components/AnimatedSection';
 import { useTypeText } from '@/hooks/useTypeText';
 import Icon from '@/components/Icon';
-// REMOVED: import Marquee from '@/components/Marquee';  <-- We don't need this anymore
+import CommunityStats from '@/components/CommunityStats';
+import SupportersWall from '@/components/SupportersWall';
 import Footer from '@/components/Footer';
 
 // --- Types ---
@@ -167,6 +168,29 @@ const ImpactPage: React.FC = () => {
           <HeroHeader />
         </AnimatedSection>
 
+        {/* Community Stats Section */}
+        <AnimatedSection className="mt-16">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-sm font-medium text-[var(--color-accent)] uppercase tracking-wider mb-2">Live Stats</p>
+              <h2 className="font-heading text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
+                Our Community in Numbers
+              </h2>
+              <p className="mt-2 text-[var(--color-text-secondary)]">
+                Real-time data from our supporters making a difference
+              </p>
+            </div>
+            <CommunityStats />
+          </div>
+        </AnimatedSection>
+
+        {/* Supporters Wall Section */}
+        <AnimatedSection className="mt-20">
+          <div className="max-w-5xl mx-auto bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl p-8 md:p-12">
+            <SupportersWall />
+          </div>
+        </AnimatedSection>
+
         <AnimatedSection>
           {/* Custom CSS Marquee Container */}
           <div className="mt-20 -mx-8 sm:-mx-16 lg:-mx-32 overflow-hidden select-none pointer-events-auto">
@@ -183,14 +207,14 @@ const ImpactPage: React.FC = () => {
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           <AnimatedSection direction="left">
             <ImpactCard
-              imageUrl="https://picsum.photos/seed/feeding-impact/800/600"
+              imageUrl="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800&h=600&fit=crop&q=80"
               title="Feeding"
               description="Consistent meals for strays in multiple city zones, ensuring no animal goes hungry. We focus on nutritious food to help them regain strength and health."
             />
           </AnimatedSection>
           <AnimatedSection direction="right">
             <ImpactCard
-              imageUrl="https://picsum.photos/seed/shelter-impact/800/600"
+              imageUrl="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=600&fit=crop&q=80"
               title="Shelter"
               description="Building and maintaining temporary, safe shelters to protect animals from harsh weather and street dangers, giving them a safe space to rest and recover."
               delay={0.5}
@@ -198,14 +222,14 @@ const ImpactPage: React.FC = () => {
           </AnimatedSection>
           <AnimatedSection direction="left">
             <ImpactCard
-              imageUrl="https://picsum.photos/seed/care-impact/800/600"
+              imageUrl="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=800&h=600&fit=crop&q=80"
               title="Care"
               description="Providing essential medical care, from first-aid for injuries to vaccinations and sterilization, with the help of volunteer vets and local clinics."
             />
           </AnimatedSection>
           <AnimatedSection direction="right">
             <ImpactCard
-              imageUrl="https://picsum.photos/seed/awareness-impact/800/600"
+              imageUrl="https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&h=600&fit=crop&q=80"
               title="Awareness"
               description="Running local awareness campaigns to educate the public about the importance of compassion towards stray animals and responsible pet ownership."
               delay={0.5}
@@ -222,14 +246,14 @@ const ImpactPage: React.FC = () => {
             <AnimatedSection direction="left">
               <StoryCard
                 name="Raja"
-                imageUrl="https://picsum.photos/seed/raja-dog/800/600"
+                imageUrl="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=600&fit=crop&q=80"
                 story="Found with a severe leg injury, Raja was timid and mistrustful. Through community-funded treatment and the patient care of a local volunteer, he's now a happy, healthy dog who loves to play, reminding us that every animal deserves a second chance."
               />
             </AnimatedSection>
             <AnimatedSection direction="right">
               <StoryCard
                 name="Misty"
-                imageUrl="https://picsum.photos/seed/misty-cat/800/600"
+                imageUrl="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&h=600&fit=crop&q=80"
                 story="A litter of kittens was found abandoned in a construction site. Our network quickly organized to provide them with a safe, temporary shelter and nutritious food. Misty, the bravest of the bunch, was the first to find her forever home."
               />
             </AnimatedSection>
@@ -266,7 +290,7 @@ const ImpactPage: React.FC = () => {
               </a>
             </div>
             <div className="order-1 md:order-2">
-              <img src="https://picsum.photos/seed/volunteer-with-dog/800/600" alt="Volunteer with a stray dog" className="rounded-lg object-cover w-full h-full" />
+              <img src="https://images.unsplash.com/photo-1601758124096-1fd661873b95?w=800&h=600&fit=crop&q=80" alt="Volunteer with a stray dog" className="rounded-lg object-cover w-full h-full" />
             </div>
           </div>
         </AnimatedSection>

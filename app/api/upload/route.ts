@@ -59,7 +59,9 @@ export async function POST(req: NextRequest) {
     // Check if Vercel Blob is configured (production) or use local storage (development)
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       // Production: Upload to Vercel Blob storage
-      const blob = await put(filename, file, {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const blob = await put(filename, buffer, {
         access: "public",
         addRandomSuffix: false,
       });

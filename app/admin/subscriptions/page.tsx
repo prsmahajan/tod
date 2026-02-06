@@ -7,11 +7,14 @@ interface Subscription {
   id: string;
   name: string;
   email: string;
+  avatar?: string | null;
   razorpaySubscriptionId: string | null;
   subscriptionStatus: string | null;
   subscriptionStartedAt: string | null;
   subscriptionEndsAt: string | null;
   nextBillingDate: string | null;
+  latestBillingAmount: number | null;
+  billingCycle: string | null;
   animalsFed: number;
   createdAt: string;
 }
@@ -32,7 +35,14 @@ const STATUS_COLORS: Record<string, string> = {
   paused: "bg-yellow-500/10 text-yellow-600",
   pending: "bg-blue-500/10 text-blue-500",
   expired: "bg-gray-500/10 text-gray-500",
+  // New statuses for mandate/payment issues
+  payment_pending: "bg-orange-500/10 text-orange-600",
+  halted: "bg-red-500/10 text-red-600",
+  authenticated: "bg-blue-500/10 text-blue-500",
 };
+
+// Statuses that indicate the subscription is at risk
+const AT_RISK_STATUSES = ["payment_pending", "halted", "cancelled", "expired"];
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -43,6 +53,9 @@ export default function SubscriptionsPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [hoveredEmail, setHoveredEmail] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -109,6 +122,99 @@ export default function SubscriptionsPage() {
     }
   };
 
+  // Verify a single subscription against Razorpay
+  const handleVerifySubscription = async (razorpaySubscriptionId: string) => {
+    if (!razorpaySubscriptionId) {
+      toast.error("No Razorpay subscription ID");
+      return;
+    }
+
+    setVerifyingId(razorpaySubscriptionId);
+
+    try {
+      const res = await fetch("/api/razorpay/verify-subscription", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ razorpaySubscriptionId }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.statusChanged) {
+          toast.warning(`Status changed: ${data.previousStatus} → ${data.newStatus}`, {
+            description: data.newStatus === "halted" || data.newStatus === "payment_pending"
+              ? "User may have revoked their UPI mandate"
+              : undefined,
+          });
+        } else {
+          toast.success("Subscription verified - status unchanged");
+        }
+        fetchSubscriptions();
+      } else {
+        toast.error(data.error || "Failed to verify subscription");
+      }
+    } catch (error) {
+      toast.error("Failed to verify subscription");
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  // Verify all active subscriptions
+  const handleVerifyAll = async () => {
+    setVerifying(true);
+    toast.info("Verifying all active subscriptions...", { duration: 2000 });
+
+    try {
+      // Get all active subscriptions with Razorpay IDs
+      const activeSubs = subscriptions.filter(
+        (s) => s.subscriptionStatus === "active" && s.razorpaySubscriptionId
+      );
+
+      let changed = 0;
+      let errors = 0;
+
+      for (const sub of activeSubs) {
+        try {
+          const res = await fetch("/api/razorpay/verify-subscription", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ razorpaySubscriptionId: sub.razorpaySubscriptionId }),
+          });
+
+          const data = await res.json();
+          if (res.ok && data.statusChanged) {
+            changed++;
+          }
+        } catch {
+          errors++;
+        }
+
+        // Small delay to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
+      if (changed > 0) {
+        toast.warning(`Verification complete: ${changed} subscription(s) had status changes`, {
+          description: "Some users may have revoked their UPI mandates",
+        });
+      } else {
+        toast.success(`Verified ${activeSubs.length} subscriptions - all in sync`);
+      }
+
+      if (errors > 0) {
+        toast.error(`${errors} subscription(s) failed to verify`);
+      }
+
+      fetchSubscriptions();
+    } catch (error) {
+      toast.error("Failed to verify subscriptions");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -134,6 +240,29 @@ export default function SubscriptionsPage() {
     return days;
   };
 
+  const getFirstName = (fullName: string | null | undefined) => {
+    if (!fullName) return "Unnamed";
+    const parts = fullName.trim().split(/\s+/);
+    return parts[0] || fullName;
+  };
+
+  const getMaskedEmail = (email: string | null | undefined) => {
+    if (!email) return "••••••••";
+    const [local, domain] = email.split("@");
+    if (!domain) return "••••••••";
+    const visiblePrefix = local.slice(0, 2);
+    return `${visiblePrefix}••••@${domain}`;
+  };
+
+  const copyEmailToClipboard = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email);
+      toast.success("Email copied to clipboard");
+    } catch {
+      toast.error("Failed to copy email");
+    }
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -144,15 +273,32 @@ export default function SubscriptionsPage() {
             Manage paid subscriptions and view revenue analytics
           </p>
         </div>
-        <button
-          onClick={() => window.open("https://dashboard.razorpay.com/app/subscriptions", "_blank")}
-          className="px-4 py-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg text-sm font-medium hover:bg-[var(--color-border)] cursor-pointer flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-          Razorpay Dashboard
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleVerifyAll}
+            disabled={verifying}
+            className="px-4 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-500/20 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Check all subscriptions against Razorpay to detect revoked mandates"
+          >
+            {verifying ? (
+              <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            {verifying ? "Verifying..." : "Verify All"}
+          </button>
+          <button
+            onClick={() => window.open("https://dashboard.razorpay.com/app/subscriptions", "_blank")}
+            className="px-4 py-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg text-sm font-medium hover:bg-[var(--color-border)] cursor-pointer flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Razorpay Dashboard
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -246,6 +392,9 @@ export default function SubscriptionsPage() {
                       Next Billing
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Contribution
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       Impact
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
@@ -260,18 +409,59 @@ export default function SubscriptionsPage() {
                       <tr key={sub.id} className="hover:bg-[var(--color-bg)] transition-colors">
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-medium text-[var(--color-text-primary)]">{sub.name}</p>
-                            <p className="text-sm text-[var(--color-text-secondary)]">{sub.email}</p>
+                            <p className="font-medium text-[var(--color-text-primary)]">
+                              {getFirstName(sub.name)}
+                            </p>
+                            <div 
+                              className="flex items-center gap-2 group"
+                              onMouseEnter={() => setHoveredEmail(sub.id)}
+                              onMouseLeave={() => setHoveredEmail(null)}
+                            >
+                              <p 
+                                className="text-sm text-[var(--color-text-secondary)] cursor-pointer"
+                                onClick={() => copyEmailToClipboard(sub.email)}
+                                title="Click to copy email"
+                              >
+                                {hoveredEmail === sub.id ? sub.email : getMaskedEmail(sub.email)}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => copyEmailToClipboard(sub.email)}
+                                className="p-1 rounded-full hover:bg-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer"
+                                title="Click to copy email"
+                              >
+                                {hoveredEmail === sub.id ? (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              STATUS_COLORS[sub.subscriptionStatus || "pending"] || STATUS_COLORS.pending
-                            }`}
-                          >
-                            {sub.subscriptionStatus || "No Subscription"}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                STATUS_COLORS[sub.subscriptionStatus || "pending"] || STATUS_COLORS.pending
+                              }`}
+                            >
+                              {sub.subscriptionStatus || "No Subscription"}
+                            </span>
+                            {/* At-risk indicator */}
+                            {AT_RISK_STATUSES.includes(sub.subscriptionStatus || "") && (
+                              <span title="Subscription at risk - mandate may be revoked">
+                                <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                                </svg>
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-sm text-[var(--color-text-secondary)]">
@@ -279,7 +469,11 @@ export default function SubscriptionsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          {sub.nextBillingDate ? (
+                          {sub.subscriptionStatus === "CANCELLED" ? (
+                            <span className="text-sm text-[var(--color-text-secondary)]">
+                              Cancelled autopay
+                            </span>
+                          ) : sub.nextBillingDate ? (
                             <div>
                               <p className="text-sm text-[var(--color-text-primary)]">
                                 {formatDate(sub.nextBillingDate)}
@@ -303,15 +497,41 @@ export default function SubscriptionsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
+                          <span className="text-sm text-[var(--color-text-primary)]">
+                            {sub.latestBillingAmount != null
+                              ? formatCurrency(sub.latestBillingAmount)
+                              : "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                             </svg>
-                            <span className="font-medium text-[var(--color-text-primary)]">{sub.animalsFed}</span>
+                            <span className="font-medium text-[var(--color-text-primary)]">
+                              {sub.animalsFed}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            {/* Verify button */}
+                            {sub.razorpaySubscriptionId && (
+                              <button
+                                onClick={() => handleVerifySubscription(sub.razorpaySubscriptionId!)}
+                                disabled={verifyingId === sub.razorpaySubscriptionId}
+                                className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                title="Verify with Razorpay"
+                              >
+                                {verifyingId === sub.razorpaySubscriptionId ? (
+                                  <div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
                             <button
                               onClick={() => setSelectedSubscription(sub)}
                               className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border)] rounded-lg transition-colors cursor-pointer"
@@ -394,8 +614,16 @@ export default function SubscriptionsPage() {
 
               {/* User Info */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center text-lg font-bold">
-                  {selectedSubscription.name.charAt(0).toUpperCase()}
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-white border border-[var(--color-border)] flex items-center justify-center text-lg font-bold text-black">
+                  {selectedSubscription.avatar ? (
+                    <img
+                      src={selectedSubscription.avatar}
+                      alt={selectedSubscription.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    selectedSubscription.name.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div>
                   <h3 className="font-semibold text-[var(--color-text-primary)]">{selectedSubscription.name}</h3>

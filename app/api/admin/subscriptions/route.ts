@@ -1,5 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { databases, DATABASE_ID, COLLECTIONS, Query, users } from "@/lib/appwrite/server";
+import { getSubscriptionByEmail } from "@/lib/subscription-sync";
+
+async function calculateTotalRevenue(): Promise<number> {
+  try {
+    let total = 0;
+    let cursor: string | undefined;
+
+    // Paginate through all successful transaction documents to sum amounts.
+    // This is safe for current scale and can be optimized later if needed.
+    // Appwrite max limit is 100 per page, so we loop until fewer than 100 docs are returned.
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const queries = [Query.limit(100)];
+      if (cursor) {
+        queries.push(Query.cursorAfter(cursor));
+      }
+
+      const res = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.TRANSACTIONS,
+        [
+          ...queries,
+          Query.equal("status", "success"),
+        ]
+      );
+
+      for (const doc of res.documents as any[]) {
+        if (typeof doc.amount === "number") {
+          total += doc.amount;
+        }
+      }
+
+      if (res.documents.length < 100) {
+        break;
+      }
+
+      cursor = res.documents[res.documents.length - 1].$id;
+    }
+
+    return total;
+  } catch (error) {
+    console.error("Error calculating total revenue from Appwrite:", error);
+    return 0;
+  }
+}
+
+async function calculateMrr(): Promise<number> {
+  try {
+    let mrr = 0;
+    let cursor: string | undefined;
+
+    // Fetch active subscriptions from Appwrite and approximate MRR
+    // Weekly plans are converted to monthly by multiplying by 4.
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const queries = [
+        Query.limit(100),
+        Query.equal("status", "active"),
+      ];
+      if (cursor) {
+        queries.push(Query.cursorAfter(cursor));
+      }
+
+      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, queries);
+
+      for (const doc of res.documents as any[]) {
+        const amount = typeof doc.amount === "number" ? doc.amount : 0;
+        const billingCycle = doc.billingCycle || "monthly";
+
+        if (!amount) continue;
+
+        if (billingCycle === "weekly") {
+          // Approximate 4 weeks per month
+          mrr += amount * 4;
+        } else {
+          // Treat anything else as monthly for now
+          mrr += amount;
+        }
+      }
+
+      if (res.documents.length < 100) {
+        break;
+      }
+
+      cursor = res.documents[res.documents.length - 1].$id;
+    }
+
+    return mrr;
+  } catch (error) {
+    console.error("Error calculating MRR from Appwrite:", error);
+    return 0;
+  }
+}
 
 // GET /api/admin/subscriptions - Get all subscriptions with stats
 export async function GET(req: NextRequest) {
@@ -64,6 +158,7 @@ export async function GET(req: NextRequest) {
           id: true,
           name: true,
           email: true,
+          avatar: true,
           razorpaySubscriptionId: true,
           subscriptionStatus: true,
           subscriptionStartedAt: true,
@@ -89,20 +184,142 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    // Enrich subscriptions with latest billing amount and fallback metadata.
+    // We prefer the Appwrite SUBSCRIPTIONS amount, but if that's missing/zero
+    // we fall back to the latest successful subscription transaction.
+    const enrichedSubscriptions = await Promise.all(
+      subscriptions.map(async (sub) => {
+        try {
+          const appwriteSub = await getSubscriptionByEmail(sub.email);
+          let latestBillingAmount = appwriteSub ? appwriteSub.amount : null;
+          let billingCycle = appwriteSub ? appwriteSub.billingCycle : null;
+          let planType = appwriteSub ? (appwriteSub as any).planType || null : null;
+          let avatar = (sub as any).avatar || null;
+
+          // Prefer the human-readable name stored in Appwrite subscriptions
+          // (userName) since that's what the supporter entered when
+          // subscribing. Fall back to the Postgres user.name, then finally
+          // to the email prefix.
+          const effectiveName =
+            (appwriteSub as any)?.userName ||
+            sub.name ||
+            sub.email.split("@")[0];
+
+          // If subscriptionStartedAt is missing in Postgres, use the
+          // Appwrite subscription creation time so the "Started" column
+          // always has a meaningful value.
+          const effectiveStartedAt =
+            sub.subscriptionStartedAt || (appwriteSub ? appwriteSub.$createdAt : null);
+
+          // If the subscription amount in Appwrite is missing or zero,
+          // look at the most recent successful subscription transaction.
+          if (!latestBillingAmount || latestBillingAmount <= 0) {
+            const txRes = await databases.listDocuments(
+              DATABASE_ID,
+              COLLECTIONS.TRANSACTIONS,
+              [
+                Query.equal("userEmail", sub.email),
+                Query.equal("type", "subscription"),
+                Query.equal("status", "success"),
+                Query.orderDesc("$createdAt"),
+                Query.limit(1),
+              ]
+            );
+
+            if (txRes.documents.length > 0) {
+              const tx = txRes.documents[0] as any;
+              latestBillingAmount = typeof tx.amount === "number" ? tx.amount : latestBillingAmount;
+              billingCycle = tx.billingCycle || billingCycle;
+              planType = tx.planType || planType;
+            }
+          }
+
+          // Estimate impact:
+          //  - seedling → 1 animal per billing
+          //  - sprout   → 2 animals per billing
+          //  - tree     → 5 animals per billing
+          // Fallback to amount bands when planType is missing.
+          let perCycleImpact = 0;
+          if (planType === "seedling") perCycleImpact = 1;
+          else if (planType === "sprout") perCycleImpact = 2;
+          else if (planType === "tree") perCycleImpact = 5;
+          else if (latestBillingAmount && latestBillingAmount > 0) {
+            if (latestBillingAmount <= 100) perCycleImpact = 1;
+            else if (latestBillingAmount <= 600) perCycleImpact = 2;
+            else perCycleImpact = 5;
+          }
+
+          // Count successful subscription billing cycles for this user
+          let totalCycles = 0;
+          try {
+            const allTxRes = await databases.listDocuments(
+              DATABASE_ID,
+              COLLECTIONS.TRANSACTIONS,
+              [
+                Query.equal("userEmail", sub.email),
+                Query.equal("type", "subscription"),
+                Query.equal("status", "success"),
+                Query.limit(100),
+              ]
+            );
+            totalCycles = allTxRes.documents.length;
+          } catch (txError) {
+            console.error("Error counting subscription transactions for impact:", txError);
+          }
+
+          const totalImpact = perCycleImpact * totalCycles;
+
+          // If we don't have an avatar in Postgres, try to read it from the
+          // Appwrite user prefs (where the profile page stores it).
+          if (!avatar && appwriteSub) {
+            try {
+              const appwriteUser = await users.get(appwriteSub.userId);
+              avatar = (appwriteUser as any).prefs?.avatar || null;
+            } catch (userError) {
+              console.error("Error fetching Appwrite user avatar:", userError);
+            }
+          }
+
+          return {
+            ...sub,
+            name: effectiveName,
+            subscriptionStartedAt: effectiveStartedAt,
+            latestBillingAmount,
+            billingCycle,
+            planType,
+            avatar,
+            animalsFed: totalImpact,
+          };
+        } catch (error) {
+          console.error("Error enriching subscription with Appwrite data:", error);
+          return {
+            ...sub,
+            latestBillingAmount: null,
+            billingCycle: null,
+          };
+        }
+      })
+    );
+
+    const [mrr, totalRevenue] = await Promise.all([
+      calculateMrr(),
+      calculateTotalRevenue(),
+    ]);
+
     const stats = {
       totalSubscribers,
       activeSubscriptions: activeCount,
       cancelledSubscriptions: cancelledCount,
       pausedSubscriptions: pausedCount,
       totalAnimalsFed: animalsFedSum._sum.animalsFed || 0,
-      // MRR calculation (assuming Rs. 199/month per active subscriber)
-      mrr: activeCount * 199,
-      // Estimated total revenue (basic calculation)
-      totalRevenue: totalSubscribers * 199 * 6, // Rough estimate
+      // MRR and total revenue are now calculated from real
+      // Appwrite subscription and transaction data.
+      mrr,
+      totalRevenue,
     };
 
     return NextResponse.json({
-      subscriptions,
+      subscriptions: enrichedSubscriptions,
       stats,
       pagination: {
         page,

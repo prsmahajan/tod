@@ -1,15 +1,23 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth, account } from '@/lib/appwrite/auth';
 import { toast } from 'sonner';
 import { Upload, User as UserIcon } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [savingName, setSavingName] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user?.name) {
+      setName(user.name);
+    }
+  }, [user?.name]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,6 +87,37 @@ export default function ProfilePage() {
   };
 
   const currentAvatar = previewUrl || user?.prefs?.avatar;
+
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+
+    setSavingName(true);
+    try {
+      // Update name in Appwrite auth profile
+      await account.updateName(trimmed);
+
+      // Update name in PostgreSQL profile (used in admin dashboard, uploads, etc.)
+      await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      });
+
+      await refreshUser();
+      toast.success('Name updated successfully');
+    } catch (error: any) {
+      console.error('Name update error:', error);
+      toast.error(error.message || 'Failed to update name');
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -151,16 +190,16 @@ export default function ProfilePage() {
             Account Information
           </h2>
 
-          <div className="space-y-4">
+          <form onSubmit={handleSaveName} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-2">
                 Name
               </label>
               <input
                 type="text"
-                value={user?.name || ''}
-                disabled
-                className="w-full px-4 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] disabled:opacity-60"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)]"
               />
             </div>
 
@@ -178,7 +217,14 @@ export default function ProfilePage() {
                 Contact support to change your email address
               </p>
             </div>
-          </div>
+            <button
+              type="submit"
+              disabled={savingName}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {savingName ? 'Saving...' : 'Save Changes'}
+            </button>
+          </form>
         </div>
       </div>
     </div>

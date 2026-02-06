@@ -12,14 +12,14 @@ export async function GET() {
     },
   });
 
-  const baseUrl = process.env.NEXTAUTH_URL || "https://theopendraft.com";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://theopendraft.com";
 
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>The Open Draft</title>
+    <title>The Open Draft (TODR)</title>
     <link>${baseUrl}</link>
-    <description>Tech education while feeding stray animals across India</description>
+    <description>The Open Draft (todr.in) - Tech education while feeding stray animals across India</description>
     <language>en</language>
     <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml"/>
     ${posts

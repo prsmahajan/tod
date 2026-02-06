@@ -463,6 +463,35 @@ html.black {
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+  opacity: 0;
+}
+
 @keyframes marquee-scroll {
   0% {
     transform: translateX(0);
@@ -706,6 +735,11 @@ html.black {
 
 .cms-theme-light nav a.nav-item {
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+/* Dashboard hover override for light mode */
+.cms-theme-light .cms-main .hover\:bg-\[\#222\]:hover {
+  background-color: var(--cms-hover-bg, #f3f4f6) !important;
 }
 
 /* CMS Dark Theme */

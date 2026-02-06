@@ -36,11 +36,11 @@ export async function syncSubscriptionToPostgres(
     });
 
     if (!user) {
-      // Create user if doesn't exist
+      // Create user if doesn't exist, prefer the name the user chose at signup
       user = await prisma.user.create({
         data: {
           email: appwriteSubscription.userEmail,
-          name: appwriteSubscription.userEmail.split('@')[0], // Default name
+          name: appwriteSubscription.userName || appwriteSubscription.userEmail.split('@')[0],
           passwordHash: '', // No password for now
           role: 'SUBSCRIBER',
         },
@@ -65,6 +65,9 @@ export async function syncSubscriptionToPostgres(
       data: {
         razorpaySubscriptionId: appwriteSubscription.razorpaySubscriptionId,
         subscriptionStatus: subscriptionStatus,
+        // Use the Appwrite subscription creation time as the "Started" date
+        // so the admin dashboard shows when the user first subscribed.
+        subscriptionStartedAt: new Date(appwriteSubscription.$createdAt),
         subscriptionEndsAt: new Date(appwriteSubscription.currentPeriodEnd),
         nextBillingDate: new Date(appwriteSubscription.currentPeriodEnd),
       },

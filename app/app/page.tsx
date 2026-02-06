@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/appwrite/auth';
 import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
 import type { Transaction, Subscription, UserPhoto } from '@/lib/appwrite/types';
+import PersonalImpact from '@/components/PersonalImpact';
 
 interface Stats {
   totalContributed: number;
@@ -14,6 +15,15 @@ interface Stats {
   photosApproved: number;
   activeSubscription: Subscription | null;
 }
+
+// Fallback amounts when subscription.amount is 0
+const getFallbackAmount = (planType: string, billingCycle: string): number => {
+  const isWeekly = billingCycle === 'weekly';
+  if (planType === 'seedling') return isWeekly ? 29 : 79;
+  if (planType === 'sprout') return isWeekly ? 99 : 499;
+  if (planType === 'tree') return isWeekly ? 199 : 999;
+  return 0;
+};
 
 export default function DashboardOverview() {
   const { user } = useAuth();
@@ -29,15 +39,15 @@ export default function DashboardOverview() {
 
   useEffect(() => {
     async function fetchDashboardData() {
-      if (!user?.$id) return;
+      if (!user?.email) return;
 
       try {
-        // Fetch transactions
+        // Fetch transactions by email (webhooks record userEmail, not always userId)
         const transactionsResponse = await databases.listDocuments(
           DATABASE_ID,
           COLLECTIONS.TRANSACTIONS,
           [
-            Query.equal('userId', user.$id),
+            Query.equal('userEmail', user.email),
             Query.equal('status', 'success'),
             Query.orderDesc('$createdAt'),
             Query.limit(5),
@@ -52,17 +62,17 @@ export default function DashboardOverview() {
           DATABASE_ID,
           COLLECTIONS.TRANSACTIONS,
           [
-            Query.equal('userId', user.$id),
+            Query.equal('userEmail', user.email),
             Query.equal('status', 'success'),
           ]
         );
 
-        // Fetch active subscription
+        // Fetch active subscription by email
         const subscriptionsResponse = await databases.listDocuments(
           DATABASE_ID,
           COLLECTIONS.SUBSCRIPTIONS,
           [
-            Query.equal('userId', user.$id),
+            Query.equal('userEmail', user.email),
             Query.equal('status', 'active'),
             Query.limit(1),
           ]
@@ -70,7 +80,7 @@ export default function DashboardOverview() {
 
         const activeSubscription = subscriptionsResponse.documents[0] as unknown as Subscription | null;
 
-        // Fetch photos
+        // Fetch photos (keep userId for photos as they're uploaded directly)
         const photosResponse = await databases.listDocuments(
           DATABASE_ID,
           COLLECTIONS.USER_PHOTOS,
@@ -98,7 +108,7 @@ export default function DashboardOverview() {
     }
 
     fetchDashboardData();
-  }, [user?.$id]);
+  }, [user?.email, user?.$id]);
 
   if (loading) {
     return (
@@ -116,6 +126,18 @@ export default function DashboardOverview() {
       <p className="mt-2 text-[var(--color-text-secondary)]">
         Here&apos;s an overview of your contributions and activity.
       </p>
+
+      {/* Personal Impact Section */}
+      <div className="mt-8">
+        <PersonalImpact
+          totalContributed={stats.totalContributed}
+          transactionCount={stats.transactionCount}
+          subscriptionStartDate={stats.activeSubscription?.$createdAt}
+          planType={stats.activeSubscription?.planType}
+          billingCycle={stats.activeSubscription?.billingCycle}
+          amount={stats.activeSubscription?.amount}
+        />
+      </div>
 
       {/* Stats Grid */}
       <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -152,7 +174,7 @@ export default function DashboardOverview() {
             <div>
               <p className="text-sm text-green-600 font-medium">Active Subscription</p>
               <p className="mt-1 font-heading text-xl font-bold text-[var(--color-text-primary)]">
-                {stats.activeSubscription.planType.charAt(0).toUpperCase() + stats.activeSubscription.planType.slice(1)} - ₹{stats.activeSubscription.amount}/{stats.activeSubscription.billingCycle === 'weekly' ? 'week' : 'month'}
+                {stats.activeSubscription.planType.charAt(0).toUpperCase() + stats.activeSubscription.planType.slice(1)} - ₹{stats.activeSubscription.amount > 0 ? stats.activeSubscription.amount : getFallbackAmount(stats.activeSubscription.planType, stats.activeSubscription.billingCycle)}/{stats.activeSubscription.billingCycle === 'weekly' ? 'week' : 'month'}
               </p>
               {stats.activeSubscription.currentPeriodEnd && (
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">

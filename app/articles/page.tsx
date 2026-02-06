@@ -5,6 +5,17 @@ import { SearchBar } from "@/components/SearchBar";
 import { Calendar } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
 import Footer from "@/components/Footer";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Articles - Tech Education for Animal Welfare",
+  description: "Read insightful technology articles on The Open Draft. Every read supports feeding stray animals across India. Simple explanations, real impact.",
+  openGraph: {
+    title: "Articles | The Open Draft",
+    description: "Tech articles that make a difference. Every read supports stray animal welfare in India.",
+    url: "https://theopendraft.com/articles",
+  },
+};
 
 // Revalidate every 60 seconds for Vercel (ISR)
 export const revalidate = 60;

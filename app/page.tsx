@@ -5,6 +5,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useTypeText } from "@/hooks/useTypeText";
+import CommunityStats from "@/components/CommunityStats";
 
 export default function HomePage() {
   const animatedText = useTypeText(["Technology", "Compassion", "Community", "Action"], 1500, 100);
@@ -37,6 +38,21 @@ export default function HomePage() {
               </Link>
             </div>
           </header>
+        </AnimatedSection>
+
+        {/* Community Stats Banner */}
+        <AnimatedSection className="mt-20">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8">
+              <p className="text-center text-sm text-[var(--color-text-secondary)] mb-4">Powered by our growing community</p>
+              <CommunityStats variant="compact" />
+              <div className="mt-6 text-center">
+                <Link href="/impact" className="text-sm text-[var(--color-accent)] hover:underline">
+                  See full impact details →
+                </Link>
+              </div>
+            </div>
+          </div>
         </AnimatedSection>
 
         {/* How It Works Section */}

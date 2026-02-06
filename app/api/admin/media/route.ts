@@ -106,7 +106,9 @@ export async function POST(req: NextRequest) {
 
     // Upload to Vercel Blob
     const filename = `media/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const blob = await put(filename, file, {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const blob = await put(filename, buffer, {
       access: "public",
     });
 

@@ -78,18 +78,18 @@ export function SearchBar() {
   return (
     <div ref={searchRef} className="relative w-full max-w-2xl mx-auto">
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]" size={20} />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search articles..."
-          className="w-full pl-12 pr-12 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
+          className="w-full pl-12 pr-12 py-3 border-2 border-[var(--color-border)] rounded-xl focus:border-[var(--color-accent)] focus:outline-none bg-[var(--color-card-bg)] text-[var(--color-text-primary)] placeholder-[var(--color-text-secondary)]"
         />
         {query && (
           <button
             onClick={clearSearch}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           >
             <X size={20} />
           </button>
@@ -98,14 +98,14 @@ export function SearchBar() {
 
       {/* Search Results Dropdown */}
       {showResults && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-2xl border border-gray-200 max-h-[500px] overflow-y-auto z-50">
+        <div className="absolute top-full mt-2 w-full bg-[var(--color-card-bg)] rounded-xl shadow-2xl border border-[var(--color-border)] max-h-[500px] overflow-y-auto z-50">
           {loading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-[var(--color-text-secondary)]">
               Searching...
             </div>
           ) : results.length > 0 ? (
             <div className="py-2">
-              <div className="px-4 py-2 text-sm text-gray-500 border-b">
+              <div className="px-4 py-2 text-sm text-[var(--color-text-secondary)] border-b border-[var(--color-border)]">
                 Found {results.length} result{results.length !== 1 ? 's' : ''}
               </div>
               {results.map((post) => (
@@ -113,7 +113,7 @@ export function SearchBar() {
                   key={post.id}
                   href={`/articles/${post.slug}`}
                   onClick={() => setShowResults(false)}
-                  className="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                  className="block px-4 py-3 hover:bg-[var(--color-bg)] border-b border-[var(--color-border)] last:border-b-0 transition-colors"
                 >
                   <div className="flex gap-3">
                     {post.coverImage && (
@@ -124,17 +124,17 @@ export function SearchBar() {
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                      <h3 className="font-semibold text-[var(--color-text-primary)] mb-1 line-clamp-1">
                         {post.title}
                       </h3>
                       {post.excerpt && (
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                        <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2 mb-2">
                           {post.excerpt}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                         {post.categories.length > 0 && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                          <span className="px-2 py-0.5 bg-[var(--color-bg)] text-[var(--color-text-primary)] rounded-full border border-[var(--color-border)]">
                             {post.categories[0].category.name}
                           </span>
                         )}
@@ -153,7 +153,7 @@ export function SearchBar() {
               ))}
             </div>
           ) : query.trim().length >= 2 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-[var(--color-text-secondary)]">
               No results found for "{query}"
             </div>
           ) : null}

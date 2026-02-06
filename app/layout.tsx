@@ -24,11 +24,15 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://theopendraft.com'),
   title: {
-    default: "The Open Draft - Learn Tech, Feed Stray Animals in India",
-    template: "%s | The Open Draft"
+    default: "The Open Draft (TODR) - Learn Tech, Feed Stray Animals in India",
+    template: "%s | The Open Draft (TODR)"
   },
-  description: "Join The Open Draft - a community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Make a real impact today.",
+  description: "The Open Draft (todr.in) — a community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Visit todr.in to make a real impact today.",
   keywords: [
+    "todr",
+    "todr.in",
+    "the open draft",
+    "theopendraft",
     "stray animals India",
     "feed stray dogs",
     "feed stray cats",
@@ -59,8 +63,8 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: 'https://theopendraft.com',
     siteName: 'The Open Draft',
-    title: 'The Open Draft - Learn Tech, Feed Stray Animals',
-    description: 'Technology education meets animal welfare. Every subscription feeds stray animals across India. Join our community and make a difference.',
+    title: 'The Open Draft (TODR) - Learn Tech, Feed Stray Animals',
+    description: 'The Open Draft (todr.in) — Technology education meets animal welfare. Every subscription feeds stray animals across India. Join our community.',
     images: [
       {
         url: '/og-image.png',
@@ -72,8 +76,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Open Draft - Learn Tech, Feed Stray Animals',
-    description: 'Technology education meets animal welfare. Every subscription feeds stray animals across India.',
+    title: 'The Open Draft (TODR) - Learn Tech, Feed Stray Animals',
+    description: 'The Open Draft (todr.in) — Technology education meets animal welfare. Every subscription feeds stray animals across India.',
     images: ['/og-image.png'],
     creator: '@theopendraft',
   },
@@ -90,13 +94,17 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://theopendraft.com',
+    languages: {
+      'en': 'https://todr.in',
+    },
     types: {
       'application/rss+xml': '/feed.xml',
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+  // Add your Google Search Console verification code here
+  // verification: {
+  //   google: 'your-actual-verification-code',
+  // },
   category: 'nonprofit',
 }
 
@@ -135,6 +143,56 @@ export default function RootLayout({
           type="application/rss+xml"
           title="The Open Draft RSS Feed"
           href="/feed.xml"
+        />
+        {/* JSON-LD Structured Data for Google */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "The Open Draft",
+              "alternateName": ["TODR", "todr.in", "The Open Draft"],
+              "url": "https://theopendraft.com",
+              "logo": "https://theopendraft.com/images/logo-dark.png",
+              "description": "A community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Also available at todr.in.",
+              "sameAs": [
+                "https://todr.in"
+              ],
+              "foundingDate": "2025",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "customer support",
+                "url": "https://theopendraft.com/contact"
+              }
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "The Open Draft",
+              "alternateName": ["TOD", "TODR", "todr.in"],
+              "url": "https://theopendraft.com",
+              "description": "The Open Draft (todr.in) - Learn Tech, Feed Stray Animals in India",
+              "publisher": {
+                "@type": "Organization",
+                "name": "The Open Draft",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://theopendraft.com/images/logo-dark.png"
+                }
+              },
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://theopendraft.com/articles?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
         />
         <script
           dangerouslySetInnerHTML={{
