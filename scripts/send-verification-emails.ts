@@ -2,18 +2,38 @@
  * Send verification emails to all unverified users
  * 
  * Usage:
- *   npx tsx scripts/send-verification-emails.ts
+ *   npm run send-verifications
+ * 
+ * Or manually:
+ *   npx tsx -r dotenv/config scripts/send-verification-emails.ts dotenv_config_path=.env.local
  */
 
+// Now import after env vars are loaded
 import { prisma } from '../lib/db';
 import { sendVerificationEmail } from '../lib/mail';
 import { createHash, randomBytes } from 'crypto';
-import { config } from 'dotenv';
-
-config({ path: '.env.local' });
 
 async function sendVerificationEmails() {
   try {
+    // Verify required environment variables
+    if (!process.env.RESEND_API_KEY) {
+      console.error('❌ Error: RESEND_API_KEY is not set in .env.local');
+      console.log('\nPlease add the following to your .env.local file:');
+      console.log('RESEND_API_KEY=re_your_api_key_here');
+      process.exit(1);
+    }
+
+    if (!process.env.EMAIL_FROM) {
+      console.error('❌ Error: EMAIL_FROM is not set in .env.local');
+      console.log('\nPlease add the following to your .env.local file:');
+      console.log('EMAIL_FROM=noreply@theopendraft.com');
+      process.exit(1);
+    }
+
+    console.log('✅ Environment variables loaded');
+    console.log(`   API Key: ${process.env.RESEND_API_KEY.substring(0, 8)}...`);
+    console.log(`   From: ${process.env.EMAIL_FROM}\n`);
+    
     console.log('🔍 Finding unverified users...\n');
 
     // Find all users without emailVerified

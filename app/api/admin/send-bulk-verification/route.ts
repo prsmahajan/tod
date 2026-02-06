@@ -66,11 +66,22 @@ export async function POST(req: NextRequest) {
         // Send email via Resend
         await sendVerificationEmail(user.email, verificationUrl);
         sent++;
+        
+        console.log(`✅ Sent verification to ${user.email}`);
+
+        // Add delay to avoid rate limiting (500ms between emails)
+        await new Promise(resolve => setTimeout(resolve, 500));
 
       } catch (error: any) {
         failed++;
         errors.push(`${user.email}: ${error.message}`);
-        console.error(`Failed to send to ${user.email}:`, error.message);
+        console.error(`❌ Failed to send to ${user.email}:`, error.message);
+        
+        // If rate limited, add longer delay
+        if (error.message.includes('rate') || error.message.includes('limit')) {
+          console.log('⏳ Rate limited, waiting 2 seconds...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       }
     }
 
