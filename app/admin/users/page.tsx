@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/appwrite/auth";
 import { toast } from "sonner";
-import { User, Mail, Calendar, FileText, Trash2, Check, X } from "lucide-react";
+import { User, Mail, Calendar, FileText, Trash2, Check, X, Send } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -35,6 +35,7 @@ export default function UsersPage() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [sendingVerification, setSendingVerification] = useState(false);
 
   useEffect(() => {
     if (user?.email) {
@@ -116,6 +117,46 @@ export default function UsersPage() {
     setEditRole("");
   }
 
+  async function handleSendBulkVerification() {
+    const unverifiedCount = users.filter(u => !u.emailVerified).length;
+    
+    if (unverifiedCount === 0) {
+      toast.info('All users are already verified!');
+      return;
+    }
+
+    if (!confirm(`Send verification emails to ${unverifiedCount} unverified users?`)) {
+      return;
+    }
+
+    setSendingVerification(true);
+    
+    try {
+      const res = await fetch('/api/admin/send-bulk-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user?.email || '',
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send verification emails');
+      }
+
+      toast.success(`Sent ${data.sent} verification emails`, {
+        description: data.failed > 0 ? `${data.failed} failed to send` : undefined,
+      });
+
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send verification emails');
+    } finally {
+      setSendingVerification(false);
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-12">Loading users...</div>;
   }
@@ -128,11 +169,26 @@ export default function UsersPage() {
     );
   }
 
+  const unverifiedCount = users.filter(u => !u.emailVerified).length;
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Users</h1>
-        <p className="text-gray-600">Manage user accounts and permissions</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Users</h1>
+          <p className="text-gray-600">Manage user accounts and permissions</p>
+        </div>
+        
+        {unverifiedCount > 0 && (
+          <button
+            onClick={handleSendBulkVerification}
+            disabled={sendingVerification}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black border border-black hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Send className="w-4 h-4" />
+            {sendingVerification ? 'Sending...' : `Send Verification (${unverifiedCount})`}
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-lg border">
@@ -161,28 +217,42 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {user.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#000000]"></div>
-                      )}
-                      <div>
-                        <div className="font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500 flex items-center gap-1">
-                          <Mail size={12} />
-                          {user.email}
+              {users.map((user) => {
+                const getInitials = (name: string) => {
+                  return name
+                    .split(' ')
+                    .map(word => word[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2);
+                };
+
+                return (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center">
+                            <span className="text-sm font-semibold text-gray-700">
+                              {getInitials(user.name)}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm text-gray-500 flex items-center gap-1">
+                            <Mail size={12} />
+                            {user.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
                   <td className="px-6 py-4">
                     {editingUserId === user.id ? (
                       <div className="flex items-center gap-2">
@@ -256,9 +326,10 @@ export default function UsersPage() {
                     >
                       <Trash2 size={16} />
                     </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

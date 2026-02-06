@@ -2,17 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Account, Client } from 'appwrite';
 import Link from 'next/link';
 import AnimatedSection from '@/components/AnimatedSection';
-
-// Initialize Appwrite client
-const client = new Client();
-client
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '');
-
-const account = new Account(client);
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -22,23 +13,34 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     const verifyEmail = async () => {
-      const userId = searchParams.get('userId');
-      const secret = searchParams.get('secret');
+      const token = searchParams.get('token');
+      const email = searchParams.get('email');
 
-      if (!userId || !secret) {
+      if (!token || !email) {
         setStatus('error');
         setMessage('Invalid verification link. Please request a new one.');
         return;
       }
 
       try {
-        await account.updateVerification(userId, secret);
+        const response = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, email }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Verification failed');
+        }
+
         setStatus('success');
         setMessage('Your email has been verified successfully!');
         
-        // Redirect to dashboard after 3 seconds
+        // Redirect to login after 3 seconds
         setTimeout(() => {
-          router.push('/app');
+          router.push('/login?verified=true');
         }, 3000);
       } catch (error: any) {
         console.error('Verification error:', error);
@@ -57,11 +59,9 @@ export default function VerifyEmailPage() {
           <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-8">
             {status === 'loading' && (
               <>
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--color-bg)] flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-[var(--color-border)] border-t-[var(--color-text-primary)] rounded-full animate-spin" />
-                </div>
+                <div className="w-16 h-16 mx-auto mb-6 border-4 border-[var(--color-border)] border-t-[var(--color-text-primary)] rounded-full animate-spin" />
                 <h1 className="font-heading text-2xl font-bold text-[var(--color-text-primary)] mb-2">
-                  Verifying Email
+                  Verifying...
                 </h1>
                 <p className="text-[var(--color-text-secondary)]">{message}</p>
               </>
@@ -78,15 +78,7 @@ export default function VerifyEmailPage() {
                   Email Verified!
                 </h1>
                 <p className="text-[var(--color-text-secondary)] mb-6">{message}</p>
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Redirecting to your dashboard...
-                </p>
-                <Link
-                  href="/app"
-                  className="mt-4 inline-block px-6 py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg font-medium hover:opacity-90 transition-opacity"
-                >
-                  Go to Dashboard
-                </Link>
+                <p className="text-sm text-[var(--color-text-secondary)]">Redirecting to login...</p>
               </>
             )}
 
@@ -101,17 +93,12 @@ export default function VerifyEmailPage() {
                   Verification Failed
                 </h1>
                 <p className="text-[var(--color-text-secondary)] mb-6">{message}</p>
-                <div className="space-y-3">
-                  <Link
-                    href="/app"
-                    className="block px-6 py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg font-medium hover:opacity-90 transition-opacity"
-                  >
-                    Go to Dashboard
-                  </Link>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    You can request a new verification email from your dashboard.
-                  </p>
-                </div>
+                <Link
+                  href="/login"
+                  className="inline-block px-6 py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-lg font-medium hover:opacity-90 transition-opacity"
+                >
+                  Go to Login
+                </Link>
               </>
             )}
           </div>

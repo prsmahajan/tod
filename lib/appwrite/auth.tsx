@@ -186,11 +186,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const sendVerificationEmail = useCallback(async () => {
     try {
-      await account.createVerification(`${window.location.origin}/auth/verify`);
+      if (!user?.email) {
+        throw new Error('No user email found');
+      }
+      
+      const response = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send verification email');
+      }
     } catch (error: any) {
       throw new Error(error.message || 'Failed to send verification email');
     }
-  }, []);
+  }, [user?.email]);
 
   const value: AuthContextType = {
     user,
