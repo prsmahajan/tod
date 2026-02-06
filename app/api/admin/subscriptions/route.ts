@@ -269,14 +269,17 @@ export async function GET(req: NextRequest) {
 
           const totalImpact = perCycleImpact * totalCycles;
 
-          // If we don't have an avatar in Postgres, try to read it from the
-          // Appwrite user prefs (where the profile page stores it).
-          if (!avatar && appwriteSub) {
+          // Always try to get the avatar from Appwrite user prefs (most up-to-date source)
+          if (appwriteSub && appwriteSub.userId) {
             try {
               const appwriteUser = await users.get(appwriteSub.userId);
-              avatar = (appwriteUser as any).prefs?.avatar || null;
-            } catch (userError) {
-              console.error("Error fetching Appwrite user avatar:", userError);
+              const appwriteAvatar = (appwriteUser as any).prefs?.avatar;
+              if (appwriteAvatar) {
+                avatar = appwriteAvatar;
+              }
+            } catch (userError: any) {
+              console.error(`Error fetching Appwrite avatar for user ${appwriteSub.userId}:`, userError.message);
+              // Keep existing avatar from Postgres if available
             }
           }
 
