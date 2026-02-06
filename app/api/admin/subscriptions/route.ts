@@ -270,6 +270,7 @@ export async function GET(req: NextRequest) {
           const totalImpact = perCycleImpact * totalCycles;
 
           // Always try to get the avatar from Appwrite user prefs (most up-to-date source)
+          // Try both userId lookup and email lookup as fallback
           if (appwriteSub && appwriteSub.userId) {
             try {
               const appwriteUser = await users.get(appwriteSub.userId);
@@ -278,8 +279,19 @@ export async function GET(req: NextRequest) {
                 avatar = appwriteAvatar;
               }
             } catch (userError: any) {
-              console.error(`Error fetching Appwrite avatar for user ${appwriteSub.userId}:`, userError.message);
-              // Keep existing avatar from Postgres if available
+              // Fallback: try to find user by email
+              try {
+                const usersList = await users.list([Query.equal('email', sub.email)]);
+                if (usersList.total > 0) {
+                  const appwriteUser = usersList.users[0];
+                  const appwriteAvatar = (appwriteUser as any).prefs?.avatar;
+                  if (appwriteAvatar) {
+                    avatar = appwriteAvatar;
+                  }
+                }
+              } catch (emailError: any) {
+                console.error(`Failed to fetch avatar for ${sub.email}:`, emailError.message);
+              }
             }
           }
 

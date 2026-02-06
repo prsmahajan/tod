@@ -66,15 +66,24 @@ export default function ProfilePage() {
       }
 
       const data = await response.json();
+      console.log('Upload response:', data);
 
       // Update user preferences with avatar URL directly using Appwrite
-      await account.updatePrefs({
-        ...user.prefs,
-        avatar: data.url,
-      });
+      try {
+        console.log('Updating Appwrite prefs with avatar:', data.url);
+        const prefsUpdate = await account.updatePrefs({
+          ...user.prefs,
+          avatar: data.url,
+        });
+        console.log('Prefs updated successfully:', prefsUpdate);
+      } catch (prefsError: any) {
+        console.error('Failed to update Appwrite prefs:', prefsError);
+        throw new Error(`Avatar uploaded but failed to save: ${prefsError.message}`);
+      }
 
       // Refresh user data
       await refreshUser();
+      console.log('User data refreshed');
 
       toast.success('Profile picture updated successfully!');
     } catch (error: any) {
