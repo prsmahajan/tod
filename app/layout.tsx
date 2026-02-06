@@ -24,8 +24,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://theopendraft.com'),
   title: {
-    default: "The Open Draft (TODR) - Learn Tech, Feed Stray Animals in India",
-    template: "%s | The Open Draft (TODR)"
+    default: "The Open Draft (TOD) - Learn Tech, Feed Stray Animals in India",
+    template: "%s | The Open Draft (TOD)"
   },
   description: "The Open Draft (todr.in) — a community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Visit todr.in to make a real impact today.",
   keywords: [
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: 'https://theopendraft.com',
     siteName: 'The Open Draft',
-    title: 'The Open Draft (TODR) - Learn Tech, Feed Stray Animals',
+    title: 'The Open Draft (TOD) - Learn Tech, Feed Stray Animals',
     description: 'The Open Draft (todr.in) — Technology education meets animal welfare. Every subscription feeds stray animals across India. Join our community.',
     images: [
       {
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Open Draft (TODR) - Learn Tech, Feed Stray Animals',
+    title: 'The Open Draft (TOD) - Learn Tech, Feed Stray Animals',
     description: 'The Open Draft (todr.in) — Technology education meets animal welfare. Every subscription feeds stray animals across India.',
     images: ['/og-image.png'],
     creator: '@theopendraft',
@@ -152,7 +152,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "The Open Draft",
-              "alternateName": ["TODR", "todr.in", "The Open Draft"],
+              "alternateName": ["TOD", "todr.in", "The Open Draft"],
               "url": "https://theopendraft.com",
               "logo": "https://theopendraft.com/images/logo-dark.png",
               "description": "A community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Also available at todr.in.",
@@ -175,7 +175,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "The Open Draft",
-              "alternateName": ["TOD", "TODR", "todr.in"],
+              "alternateName": ["TOD", "todr.in"],
               "url": "https://theopendraft.com",
               "description": "The Open Draft (todr.in) - Learn Tech, Feed Stray Animals in India",
               "publisher": {

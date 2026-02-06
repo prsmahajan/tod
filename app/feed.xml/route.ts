@@ -17,7 +17,7 @@ export async function GET() {
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>The Open Draft (TODR)</title>
+    <title>The Open Draft (TOD)</title>
     <link>${baseUrl}</link>
     <description>The Open Draft (todr.in) - Tech education while feeding stray animals across India</description>
     <language>en</language>

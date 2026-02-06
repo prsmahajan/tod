@@ -174,7 +174,7 @@ export default async function AdminDashboard() {
               recentPosts.map((post, index) => (
                 <Link
                   key={post.id}
-                  href={`/admin/posts/${post.id}/edit`}
+                  href={`/admin/posts/${post.id}`}
                   className="flex items-center justify-between px-5 py-4 transition-colors group hover:bg-[#222]"
                   style={{
                     borderBottomColor: index < recentPosts.length - 1 ? "var(--cms-border, #2a2a2a)" : "transparent",
