@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { databases, DATABASE_ID, COLLECTIONS, Query, users } from "@/lib/appwrite/server";
 import { getSubscriptionByEmail } from "@/lib/subscription-sync";
+import Razorpay from "razorpay";
 
 async function calculateTotalRevenue(): Promise<number> {
   try {
@@ -295,6 +296,33 @@ export async function GET(req: NextRequest) {
             }
           }
 
+          // Check if autopay is disabled by querying Razorpay
+          let autopayDisabled = false;
+          let razorpayStatus = null;
+          if (sub.razorpaySubscriptionId && sub.subscriptionStatus === 'ACTIVE') {
+            try {
+              const razorpay = new Razorpay({
+                key_id: process.env.RAZORPAY_LIVE_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+                key_secret: process.env.RAZORPAY_LIVE_KEY || process.env.RAZORPAY_KEY_SECRET || '',
+              });
+
+              const razorpaySub = await razorpay.subscriptions.fetch(sub.razorpaySubscriptionId);
+              razorpayStatus = razorpaySub.status;
+              
+              // Check if subscription is truly cancelled or paused
+              const isCancelled = razorpaySub.status === 'cancelled' || razorpaySub.status === 'completed';
+              const isPauseInitiated = razorpaySub.pause_initiated === true;
+              const hasScheduledCancel = razorpaySub.has_scheduled_changes && 
+                                        razorpaySub.scheduled_changes?.some((change: any) => 
+                                          change.action === 'cancel'
+                                        );
+              
+              autopayDisabled = isCancelled || isPauseInitiated || hasScheduledCancel;
+            } catch (razorpayError: any) {
+              console.error(`Failed to check autopay for ${sub.email}:`, razorpayError.message);
+            }
+          }
+
           return {
             ...sub,
             name: effectiveName,
@@ -304,6 +332,8 @@ export async function GET(req: NextRequest) {
             planType,
             avatar,
             animalsFed: totalImpact,
+            autopayDisabled,
+            razorpayStatus,
           };
         } catch (error) {
           console.error("Error enriching subscription with Appwrite data:", error);

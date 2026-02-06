@@ -17,6 +17,8 @@ interface Subscription {
   billingCycle: string | null;
   animalsFed: number;
   createdAt: string;
+  autopayDisabled?: boolean;
+  razorpayStatus?: string | null;
 }
 
 interface Stats {
@@ -409,7 +411,7 @@ export default function SubscriptionsPage() {
                       <tr key={sub.id} className="hover:bg-[var(--color-bg)] transition-colors">
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-medium text-[var(--color-text-primary)]">
+                            <p className={`font-medium ${sub.autopayDisabled ? 'text-red-500' : 'text-[var(--color-text-primary)]'}`}>
                               {getFirstName(sub.name)}
                             </p>
                             <div 
@@ -453,8 +455,20 @@ export default function SubscriptionsPage() {
                             >
                               {sub.subscriptionStatus || "No Subscription"}
                             </span>
+                            {/* Autopay disabled indicator */}
+                            {sub.autopayDisabled && (
+                              <span 
+                                title={`Autopay disabled - Razorpay status: ${sub.razorpayStatus || 'unknown'}`}
+                                className="flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-600 rounded-full text-xs font-medium"
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                                </svg>
+                                Autopay Off
+                              </span>
+                            )}
                             {/* At-risk indicator */}
-                            {AT_RISK_STATUSES.includes(sub.subscriptionStatus || "") && (
+                            {!sub.autopayDisabled && AT_RISK_STATUSES.includes(sub.subscriptionStatus || "") && (
                               <span title="Subscription at risk - mandate may be revoked">
                                 <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -469,9 +483,9 @@ export default function SubscriptionsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          {sub.subscriptionStatus === "CANCELLED" ? (
-                            <span className="text-sm text-[var(--color-text-secondary)]">
-                              Cancelled autopay
+                          {sub.subscriptionStatus === "CANCELLED" || sub.autopayDisabled ? (
+                            <span className="text-sm text-red-500 font-medium">
+                              {sub.autopayDisabled ? 'Autopay disabled' : 'Cancelled'}
                             </span>
                           ) : sub.nextBillingDate ? (
                             <div>

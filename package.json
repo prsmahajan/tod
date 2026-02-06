@@ -10,7 +10,9 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "send-verifications": "tsx -r dotenv/config scripts/send-verification-emails.ts dotenv_config_path=.env.local"
+    "send-verifications": "tsx -r dotenv/config scripts/send-verification-emails.ts dotenv_config_path=.env.local",
+    "check-cancelled": "tsx -r dotenv/config scripts/check-cancelled-subscriptions.ts dotenv_config_path=.env.local",
+    "check-autopay": "tsx -r dotenv/config scripts/check-autopay-disabled.ts dotenv_config_path=.env.local"
   },
   "engines": {
     "node": ">=21"
