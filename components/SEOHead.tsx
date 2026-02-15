@@ -28,6 +28,9 @@ export function generateSEO({
   return {
     title: fullTitle,
     description,
+    alternates: {
+      canonical: fullUrl,
+    },
     openGraph: {
       title: fullTitle,
       description,

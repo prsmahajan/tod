@@ -93,10 +93,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://theopendraft.com',
-    languages: {
-      'en': 'https://todr.in',
-    },
+    canonical: './',
     types: {
       'application/rss+xml': '/feed.xml',
     },
