@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Our Impact - See How Your Support Helps Animals",
-  description: "Track the real impact of The Open Draft community. See how many animals have been fed, how much has been raised, and the stories of lives changed through your support.",
+  title: "Feeding Updates and Community Support | The Open Draft",
+  description: "Verified feeding updates and confirmed community support for stray animals.",
   openGraph: {
-    title: "Our Impact | The Open Draft",
-    description: "Real-time impact tracking. See how community contributions feed and care for stray animals across India.",
+    title: "Feeding Updates and Community Support | The Open Draft",
+    description: "Verified feeding updates and confirmed community support for stray animals.",
     url: "https://theopendraft.com/impact",
   },
 };

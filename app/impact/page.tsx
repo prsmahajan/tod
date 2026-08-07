@@ -1,303 +1,93 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import AnimatedSection from '@/components/AnimatedSection';
-import { useTypeText } from '@/hooks/useTypeText';
-import Icon from '@/components/Icon';
-import CommunityStats from '@/components/CommunityStats';
-import SupportersWall from '@/components/SupportersWall';
-import Footer from '@/components/Footer';
+import React, { useEffect, useState } from "react";
+import CommunityStats from "@/components/CommunityStats";
+import Footer from "@/components/Footer";
+import {
+  normalizeFeaturedRecords,
+  type FeaturedPhoto,
+} from "@/components/impact/FeedingRecordCard";
+import FeedingRecordsDisplay, {
+  type RecordsStatus,
+} from "@/components/impact/FeedingRecordsDisplay";
+import TransparencyStatus from "@/components/impact/TransparencyStatus";
+import SupportersWall from "@/components/SupportersWall";
 
-// --- Types ---
-interface FeaturedPhoto {
-  id: string;
-  imageUrl: string;
-  description: string;
-  userName: string;
-  location?: string;
-  feedDate: string;
-  animalCount?: number;
-}
-
-// --- Sub-Components ---
-
-// 1. HeroHeader: Isolated to prevent the typing animation from lagging the whole page
-const HeroHeader = () => {
-  const animatedText = useTypeText(['Impact', 'Kindness', 'Care', 'Action'], 1500, 100);
-
-  return (
-    <header className="text-center max-w-3xl mx-auto">
-      <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">
-        Real-World <span className="text-[var(--color-accent)]">{animatedText}</span>
-      </h1>
-      <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
-        This isn't about grand gestures, but the consistent, daily effort of a community. Here's a look at the tangible differences being made every day.
-      </p>
-    </header>
-  );
-};
-
-// 2. Static Cards
-const ImpactCard = ({ imageUrl, title, description, delay = 0 }: { imageUrl: string, title: string, description: string, delay?: number }) => (
-  <div className="bg-[var(--color-card-bg)] rounded-lg overflow-hidden border border-[var(--color-border)] transition-shadow duration-300 hover:shadow-xl h-full animate-float" style={{ animationDelay: `${delay}s` }}>
-    <img src={imageUrl} alt={title} className="w-full h-64 object-cover" />
-    <div className="p-6">
-      <h3 className="font-heading text-2xl font-bold text-[var(--color-text-primary)]">{title}</h3>
-      <p className="mt-2 text-[var(--color-text-secondary)]">{description}</p>
-    </div>
-  </div>
-);
-
-const ApproachCard = ({ icon, title, description }: { icon: 'users' | 'shield' | 'heart', title: string, description: string }) => (
-  <div className="bg-[var(--color-card-bg)] p-6 rounded-lg border border-[var(--color-border)]">
-    <Icon name={icon} className="h-8 w-8 text-[var(--color-accent)]" />
-    <h3 className="font-heading text-xl font-bold mt-4">{title}</h3>
-    <p className="text-[var(--color-text-secondary)] mt-2 text-sm">{description}</p>
-  </div>
-);
-
-const StoryCard = ({ imageUrl, name, story }: { imageUrl: string, name: string, story: string }) => (
-  <div className="bg-[var(--color-card-bg)] rounded-lg overflow-hidden border border-[var(--color-border)]">
-    <img src={imageUrl} alt={`Story of ${name}`} className="w-full h-72 object-cover" />
-    <div className="p-6">
-      <h3 className="font-heading text-2xl font-bold text-[var(--color-accent)]">{name}'s Story</h3>
-      <p className="mt-3 text-[var(--color-text-secondary)] italic">"{story}"</p>
-    </div>
-  </div>
-);
-
-const marqueeImages = [
-  "https://images.unsplash.com/photo-1679390974280-3899379f1c65?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1622905840442-47d9a953fec2?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1674802401345-4e6ec9fc2146?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1684937992798-ee66babd7e3a?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1651040618420-adb8081160e0?w=600&h=400&fit=crop",
-  "https://plus.unsplash.com/premium_photo-1691031428727-3b8c7adfad37?w=600&h=400&fit=crop",
-];
-
-const ImpactPage: React.FC = () => {
-  const [featuredPhotos, setFeaturedPhotos] = useState<FeaturedPhoto[]>([]);
+export default function ImpactPage() {
+  const [records, setRecords] = useState<FeaturedPhoto[]>([]);
+  const [status, setStatus] = useState<RecordsStatus>("loading");
 
   useEffect(() => {
-    async function fetchFeaturedPhotos() {
+    const controller = new AbortController();
+
+    async function loadRecords() {
       try {
-        const response = await fetch('/api/photos/featured');
-        const data = await response.json();
-        if (data.photos && data.photos.length > 0) {
-          setFeaturedPhotos(data.photos);
-        }
+        const response = await fetch("/api/photos/featured", { signal: controller.signal });
+        if (!response.ok) throw new Error("Featured records request failed");
+
+        const payload: unknown = await response.json();
+        setRecords(normalizeFeaturedRecords(payload));
+        setStatus("ready");
       } catch (error) {
-        console.error('Error fetching featured photos:', error);
+        if (controller.signal.aborted) return;
+        console.error("Error fetching featured feeding records:", error);
+        setStatus("error");
       }
     }
-    fetchFeaturedPhotos();
+
+    loadRecords();
+    return () => controller.abort();
   }, []);
-
-  // Prepare the base list of images
-  const baseImageList = useMemo(() => {
-    const uniqueFeaturedPhotos = featuredPhotos.reduce((acc: any[], photo) => {
-      if (!acc.find((p: any) => p.src === photo.imageUrl)) {
-        acc.push({
-          src: photo.imageUrl,
-          userName: photo.userName || 'Anonymous',
-          isUser: true
-        });
-      }
-      return acc;
-    }, []);
-
-    // Combine user photos + static photos
-    const combined = [
-      ...uniqueFeaturedPhotos,
-      ...marqueeImages.map(src => ({ src, userName: '', isUser: false })),
-    ];
-    
-    // If we don't have enough images (less than 10), duplicate them so the strip is long enough
-    if (combined.length < 10) {
-      return [...combined, ...combined, ...combined];
-    }
-    return combined;
-  }, [featuredPhotos]);
-
-  // Helper to render a strip of images
-  const renderImageStrip = (keyPrefix: string) => (
-    <div className="flex shrink-0 gap-4 px-2">
-      {baseImageList.map((image, index) => (
-        <figure 
-          key={`${keyPrefix}-${index}`} 
-          className="relative group flex-shrink-0 m-0"
-        >
-          <img
-            src={image.src}
-            alt={image.isUser ? `Photo by ${image.userName}` : "Stray animal"}
-            loading="eager"
-            decoding="async"
-            // Fixed width/height ensures layout doesn't jump when image loads
-            className="w-64 h-48 object-cover rounded-lg shadow-md bg-[var(--color-card-bg)]"
-            style={{ width: '256px', height: '192px' }} 
-          />
-          {image.isUser && image.userName && (
-            <figcaption className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent text-white text-xs rounded-b-lg">
-              Posted by {image.userName}
-            </figcaption>
-          )}
-        </figure>
-      ))}
-    </div>
-  );
 
   return (
     <>
-      {/* Inject CSS Keyframes directly here to avoid external file dependencies.
-         This creates a smooth -50% translation loop.
-      */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes scroll-smooth {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .scrolling-wrapper {
-          display: flex;
-          width: max-content;
-          animation: scroll-smooth 20s linear infinite; /* 60s is the speed, adjust if needed */
-        }
-      `}} />
+      <div className="container mx-auto px-4 pb-16 pt-32 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <header className="max-w-4xl">
+            <h1 className="font-heading text-4xl font-extrabold leading-10 tracking-[-0.02em] text-[var(--color-text-primary)] md:text-6xl md:leading-[60px]">
+              Feeding Records and Support
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)] md:text-xl">
+              See confirmed community support and approved feeding updates in one clear place.
+            </p>
+          </header>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-24">
-        <AnimatedSection>
-          <HeroHeader />
-        </AnimatedSection>
-
-        {/* Community Stats Section */}
-        <AnimatedSection className="mt-16">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <p className="text-sm font-medium text-[var(--color-accent)] uppercase tracking-wider mb-2">Live Stats</p>
-              <h2 className="font-heading text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
-                Our Community in Numbers
+          <section className="mt-20">
+            <div className="max-w-2xl">
+              <h2 className="font-heading text-3xl font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)] md:text-4xl">
+                Confirmed community support
               </h2>
-              <p className="mt-2 text-[var(--color-text-secondary)]">
-                Real-time data from our supporters making a difference
+              <p className="mt-4 leading-relaxed text-[var(--color-text-secondary)]">
+                Contribution totals are confirmed. Meal capacity remains clearly labelled as an estimate.
               </p>
             </div>
-            <CommunityStats />
-          </div>
-        </AnimatedSection>
+            <CommunityStats className="mt-10" />
+          </section>
 
-        {/* Supporters Wall Section */}
-        <AnimatedSection className="mt-20">
-          <div className="max-w-5xl mx-auto bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl p-8 md:p-12">
+          <section className="mt-32">
+            <div className="max-w-2xl">
+              <h2 className="font-heading text-3xl font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)] md:text-4xl">
+                Verified feeding records
+              </h2>
+              <p className="mt-4 leading-relaxed text-[var(--color-text-secondary)]">
+                Only approved uploads with a feeding date and genuine photograph appear here.
+              </p>
+            </div>
+            <div className="mt-10">
+              <FeedingRecordsDisplay status={status} records={records} />
+            </div>
+          </section>
+
+          <section className="mt-32 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 md:p-8 lg:p-12">
             <SupportersWall />
+          </section>
+
+          <div className="mt-32">
+            <TransparencyStatus />
           </div>
-        </AnimatedSection>
-
-        <AnimatedSection>
-          {/* Custom CSS Marquee Container */}
-          <div className="mt-20 -mx-8 sm:-mx-16 lg:-mx-32 overflow-hidden select-none pointer-events-auto">
-            <div className="scrolling-wrapper">
-              {/* We render the strip TWICE. The animation slides exactly 50% (one strip length) and snaps back. */}
-              {renderImageStrip('set1')}
-              {renderImageStrip('set2')}
-            </div>
-          </div>
-        </AnimatedSection>
-
-        {/* --- The rest of your sections remain unchanged --- */}
-
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          <AnimatedSection direction="left">
-            <ImpactCard
-              imageUrl="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800&h=600&fit=crop&q=80"
-              title="Feeding"
-              description="Consistent meals for strays in multiple city zones, ensuring no animal goes hungry. We focus on nutritious food to help them regain strength and health."
-            />
-          </AnimatedSection>
-          <AnimatedSection direction="right">
-            <ImpactCard
-              imageUrl="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=600&fit=crop&q=80"
-              title="Shelter"
-              description="Building and maintaining temporary, safe shelters to protect animals from harsh weather and street dangers, giving them a safe space to rest and recover."
-              delay={0.5}
-            />
-          </AnimatedSection>
-          <AnimatedSection direction="left">
-            <ImpactCard
-              imageUrl="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=800&h=600&fit=crop&q=80"
-              title="Care"
-              description="Providing essential medical care, from first-aid for injuries to vaccinations and sterilization, with the help of volunteer vets and local clinics."
-            />
-          </AnimatedSection>
-          <AnimatedSection direction="right">
-            <ImpactCard
-              imageUrl="https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&h=600&fit=crop&q=80"
-              title="Awareness"
-              description="Running local awareness campaigns to educate the public about the importance of compassion towards stray animals and responsible pet ownership."
-              delay={0.5}
-            />
-          </AnimatedSection>
         </div>
-
-        <AnimatedSection className="mt-32">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="font-heading text-3xl md:text-4xl font-extrabold text-[var(--color-text-primary)]">Success Stories</h2>
-            <p className="mt-3 text-[var(--color-text-secondary)]">Behind every number is a life changed. Here are a few of them.</p>
-          </div>
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <AnimatedSection direction="left">
-              <StoryCard
-                name="Raja"
-                imageUrl="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=600&fit=crop&q=80"
-                story="Found with a severe leg injury, Raja was timid and mistrustful. Through community-funded treatment and the patient care of a local volunteer, he's now a happy, healthy dog who loves to play, reminding us that every animal deserves a second chance."
-              />
-            </AnimatedSection>
-            <AnimatedSection direction="right">
-              <StoryCard
-                name="Misty"
-                imageUrl="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&h=600&fit=crop&q=80"
-                story="A litter of kittens was found abandoned in a construction site. Our network quickly organized to provide them with a safe, temporary shelter and nutritious food. Misty, the bravest of the bunch, was the first to find her forever home."
-              />
-            </AnimatedSection>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection className="mt-32">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="font-heading text-3xl md:text-4xl font-extrabold text-[var(--color-text-primary)]">How We're Different</h2>
-            <p className="mt-3 text-[var(--color-text-secondary)]">We believe in direct, transparent, and compassionate action.</p>
-          </div>
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <AnimatedSection>
-              <ApproachCard icon="users" title="Community-Powered" description="We are a network of volunteers and supporters. Every action is driven by the community, for the community." />
-            </AnimatedSection>
-            <AnimatedSection>
-              <ApproachCard icon="shield" title="Radical Transparency" description="Every contribution is tracked and accounted for. You'll see the direct impact of your support in real-time updates." />
-            </AnimatedSection>
-            <AnimatedSection>
-              <ApproachCard icon="heart" title="On-the-Ground Action" description="We focus on immediate, practical help—providing food, water, and care where it's needed most, right now." />
-            </AnimatedSection>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection className="mt-32">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center bg-[var(--color-card-bg)] p-8 rounded-lg border border-[var(--color-border)]">
-            <div className="order-2 md:order-1">
-              <h2 className="font-heading text-3xl font-extrabold text-[var(--color-text-primary)]">A Glimpse Into Our Day</h2>
-              <p className="mt-4 text-[var(--color-text-secondary)]">
-                It starts with a morning round, checking on familiar furry faces. A volunteer in Delhi fills water bowls, another in Mumbai provides a meal to a litter of kittens. Later, a call comes in about an injured dog. Resources are pooled instantly, and a local volunteer helps get the dog to a nearby clinic. The day ends with photos and updates shared back to our supporters. It's simple, direct, and it happens every single day, thanks to people like you.
-              </p>
-              <a href="#/mission" className="inline-block mt-6 px-5 py-2 text-sm font-medium rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90 transition-opacity">
-                Read Our Mission
-              </a>
-            </div>
-            <div className="order-1 md:order-2">
-              <img src="https://images.unsplash.com/photo-1601758124096-1fd661873b95?w=800&h=600&fit=crop&q=80" alt="Volunteer with a stray dog" className="rounded-lg object-cover w-full h-full" />
-            </div>
-          </div>
-        </AnimatedSection>
       </div>
       <Footer />
     </>
   );
-};
-
-export default ImpactPage;
+}
