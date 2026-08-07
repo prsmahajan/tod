@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon';
-import { getInertAttribute } from '@/lib/accessibility/inert-region';
+import { useInertRegion } from '@/lib/accessibility/inert-region';
 
 interface Message {
   id: string;
@@ -20,6 +20,7 @@ const Chatbot: React.FC = () => {
   const [hasPlayedSound, setHasPlayedSound] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const chatbotPanelRef = useInertRegion<HTMLDivElement>(!isOpen);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -193,9 +194,9 @@ const Chatbot: React.FC = () => {
       </div>
 
       <div
+        ref={chatbotPanelRef}
         id="tod-chatbot-panel"
-        {...getInertAttribute(!isOpen)}
-        className={`fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100%-2rem)] max-w-sm h-[60vh] md:h-[60vh] bg-[var(--color-card-bg)] rounded-lg shadow-2xl border border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        className={`fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100%-2rem)] max-w-sm h-[60vh] md:h-[60vh] bg-[var(--color-card-bg)] rounded-lg shadow-2xl border border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'visible opacity-100 translate-y-0' : 'invisible opacity-0 translate-y-4 pointer-events-none'}`}
       >
         <header className="p-4 border-b border-[var(--color-border)]">
           <h2 className="font-heading font-bold text-lg">Chat with tod;</h2>
