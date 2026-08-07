@@ -1,10 +1,10 @@
 export type PublicSupportMode = "payment" | "subscription";
-export type PublicSupportState = "confirmed" | "pending" | "failed" | "unknown";
+export type PublicSupportState = "confirmed" | "completed" | "inactive" | "pending" | "failed" | "unknown";
 export type PublicSupportPlanType = "seedling" | "sprout" | "tree" | "custom";
 
 export type PublicSupportStatus =
   | { state: "confirmed"; amountInr: number; planType?: PublicSupportPlanType }
-  | { state: "pending" | "failed" | "unknown" };
+  | { state: "completed" | "inactive" | "pending" | "failed" | "unknown" };
 
 interface StoredPaymentStatus {
   status?: unknown;
@@ -78,6 +78,8 @@ export async function resolvePublicSupportStatus({
 
   const subscription = await findSubscription(reference);
   if (!subscription) return { state: "unknown" };
+  if (subscription.status === "completed") return { state: "completed" };
+  if (subscription.status === "paused") return { state: "inactive" };
   if (["halted", "cancelled", "expired"].includes(String(subscription.status))) {
     return { state: "failed" };
   }

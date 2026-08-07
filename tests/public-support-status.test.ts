@@ -73,3 +73,21 @@ test("subscription confirmation uses the stored provider linkage", async () => {
 
   assert.deepEqual(result, { state: "confirmed", amountInr: 79, planType: "seedling" });
 });
+
+test("completed and paused subscriptions never look like confirmation is still pending", async () => {
+  const base = {
+    mode: "subscription" as const,
+    reference: "sub_123",
+    findPayment: async () => null,
+  };
+
+  assert.deepEqual(await resolvePublicSupportStatus({
+    ...base,
+    findSubscription: async () => ({ status: "completed", amount: 79, planType: "seedling" }),
+  }), { state: "completed" });
+
+  assert.deepEqual(await resolvePublicSupportStatus({
+    ...base,
+    findSubscription: async () => ({ status: "paused", amount: 79, planType: "seedling" }),
+  }), { state: "inactive" });
+});

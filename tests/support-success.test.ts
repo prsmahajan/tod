@@ -92,3 +92,21 @@ test("checkout success analytics can be built only from a server-confirmed plan 
   }), null);
   assert.equal(serverConfirmedAnalyticsSelection({ state: "pending" }), null);
 });
+
+test("completed and inactive subscription displays are terminal, neutral states", () => {
+  const completed = renderToStaticMarkup(SupportStatusDisplay({
+    mode: "subscription",
+    status: { state: "completed" } as any,
+  }));
+  assert.match(completed, /Recurring support completed/);
+  assert.match(completed, /completed its scheduled cycles/i);
+  assert.equal(completed.includes("has not finished confirming"), false);
+
+  const inactive = renderToStaticMarkup(SupportStatusDisplay({
+    mode: "subscription",
+    status: { state: "inactive" } as any,
+  }));
+  assert.match(inactive, /Recurring support is not active/);
+  assert.equal(inactive.includes("has not finished confirming"), false);
+  assert.equal(inactive.includes("Thank you"), false);
+});

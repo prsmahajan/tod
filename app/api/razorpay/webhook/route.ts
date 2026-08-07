@@ -238,7 +238,16 @@ async function persistAuthoritativeSubscription(webhookEntity: Record<string, un
   const result = await persistSubscriptionRecord({
     providerSubscriptionId: subscriptionId,
     existingDocumentId: existing?.$id ?? null,
+    existingDocument: existing,
     document,
+    findExistingDocument: async (documentId) => {
+      const winner = await databases.getDocument<any>(
+        DATABASE_ID,
+        COLLECTIONS.SUBSCRIPTIONS,
+        documentId,
+      );
+      return winner as StoredDocument;
+    },
     createDocument: (documentId, data) => databases.createDocument<any>(
       DATABASE_ID,
       COLLECTIONS.SUBSCRIPTIONS,

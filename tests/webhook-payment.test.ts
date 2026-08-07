@@ -243,6 +243,136 @@ test("missing subscription records are created deterministically for status-befo
   ]);
 });
 
+test("subscription create conflicts re-read the winner and preserve its nonempty donor identity", async () => {
+  const persistSubscriptionRecord = (webhookPayment as typeof webhookPayment & {
+    persistSubscriptionRecord?: (options: any) => Promise<string>;
+  }).persistSubscriptionRecord;
+
+  assert.equal(typeof persistSubscriptionRecord, "function");
+  if (!persistSubscriptionRecord) return;
+
+  let stored: Record<string, unknown> = {
+    $id: "sub_race",
+    userId: "account_123",
+    userEmail: "payer@example.com",
+    userName: "Payer Name",
+    status: "active",
+  };
+  let appliedUpdate: Record<string, unknown> | null = null;
+
+  const result = await persistSubscriptionRecord({
+    providerSubscriptionId: "sub_race",
+    existingDocumentId: null,
+    document: {
+      userId: "anonymous",
+      userEmail: "",
+      userName: "   ",
+      planId: "plan_123",
+      status: "completed",
+    },
+    createDocument: async () => {
+      throw { code: 409, type: "document_already_exists" };
+    },
+    findExistingDocument: async () => stored,
+    updateDocument: async (id: string, document: Record<string, unknown>) => {
+      assert.equal(id, "sub_race");
+      appliedUpdate = document;
+      stored = { ...stored, ...document };
+    },
+  });
+
+  assert.equal(result, "updated");
+  assert.equal(Object.hasOwn(appliedUpdate || {}, "userEmail"), false);
+  assert.equal(Object.hasOwn(appliedUpdate || {}, "userName"), false);
+  assert.equal(Object.hasOwn(appliedUpdate || {}, "userId"), false);
+  assert.deepEqual({
+    userId: stored.userId,
+    userEmail: stored.userEmail,
+    userName: stored.userName,
+    status: stored.status,
+  }, {
+    userId: "account_123",
+    userEmail: "payer@example.com",
+    userName: "Payer Name",
+    status: "completed",
+  });
+});
+
+test("charged identity wins when an anonymous activation document creates first", async () => {
+  const persistSubscriptionRecord = (webhookPayment as typeof webhookPayment & {
+    persistSubscriptionRecord?: (options: any) => Promise<string>;
+  }).persistSubscriptionRecord;
+
+  assert.equal(typeof persistSubscriptionRecord, "function");
+  if (!persistSubscriptionRecord) return;
+
+  let stored: Record<string, unknown> = {
+    $id: "sub_reverse_race",
+    userId: "anonymous",
+    userEmail: "",
+    userName: "",
+    status: "pending",
+  };
+
+  await persistSubscriptionRecord({
+    providerSubscriptionId: "sub_reverse_race",
+    existingDocumentId: null,
+    document: {
+      userId: "anonymous",
+      userEmail: "charged@example.com",
+      userName: "Charged Donor",
+      status: "active",
+    },
+    createDocument: async () => {
+      throw { code: 409, type: "document_already_exists" };
+    },
+    findExistingDocument: async () => stored,
+    updateDocument: async (_id: string, document: Record<string, unknown>) => {
+      stored = { ...stored, ...document };
+    },
+  });
+
+  assert.deepEqual({
+    userEmail: stored.userEmail,
+    userName: stored.userName,
+    status: stored.status,
+  }, {
+    userEmail: "charged@example.com",
+    userName: "Charged Donor",
+    status: "active",
+  });
+});
+
+test("subscription conflict re-read and update failures remain retryable", async () => {
+  const persistSubscriptionRecord = (webhookPayment as typeof webhookPayment & {
+    persistSubscriptionRecord?: (options: any) => Promise<string>;
+  }).persistSubscriptionRecord;
+
+  assert.equal(typeof persistSubscriptionRecord, "function");
+  if (!persistSubscriptionRecord) return;
+
+  const conflict = { code: 409, type: "document_already_exists" };
+  const readFailure = new Error("winning subscription unavailable");
+  await assert.rejects(persistSubscriptionRecord({
+    providerSubscriptionId: "sub_read_failure",
+    existingDocumentId: null,
+    document: { status: "active" },
+    createDocument: async () => { throw conflict; },
+    findExistingDocument: async () => { throw readFailure; },
+    updateDocument: async () => {},
+  }), readFailure);
+
+  const updateFailure = new Error("subscription update unavailable");
+  await assert.rejects(persistSubscriptionRecord({
+    providerSubscriptionId: "sub_update_failure",
+    existingDocumentId: null,
+    document: { status: "active" },
+    createDocument: async () => { throw conflict; },
+    findExistingDocument: async () => ({ $id: "sub_update_failure", status: "pending" }),
+    updateDocument: async () => { throw updateFailure; },
+  }), updateFailure);
+});
+
 test("authoritative subscription fetch prevents delayed lifecycle events from regressing current state", async () => {
   const resolveAuthoritativeSubscription = (webhookPayment as typeof webhookPayment & {
     resolveAuthoritativeSubscription?: (
@@ -445,4 +575,98 @@ test("a failed-event create conflict re-reads the winning success before updatin
 
   assert.equal(result, "existing");
   assert.equal(persistedStatus, undefined);
+});
+
+test("a stale failed reconciliation cannot issue a second update after success wins", async () => {
+  const reconcilePaymentTransaction = (webhookPayment as typeof webhookPayment & {
+    reconcilePaymentTransaction?: (options: any) => Promise<string>;
+  }).reconcilePaymentTransaction;
+
+  assert.equal(typeof reconcilePaymentTransaction, "function");
+  if (!reconcilePaymentTransaction) return;
+
+  const initial = {
+    $id: "pay_two_update_race",
+    type: "one-time",
+    status: "failed",
+    amount: 99,
+  };
+  let stored: Record<string, unknown> = { ...initial };
+  let markSuccessWritten!: () => void;
+  const successWritten = new Promise<void>((resolve) => {
+    markSuccessWritten = resolve;
+  });
+
+  const updateDocument = async (_id: string, document: Record<string, unknown>) => {
+    if (document.status === "failed") await successWritten;
+    stored = { ...stored, ...document };
+    if (document.status === "success") markSuccessWritten();
+  };
+
+  await Promise.all([
+    reconcilePaymentTransaction({
+      paymentId: "pay_two_update_race",
+      existingTransaction: { ...initial },
+      document: {
+        type: "one-time",
+        status: "failed",
+        amount: 99,
+        razorpayOrderId: "order_delayed_failure",
+      },
+      createDocument: async () => assert.fail("existing failures must not create"),
+      updateDocument,
+    }),
+    reconcilePaymentTransaction({
+      paymentId: "pay_two_update_race",
+      existingTransaction: { ...initial },
+      document: {
+        type: "subscription",
+        status: "success",
+        amount: 99,
+        razorpaySubscriptionId: "sub_123",
+      },
+      createDocument: async () => assert.fail("legacy failed rows must update"),
+      updateDocument,
+    }),
+  ]);
+
+  assert.equal(stored.status, "success");
+  assert.equal(stored.type, "subscription");
+  assert.equal(stored.razorpaySubscriptionId, "sub_123");
+});
+
+test("a failed create conflict accepts the winner without rewriting its successful type", async () => {
+  const reconcilePaymentTransaction = (webhookPayment as typeof webhookPayment & {
+    reconcilePaymentTransaction?: (options: any) => Promise<string>;
+  }).reconcilePaymentTransaction;
+
+  assert.equal(typeof reconcilePaymentTransaction, "function");
+  if (!reconcilePaymentTransaction) return;
+
+  let stored: Record<string, unknown> = {
+    $id: "pay_failed_conflict",
+    type: "subscription",
+    status: "success",
+    razorpaySubscriptionId: "sub_123",
+  };
+  const result = await reconcilePaymentTransaction({
+    paymentId: "pay_failed_conflict",
+    existingTransaction: null,
+    document: { type: "one-time", status: "failed", razorpayOrderId: "order_123" },
+    createDocument: async () => {
+      throw { code: 409, type: "document_already_exists" };
+    },
+    findExistingTransaction: async () => stored,
+    updateDocument: async (_id: string, document: Record<string, unknown>) => {
+      stored = { ...stored, ...document };
+    },
+  });
+
+  assert.equal(result, "existing");
+  assert.deepEqual(stored, {
+    $id: "pay_failed_conflict",
+    type: "subscription",
+    status: "success",
+    razorpaySubscriptionId: "sub_123",
+  });
 });

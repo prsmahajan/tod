@@ -113,6 +113,34 @@ export function SupportStatusDisplay({ mode, status }: SupportStatusDisplayProps
     );
   }
 
+  if (status.state === "completed") {
+    return (
+      <div role="status" aria-live="polite">
+        <p className="text-sm font-medium text-[var(--color-text-secondary)]">Recurring support completed</p>
+        <h1 className="mt-4 font-heading text-4xl font-extrabold text-[var(--color-text-primary)]">
+          This recurring support has completed its scheduled cycles.
+        </h1>
+        <p className="mx-auto mt-4 max-w-xl text-[var(--color-text-secondary)]">
+          The stored subscription status is complete. No new contribution or specific feeding outcome is being claimed here.
+        </p>
+      </div>
+    );
+  }
+
+  if (status.state === "inactive") {
+    return (
+      <div role="status" aria-live="polite">
+        <p className="text-sm font-medium text-[var(--color-text-secondary)]">Recurring support inactive</p>
+        <h1 className="mt-4 font-heading text-4xl font-extrabold text-[var(--color-text-primary)]">
+          Recurring support is not active.
+        </h1>
+        <p className="mx-auto mt-4 max-w-xl text-[var(--color-text-secondary)]">
+          This subscription is paused. No new contribution is being claimed while it is inactive.
+        </p>
+      </div>
+    );
+  }
+
   if (status.state === "pending") {
     return (
       <div role="status" aria-live="polite">

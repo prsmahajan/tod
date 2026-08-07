@@ -81,6 +81,7 @@ const nextConfig = {
       { source: '/waitlist-dashboard', destination: '/', permanent: false },
       { source: '/dashboard', destination: '/', permanent: false },
       { source: '/community', destination: '/', permanent: false },
+      { source: '/pay', destination: '/support', permanent: true },
     ];
   },
 }

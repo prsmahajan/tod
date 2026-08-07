@@ -121,20 +121,49 @@ export async function persistSubscriptionStatus({
 interface PersistSubscriptionRecordOptions {
   providerSubscriptionId: string;
   existingDocumentId: string | null;
+  existingDocument?: StoredSubscriptionRecord | null;
   document: Record<string, unknown>;
+  findExistingDocument?: (documentId: string) => Promise<StoredSubscriptionRecord | null>;
   createDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
   updateDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
+}
+
+interface StoredSubscriptionRecord extends Record<string, unknown> {
+  $id?: unknown;
+}
+
+function subscriptionDocumentForUpdate(
+  existingDocument: StoredSubscriptionRecord | null,
+  document: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(document).filter(([key, value]) => {
+    if (typeof value === 'string' && value.trim().length === 0) return false;
+    if (
+      key === 'userId'
+      && value === 'anonymous'
+      && typeof existingDocument?.userId === 'string'
+      && existingDocument.userId.trim().length > 0
+      && existingDocument.userId !== 'anonymous'
+    ) {
+      return false;
+    }
+    return true;
+  }));
 }
 
 export async function persistSubscriptionRecord({
   providerSubscriptionId,
   existingDocumentId,
+  existingDocument = null,
   document,
+  findExistingDocument,
   createDocument,
   updateDocument,
 }: PersistSubscriptionRecordOptions): Promise<'created' | 'updated' | 'existing'> {
   if (existingDocumentId) {
-    await updateDocument(existingDocumentId, document);
+    const update = subscriptionDocumentForUpdate(existingDocument, document);
+    if (existingDocument && transactionMatches(existingDocument, update)) return 'existing';
+    await updateDocument(existingDocumentId, update);
     return 'updated';
   }
 
@@ -142,8 +171,20 @@ export async function persistSubscriptionRecord({
     await createDocument(providerSubscriptionId, document);
     return 'created';
   } catch (error) {
-    if (isDocumentConflict(error)) return 'existing';
-    throw error;
+    if (!isDocumentConflict(error)) throw error;
+    if (!findExistingDocument) {
+      throw new Error('Subscription conflict winner could not be loaded');
+    }
+
+    const winner = await findExistingDocument(providerSubscriptionId);
+    if (!winner) throw new Error('Subscription conflict winner could not be loaded');
+
+    const update = subscriptionDocumentForUpdate(winner, document);
+    if (transactionMatches(winner, update)) return 'existing';
+
+    const documentId = typeof winner.$id === 'string' ? winner.$id : providerSubscriptionId;
+    await updateDocument(documentId, update);
+    return 'updated';
   }
 }
 
@@ -192,16 +233,6 @@ interface ReconcilePaymentTransactionOptions {
   updateDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
 }
 
-function transactionDocumentForPersistence(
-  existingTransaction: StoredTransactionRecord | null,
-  document: Record<string, unknown>,
-): Record<string, unknown> {
-  if (existingTransaction?.status === 'success' && document.status === 'failed') {
-    return { ...document, status: 'success' };
-  }
-  return document;
-}
-
 function transactionMatches(
   existingTransaction: StoredTransactionRecord,
   document: Record<string, unknown>,
@@ -217,20 +248,30 @@ export async function reconcilePaymentTransaction({
   createDocument,
   updateDocument,
 }: ReconcilePaymentTransactionOptions): Promise<'created' | 'updated' | 'existing'> {
-  const persistedDocument = transactionDocumentForPersistence(existingTransaction, document);
+  if (document.status === 'failed') {
+    if (existingTransaction) return 'existing';
+
+    try {
+      await createDocument(paymentId, document);
+      return 'created';
+    } catch (error) {
+      if (isDocumentConflict(error)) return 'existing';
+      throw error;
+    }
+  }
 
   if (existingTransaction) {
-    if (transactionMatches(existingTransaction, persistedDocument)) return 'existing';
+    if (transactionMatches(existingTransaction, document)) return 'existing';
 
     const documentId = typeof existingTransaction.$id === 'string'
       ? existingTransaction.$id
       : paymentId;
-    await updateDocument(documentId, persistedDocument);
+    await updateDocument(documentId, document);
     return 'updated';
   }
 
   try {
-    await createDocument(paymentId, persistedDocument);
+    await createDocument(paymentId, document);
     return 'created';
   } catch (error) {
     if (!isDocumentConflict(error)) throw error;
@@ -238,18 +279,14 @@ export async function reconcilePaymentTransaction({
     const concurrentTransaction = findExistingTransaction
       ? await findExistingTransaction()
       : null;
-    const reconciledDocument = transactionDocumentForPersistence(
-      concurrentTransaction,
-      document,
-    );
-    if (concurrentTransaction && transactionMatches(concurrentTransaction, reconciledDocument)) {
+    if (concurrentTransaction && transactionMatches(concurrentTransaction, document)) {
       return 'existing';
     }
 
     const documentId = typeof concurrentTransaction?.$id === 'string'
       ? concurrentTransaction.$id
       : paymentId;
-    await updateDocument(documentId, reconciledDocument);
+    await updateDocument(documentId, document);
     return 'updated';
   }
 }

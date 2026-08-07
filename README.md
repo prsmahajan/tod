@@ -106,11 +106,11 @@ CRON_SECRET=                     # For webhook security
 
 Payment (when ready):
 ```env
-RAZORPAY_KEY_ID=                 # Live or test key
-RAZORPAY_KEY_SECRET=             # Secret key
-NEXT_PUBLIC_RAZORPAY_KEY_ID=     # Public key
+RAZORPAY_LIVE_ID=                # Server-side live key ID
+RAZORPAY_LIVE_KEY=               # Server-side live secret key
+NEXT_PUBLIC_RAZORPAY_KEY_ID=     # Public checkout key ID
 RAZORPAY_PLAN_ID=                # Monthly plan ID
-RAZORPAY_WEBHOOK_SECRET=         # Webhook secret
+RAZORPAY_WEBHOOK_SECRET=         # Separate webhook signing secret
 ```
 
 ---
