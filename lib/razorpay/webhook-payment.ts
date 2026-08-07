@@ -227,6 +227,193 @@ export async function reconcileAuthoritativeSubscription<T extends Record<string
   return final;
 }
 
+interface TransactionalSubscriptionStore {
+  createTransaction: () => Promise<{ $id: string }>;
+  readDocument: (
+    transactionId: string,
+    documentId: string,
+  ) => Promise<StoredSubscriptionRecord | null>;
+  stageCreate: (
+    transactionId: string,
+    documentId: string,
+    document: Record<string, unknown>,
+  ) => Promise<unknown>;
+  stageUpdate: (
+    transactionId: string,
+    documentId: string,
+    document: Record<string, unknown>,
+  ) => Promise<unknown>;
+  commitTransaction: (transactionId: string) => Promise<unknown>;
+  rollbackTransaction: (transactionId: string) => Promise<unknown>;
+  deleteTransaction: (transactionId: string) => Promise<unknown>;
+}
+
+interface ReconcileSubscriptionTransactionOptions<T extends Record<string, unknown>> {
+  webhookEntity: Record<string, unknown>;
+  fetchSubscription: (subscriptionId: string) => Promise<T>;
+  buildDocument: (
+    subscription: T,
+    existing: StoredSubscriptionRecord | null,
+  ) => Record<string, unknown>;
+  relevantState: (subscription: T) => string;
+  shouldPersist?: (subscription: T) => boolean;
+  store: TransactionalSubscriptionStore;
+}
+
+interface ReconciledSubscriptionTransaction<T extends Record<string, unknown>> {
+  subscription: T;
+  document: StoredSubscriptionRecord | null;
+  existing: StoredSubscriptionRecord | null;
+  attempts: number;
+  providerFetches: number;
+  result: 'created' | 'updated' | 'ignored';
+}
+
+const MAX_SUBSCRIPTION_TRANSACTION_ATTEMPTS = 3;
+
+function assertTransactionSupport(store: TransactionalSubscriptionStore): void {
+  const candidate = store as unknown as Record<string, unknown>;
+  const requiredMethods = [
+    'createTransaction',
+    'readDocument',
+    'stageCreate',
+    'stageUpdate',
+    'commitTransaction',
+    'rollbackTransaction',
+    'deleteTransaction',
+  ];
+  if (requiredMethods.some((method) => typeof candidate[method] !== 'function')) {
+    throw new Error('Appwrite document transactions are required for subscription webhooks');
+  }
+}
+
+async function cleanUpSubscriptionTransaction(
+  store: TransactionalSubscriptionStore,
+  transactionId: string,
+): Promise<void> {
+  try {
+    await store.rollbackTransaction(transactionId);
+  } catch {
+    // Preserve the stage, read, or commit error that caused cleanup.
+  }
+  try {
+    await store.deleteTransaction(transactionId);
+  } catch {
+    // A rolled-back or failed transaction may already be unavailable.
+  }
+}
+
+export async function reconcileSubscriptionTransaction<T extends Record<string, unknown>>({
+  webhookEntity,
+  fetchSubscription,
+  buildDocument,
+  relevantState,
+  shouldPersist,
+  store,
+}: ReconcileSubscriptionTransactionOptions<T>): Promise<ReconciledSubscriptionTransaction<T>> {
+  assertTransactionSupport(store);
+
+  let providerFetches = 0;
+  let lastOutcome: 'conflict' | 'unstable' = 'unstable';
+  const fetchAuthoritative = async () => {
+    providerFetches += 1;
+    return resolveAuthoritativeSubscription(webhookEntity, fetchSubscription);
+  };
+
+  for (let attempt = 1; attempt <= MAX_SUBSCRIPTION_TRANSACTION_ATTEMPTS; attempt += 1) {
+    const authoritative = await fetchAuthoritative();
+    if (shouldPersist && !shouldPersist(authoritative)) {
+      return {
+        subscription: authoritative,
+        document: null,
+        existing: null,
+        attempts: attempt,
+        providerFetches,
+        result: 'ignored',
+      };
+    }
+    const authoritativeState = relevantState(authoritative);
+    const providerSubscriptionId = authoritative.id as string;
+    const transaction = await store.createTransaction();
+    if (!transaction || typeof transaction.$id !== 'string' || transaction.$id.length === 0) {
+      throw new Error('Appwrite document transaction did not return an ID');
+    }
+    const transactionId = transaction.$id;
+
+    let existing: StoredSubscriptionRecord | null;
+    try {
+      existing = await store.readDocument(transactionId, providerSubscriptionId);
+    } catch (error) {
+      await cleanUpSubscriptionTransaction(store, transactionId);
+      throw error;
+    }
+
+    let document: Record<string, unknown>;
+    try {
+      document = buildDocument(authoritative, existing);
+    } catch (error) {
+      await cleanUpSubscriptionTransaction(store, transactionId);
+      throw error;
+    }
+
+    const stagedDocument = existing
+      ? subscriptionDocumentForUpdate(existing, document)
+      : document;
+    const result = existing ? 'updated' as const : 'created' as const;
+    const documentId = typeof existing?.$id === 'string'
+      ? existing.$id
+      : providerSubscriptionId;
+
+    try {
+      if (existing) {
+        await store.stageUpdate(transactionId, documentId, stagedDocument);
+      } else {
+        await store.stageCreate(transactionId, documentId, stagedDocument);
+      }
+    } catch (error) {
+      await cleanUpSubscriptionTransaction(store, transactionId);
+      if (isDocumentConflict(error)) {
+        lastOutcome = 'conflict';
+        continue;
+      }
+      throw error;
+    }
+
+    try {
+      await store.commitTransaction(transactionId);
+    } catch (error) {
+      await cleanUpSubscriptionTransaction(store, transactionId);
+      if (isDocumentConflict(error)) {
+        lastOutcome = 'conflict';
+        continue;
+      }
+      throw error;
+    }
+
+    const persistedDocument = {
+      ...(existing ?? { $id: documentId }),
+      ...stagedDocument,
+    } as StoredSubscriptionRecord;
+    const verified = await fetchAuthoritative();
+    if (relevantState(verified) === authoritativeState) {
+      return {
+        subscription: verified,
+        document: persistedDocument,
+        existing,
+        attempts: attempt,
+        providerFetches,
+        result,
+      };
+    }
+    lastOutcome = 'unstable';
+  }
+
+  if (lastOutcome === 'conflict') {
+    throw new Error('Subscription transaction conflicts exhausted');
+  }
+  throw new Error('Authoritative subscription state did not stabilize');
+}
+
 const SUBSCRIPTION_EVENT_STATUS: Record<string, string> = {
   'subscription.activated': 'active',
   'subscription.charged': 'active',

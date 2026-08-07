@@ -209,6 +209,10 @@ npx tsx scripts/init-google-sheet.ts     # Init Google Sheets
 4. Deploy
 5. Set up cron jobs (Vercel auto-detects `vercel.json`)
 
+Subscription webhooks require Appwrite document transaction support compatible
+with `node-appwrite` 21.1.0 or newer. The webhook fails safely instead of writing
+subscription state when transactions are unavailable.
+
 ### Database
 
 Use Neon, Supabase, or any PostgreSQL provider.
