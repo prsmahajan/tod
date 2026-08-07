@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { trackPublicEvent } from "@/lib/analytics/events";
+import { shouldTrackEvidenceView } from "@/lib/analytics/evidence-funnel";
 import { normalizeFeedDate } from "@/lib/public-data/feed-date";
 
 export interface FeaturedFeedingRecord {
@@ -130,10 +131,26 @@ export default function LatestFeedingRecords() {
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section || typeof IntersectionObserver === "undefined") return;
+    if (
+      !section
+      || typeof IntersectionObserver === "undefined"
+      || !shouldTrackEvidenceView({
+        status,
+        recordCount: records.length,
+        isIntersecting: true,
+        hasTracked: hasTrackedEvidenceView.current,
+      })
+    ) {
+      return;
+    }
 
     const observer = new IntersectionObserver((entries) => {
-      if (hasTrackedEvidenceView.current || !entries.some((entry) => entry.isIntersecting)) {
+      if (!shouldTrackEvidenceView({
+        status,
+        recordCount: records.length,
+        isIntersecting: entries.some((entry) => entry.isIntersecting),
+        hasTracked: hasTrackedEvidenceView.current,
+      })) {
         return;
       }
 
@@ -144,7 +161,7 @@ export default function LatestFeedingRecords() {
 
     observer.observe(section);
     return () => observer.disconnect();
-  }, []);
+  }, [records.length, status]);
 
   return (
     <section ref={sectionRef} aria-busy={status === "loading"}>

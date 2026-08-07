@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { getPlanDetails } from '@/lib/razorpay/plans';
 import { parseGuestSubscriptionRequest } from '@/lib/razorpay/guest-checkout';
+import { createServerCheckoutSelection } from '@/lib/analytics/support-funnel';
 
 export async function POST(req: NextRequest) {
   try {
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
       billingCycle,
       shortUrl: subscription.short_url,
       keyId,
+      analytics: createServerCheckoutSelection(planType, planDetails.amount),
     });
   } catch (error: any) {
     console.error('Error creating subscription:', error);

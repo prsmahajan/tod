@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { parseGuestOrderRequest } from '@/lib/razorpay/guest-checkout';
+import { createServerCheckoutSelection } from '@/lib/analytics/support-funnel';
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
       amount: order.amount,
       currency: order.currency,
       keyId: keyId, // Send key_id to frontend for checkout
+      analytics: createServerCheckoutSelection(planType, amount),
     });
   } catch (error: any) {
     console.error('Error creating Razorpay order:', error);

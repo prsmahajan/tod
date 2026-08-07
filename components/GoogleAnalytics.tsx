@@ -1,9 +1,19 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Script from "next/script"
+import { usePathname } from "next/navigation"
+import { createPageViewTracker } from "@/lib/analytics/page-views"
 
 export default function GoogleAnalytics() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID
+  const pathname = usePathname()
+  const [analyticsReady, setAnalyticsReady] = useState(false)
+  const [trackPageView] = useState(createPageViewTracker)
+
+  useEffect(() => {
+    if (analyticsReady) trackPageView(pathname)
+  }, [analyticsReady, pathname, trackPageView])
 
   if (!gaId) {
     return null
@@ -19,6 +29,7 @@ export default function GoogleAnalytics() {
       <Script
         id="google-analytics"
         strategy="afterInteractive"
+        onReady={() => setAnalyticsReady(true)}
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];

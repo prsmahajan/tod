@@ -11,6 +11,11 @@ import {
   type CheckoutFailureCode,
   trackPublicEvent,
 } from '@/lib/analytics/events';
+import {
+  type CheckoutSelection,
+  getSupportCardSelection,
+  parseServerCheckoutSelection,
+} from '@/lib/analytics/support-funnel';
 
 declare global {
   interface Window {
@@ -67,7 +72,14 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
       )}
       <p className="mt-4 text-sm text-[var(--color-text-secondary)]">{description}</p>
       <button
-        onClick={() => onSupport(displayAmount, planType)}
+        onClick={() => {
+          const selection = getSupportCardSelection({
+            currentAmount: amount,
+            displayedAmount: displayAmount,
+            planType,
+          });
+          onSupport(selection.amount, selection.planType);
+        }}
         disabled={isProcessing}
         className={`mt-6 w-full px-6 py-3 font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${popular ? 'bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90' : 'bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)]'}`}
       >
@@ -135,6 +147,7 @@ const SupportPage: React.FC = () => {
   const handleOneTimePayment = async (amount: number, planType: PlanType) => {
     setIsProcessing(true);
     let failureCode: CheckoutFailureCode = 'order_create_failed';
+    let analyticsSelection: CheckoutSelection = { amount, planType };
 
     try {
       const orderResponse = await fetch('/api/razorpay/create-order', {
@@ -151,13 +164,16 @@ const SupportPage: React.FC = () => {
       }
 
       const orderData = await orderResponse.json();
+      const serverSelection = parseServerCheckoutSelection(orderData);
+      if (!serverSelection) throw new Error('Invalid checkout details');
+      analyticsSelection = serverSelection;
 
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'The Open Draft',
-        description: `One-time Support - ${currencySymbol}${amount}`,
+        description: `One-time Support - ${currencySymbol}${serverSelection.amount}`,
         order_id: orderData.orderId,
         prefill: {
           name: user?.name || '',
@@ -181,15 +197,14 @@ const SupportPage: React.FC = () => {
 
             const verifyData = await verifyResponse.json();
             if (verifyData.success !== true) throw new Error('Payment verification failed');
-            trackPublicEvent('checkout_succeeded', { planType, amount });
+            trackPublicEvent('checkout_succeeded', serverSelection);
             const paymentId = encodeURIComponent(verifyData.paymentId);
             const orderId = encodeURIComponent(verifyData.orderId);
             window.location.href = `/support/success?payment_id=${paymentId}&order_id=${orderId}`;
             return;
           } catch (error) {
             trackPublicEvent('checkout_failed', {
-              planType,
-              amount,
+              ...serverSelection,
               errorCode: 'verification_failed',
             });
             toast.error('Payment verification failed. Please contact support.');
@@ -198,18 +213,18 @@ const SupportPage: React.FC = () => {
         },
         modal: {
           ondismiss: function () {
-            trackPublicEvent('checkout_dismissed', { planType, amount });
+            trackPublicEvent('checkout_dismissed', serverSelection);
             setIsProcessing(false);
           },
         },
       };
 
       failureCode = 'checkout_open_failed';
-      trackPublicEvent('checkout_started', { planType, amount });
+      trackPublicEvent('checkout_started', serverSelection);
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error: any) {
-      trackPublicEvent('checkout_failed', { planType, amount, errorCode: failureCode });
+      trackPublicEvent('checkout_failed', { ...analyticsSelection, errorCode: failureCode });
       toast.error(error.message || 'Failed to initiate payment.');
       setIsProcessing(false);
     }
@@ -219,6 +234,7 @@ const SupportPage: React.FC = () => {
   const handleSubscription = async (amount: number, planType: PlanType) => {
     setIsProcessing(true);
     let failureCode: CheckoutFailureCode = 'subscription_create_failed';
+    let analyticsSelection: CheckoutSelection = { amount, planType };
 
     try {
       const subscriptionResponse = await fetch('/api/razorpay/create-subscription', {
@@ -236,12 +252,15 @@ const SupportPage: React.FC = () => {
       }
 
       const subscriptionData = await subscriptionResponse.json();
+      const serverSelection = parseServerCheckoutSelection(subscriptionData);
+      if (!serverSelection) throw new Error('Invalid checkout details');
+      analyticsSelection = serverSelection;
 
       const options = {
         key: subscriptionData.keyId,
         subscription_id: subscriptionData.subscriptionId,
         name: 'The Open Draft',
-        description: `${planType.charAt(0).toUpperCase() + planType.slice(1)} ${billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)} Subscription - ${currencySymbol}${amount}/${billingCycle === 'weekly' ? 'week' : 'month'}`,
+        description: `${serverSelection.planType.charAt(0).toUpperCase() + serverSelection.planType.slice(1)} ${subscriptionData.billingCycle.charAt(0).toUpperCase() + subscriptionData.billingCycle.slice(1)} Subscription - ${currencySymbol}${serverSelection.amount}/${subscriptionData.billingCycle === 'weekly' ? 'week' : 'month'}`,
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
@@ -254,18 +273,18 @@ const SupportPage: React.FC = () => {
         },
         modal: {
           ondismiss: function () {
-            trackPublicEvent('checkout_dismissed', { planType, amount });
+            trackPublicEvent('checkout_dismissed', serverSelection);
             setIsProcessing(false);
           },
         },
       };
 
       failureCode = 'checkout_open_failed';
-      trackPublicEvent('checkout_started', { planType, amount });
+      trackPublicEvent('checkout_started', serverSelection);
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error: any) {
-      trackPublicEvent('checkout_failed', { planType, amount, errorCode: failureCode });
+      trackPublicEvent('checkout_failed', { ...analyticsSelection, errorCode: failureCode });
       toast.error(error.message || 'Failed to create subscription.');
       setIsProcessing(false);
     }
