@@ -11,7 +11,6 @@ import FeedingRecordsDisplay, {
   type RecordsStatus,
 } from "@/components/impact/FeedingRecordsDisplay";
 import TransparencyStatus from "@/components/impact/TransparencyStatus";
-import SupportersWall from "@/components/SupportersWall";
 
 export default function ImpactPage() {
   const [records, setRecords] = useState<FeaturedPhoto[]>([]);
@@ -76,10 +75,6 @@ export default function ImpactPage() {
             <div className="mt-10">
               <FeedingRecordsDisplay status={status} records={records} />
             </div>
-          </section>
-
-          <section className="mt-32 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 md:p-8 lg:p-12">
-            <SupportersWall />
           </section>
 
           <div className="mt-32">

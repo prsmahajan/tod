@@ -14,6 +14,13 @@ interface CommunityStatsProps {
   className?: string;
 }
 
+interface CommunityStatsDisplayProps {
+  variant: "full" | "compact";
+  className: string;
+  loading: boolean;
+  stats: HomepageStatsInput | null;
+}
+
 function StatsSkeleton({ className, variant }: { className: string; variant: "full" | "compact" }) {
   const itemCount = variant === "compact" ? 2 : 4;
 
@@ -31,32 +38,12 @@ function StatsSkeleton({ className, variant }: { className: string; variant: "fu
   );
 }
 
-export default function CommunityStats({ variant = "full", className = "" }: CommunityStatsProps) {
-  const [stats, setStats] = useState<HomepageStatsInput | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function fetchStats() {
-      try {
-        const response = await fetch("/api/public/stats", { signal: controller.signal });
-        if (!response.ok) return;
-        const data = await response.json() as HomepageStatsInput;
-        setStats(data);
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error("Error fetching public stats:", error);
-        }
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-
-    fetchStats();
-    return () => controller.abort();
-  }, []);
-
+export function CommunityStatsDisplay({
+  variant,
+  className,
+  loading,
+  stats,
+}: CommunityStatsDisplayProps) {
   if (loading) return <StatsSkeleton className={className} variant={variant} />;
 
   if (!stats) {
@@ -107,5 +94,41 @@ export default function CommunityStats({ variant = "full", className = "" }: Com
         Meal capacity is an estimate derived from confirmed contributions. It is not a completed feeding count.
       </p>
     </div>
+  );
+}
+
+export default function CommunityStats({ variant = "full", className = "" }: CommunityStatsProps) {
+  const [stats, setStats] = useState<HomepageStatsInput | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchStats() {
+      try {
+        const response = await fetch("/api/public/stats", { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.json() as HomepageStatsInput;
+        setStats(data);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Error fetching public stats:", error);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    fetchStats();
+    return () => controller.abort();
+  }, []);
+
+  return (
+    <CommunityStatsDisplay
+      variant={variant}
+      className={className}
+      loading={loading}
+      stats={stats}
+    />
   );
 }

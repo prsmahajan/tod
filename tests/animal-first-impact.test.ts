@@ -11,6 +11,7 @@ test("impact page contains only the animal evidence journey", async () => {
   assert.match(html, /Feeding Records and Support/);
   assert.match(html, /Loading verified feeding records\./);
   assert.equal(html.includes("<main"), false, "the root layout already provides the main landmark");
+  assert.equal((html.match(/<section/g) ?? []).length, 3, "only stats, feeding records, and transparency belong on this page");
 
   for (const forbidden of [
     "unsplash",
@@ -20,6 +21,7 @@ test("impact page contains only the animal evidence journey", async () => {
     "#/mission",
     "feeding, shelter, care, and awareness",
     "a glimpse into our day",
+    "across india",
   ]) {
     assert.equal(normalized.includes(forbidden), false, `found unsupported impact content: ${forbidden}`);
   }
