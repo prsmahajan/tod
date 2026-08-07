@@ -1,4 +1,5 @@
 import React from "react";
+import { normalizeFeedDate } from "@/lib/public-data/feed-date";
 
 export interface FeaturedPhoto {
   id: string;
@@ -18,13 +19,13 @@ function toFeaturedPhoto(value: unknown): FeaturedPhoto | null {
   if (!value || typeof value !== "object") return null;
 
   const candidate = value as Record<string, unknown>;
+  const feedDate = normalizeFeedDate(candidate.feedDate);
   if (
     !isNonEmptyString(candidate.id)
     || !isNonEmptyString(candidate.imageUrl)
     || !isNonEmptyString(candidate.description)
     || !isNonEmptyString(candidate.userName)
-    || !isNonEmptyString(candidate.feedDate)
-    || Number.isNaN(Date.parse(candidate.feedDate))
+    || feedDate === null
   ) {
     return null;
   }
@@ -34,7 +35,7 @@ function toFeaturedPhoto(value: unknown): FeaturedPhoto | null {
     imageUrl: candidate.imageUrl.trim(),
     description: candidate.description.trim(),
     userName: candidate.userName.trim(),
-    feedDate: candidate.feedDate.trim(),
+    feedDate,
   };
 
   if (isNonEmptyString(candidate.location)) {

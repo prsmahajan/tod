@@ -185,6 +185,7 @@ test("featured record normalization rejects malformed API data", async () => {
       { id: "x", imageUrl: "", description: "x", userName: "x", feedDate: "2026-08-01" },
       { id: "x", imageUrl: "x", description: "", userName: "x", feedDate: "2026-08-01" },
       { id: "x", imageUrl: "x", description: "x", userName: "", feedDate: "2026-08-01" },
+      { id: "x", imageUrl: "x", description: "x", userName: "x", feedDate: "2026-02-30" },
     ],
   }), []);
 });

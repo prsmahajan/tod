@@ -89,6 +89,13 @@ test("impact record normalization rejects undated and malformed uploads", async 
         userName: "Admin",
         feedDate: "not-a-date",
       },
+      {
+        id: "impossible-date",
+        imageUrl: "https://example.com/impossible-date.jpg",
+        description: "Impossible record.",
+        userName: "Admin",
+        feedDate: "2026-02-30",
+      },
       null,
     ],
   });
