@@ -233,6 +233,7 @@ interface TransactionalSubscriptionStore {
     transactionId: string,
     documentId: string,
   ) => Promise<StoredSubscriptionRecord | null>;
+  readCommitted: (documentId: string) => Promise<StoredSubscriptionRecord>;
   stageCreate: (
     transactionId: string,
     documentId: string,
@@ -257,6 +258,7 @@ interface ReconcileSubscriptionTransactionOptions<T extends Record<string, unkno
   ) => Record<string, unknown>;
   relevantState: (subscription: T) => string;
   shouldPersist?: (subscription: T) => boolean;
+  onReconciledDocument?: (document: StoredSubscriptionRecord) => Promise<void>;
   store: TransactionalSubscriptionStore;
 }
 
@@ -269,6 +271,14 @@ interface ReconciledSubscriptionTransaction<T extends Record<string, unknown>> {
   result: 'created' | 'updated' | 'ignored';
 }
 
+type ReconcileSubscriptionWebhookOptions<T extends Record<string, unknown>> = Omit<
+  ReconcileSubscriptionTransactionOptions<T>,
+  'onReconciledDocument'
+> & {
+  payment?: { email?: unknown; [key: string]: unknown };
+  syncSubscription: (document: StoredSubscriptionRecord) => Promise<void>;
+};
+
 const MAX_SUBSCRIPTION_TRANSACTION_ATTEMPTS = 3;
 
 function assertTransactionSupport(store: TransactionalSubscriptionStore): void {
@@ -276,6 +286,7 @@ function assertTransactionSupport(store: TransactionalSubscriptionStore): void {
   const requiredMethods = [
     'createTransaction',
     'readDocument',
+    'readCommitted',
     'stageCreate',
     'stageUpdate',
     'commitTransaction',
@@ -309,6 +320,7 @@ export async function reconcileSubscriptionTransaction<T extends Record<string, 
   buildDocument,
   relevantState,
   shouldPersist,
+  onReconciledDocument,
   store,
 }: ReconcileSubscriptionTransactionOptions<T>): Promise<ReconciledSubscriptionTransaction<T>> {
   assertTransactionSupport(store);
@@ -390,15 +402,20 @@ export async function reconcileSubscriptionTransaction<T extends Record<string, 
       throw error;
     }
 
-    const persistedDocument = {
-      ...(existing ?? { $id: documentId }),
-      ...stagedDocument,
-    } as StoredSubscriptionRecord;
     const verified = await fetchAuthoritative();
     if (relevantState(verified) === authoritativeState) {
+      const committedDocument = await store.readCommitted(documentId);
+      if (
+        !committedDocument
+        || typeof committedDocument.$id !== 'string'
+        || committedDocument.$id !== documentId
+      ) {
+        throw new Error('Committed Appwrite subscription document could not be loaded');
+      }
+      await onReconciledDocument?.(committedDocument);
       return {
         subscription: verified,
-        document: persistedDocument,
+        document: committedDocument,
         existing,
         attempts: attempt,
         providerFetches,
@@ -412,6 +429,18 @@ export async function reconcileSubscriptionTransaction<T extends Record<string, 
     throw new Error('Subscription transaction conflicts exhausted');
   }
   throw new Error('Authoritative subscription state did not stabilize');
+}
+
+export async function reconcileSubscriptionWebhook<T extends Record<string, unknown>>({
+  payment,
+  syncSubscription,
+  ...options
+}: ReconcileSubscriptionWebhookOptions<T>): Promise<ReconciledSubscriptionTransaction<T>> {
+  const attribution = getGatewayPaymentAttribution(payment);
+  return reconcileSubscriptionTransaction({
+    ...options,
+    onReconciledDocument: attribution.userEmail ? syncSubscription : undefined,
+  });
 }
 
 const SUBSCRIPTION_EVENT_STATUS: Record<string, string> = {

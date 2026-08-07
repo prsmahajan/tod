@@ -9,7 +9,7 @@ import {
   getGatewayPaymentAttribution,
   isInrWebhookEntity,
   reconcilePaymentTransaction,
-  reconcileSubscriptionTransaction,
+  reconcileSubscriptionWebhook,
   subscriptionStatusFromEvent,
 } from '@/lib/razorpay/webhook-payment';
 
@@ -296,9 +296,10 @@ function buildSubscriptionDocument(
 
 async function persistAuthoritativeSubscription(webhookEntity: Record<string, unknown>, payment?: any) {
   assertAppwriteTransactionSupport();
-  const paymentAttribution = getGatewayPaymentAttribution(payment);
-  const reconciliation = await reconcileSubscriptionTransaction({
+  const reconciliation = await reconcileSubscriptionWebhook({
     webhookEntity,
+    payment,
+    syncSubscription: (document) => syncSubscriptionToPostgres(document as any),
     fetchSubscription: fetchAuthoritativeSubscription,
     shouldPersist: isInrWebhookEntity,
     relevantState: subscriptionReconciliationState,
@@ -313,6 +314,11 @@ async function persistAuthoritativeSubscription(webhookEntity: Record<string, un
         return { $id: transaction.$id };
       },
       readDocument: readSubscriptionInTransaction,
+      readCommitted: (documentId) => databases.getDocument<any>({
+        databaseId: DATABASE_ID,
+        collectionId: COLLECTIONS.SUBSCRIPTIONS,
+        documentId,
+      }) as Promise<StoredDocument>,
       stageCreate: (transactionId, documentId, data) => databases.createDocument<any>({
         databaseId: DATABASE_ID,
         collectionId: COLLECTIONS.SUBSCRIPTIONS,
@@ -338,14 +344,6 @@ async function persistAuthoritativeSubscription(webhookEntity: Record<string, un
       deleteTransaction: (transactionId) => databases.deleteTransaction({ transactionId }),
     },
   });
-
-  if (reconciliation.existing && reconciliation.document && paymentAttribution.userEmail) {
-    try {
-      await syncSubscriptionToPostgres(reconciliation.document as any);
-    } catch (syncError) {
-      console.error('Error syncing subscription to PostgreSQL:', syncError);
-    }
-  }
 
   console.log(
     `Subscription ${String(reconciliation.subscription.id)} reconciled from Razorpay:`,

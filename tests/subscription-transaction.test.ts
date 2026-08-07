@@ -15,6 +15,7 @@ type StoredSubscription = Record<string, unknown> & { $id: string };
 interface TransactionStore {
   createTransaction: () => Promise<{ $id: string }>;
   readDocument: (transactionId: string, documentId: string) => Promise<StoredSubscription | null>;
+  readCommitted: (documentId: string) => Promise<StoredSubscription>;
   stageCreate: (
     transactionId: string,
     documentId: string,
@@ -38,6 +39,7 @@ interface ReconcileOptions {
     existing: StoredSubscription | null,
   ) => Record<string, unknown>;
   relevantState: (subscription: ProviderSubscription) => string;
+  onReconciledDocument?: (document: StoredSubscription) => Promise<void>;
   store: TransactionStore;
 }
 
@@ -50,6 +52,11 @@ interface ReconcileResult {
 }
 
 type ReconcileSubscriptionTransaction = (options: ReconcileOptions) => Promise<ReconcileResult>;
+
+type ReconcileSubscriptionWebhook = (options: ReconcileOptions & {
+  payment?: { email?: unknown };
+  syncSubscription: (document: StoredSubscription) => Promise<void>;
+}) => Promise<ReconcileResult>;
 
 interface PendingTransaction {
   readVersion: number | null;
@@ -72,6 +79,7 @@ function createTransactionalMock(initial: StoredSubscription | null = null) {
   const counts = {
     create: 0,
     read: 0,
+    readCommitted: 0,
     stageCreate: 0,
     stageUpdate: 0,
     commit: 0,
@@ -97,6 +105,11 @@ function createTransactionalMock(initial: StoredSubscription | null = null) {
       if (!transaction) throw new Error("unknown transaction");
       transaction.readVersion = version;
       return stored ? { ...stored } : null;
+    },
+    readCommitted: async () => {
+      counts.readCommitted += 1;
+      if (!stored) throw new Error("committed subscription is missing");
+      return { ...stored };
     },
     stageCreate: async (transactionId, documentId, document) => {
       counts.stageCreate += 1;
@@ -127,8 +140,20 @@ function createTransactionalMock(initial: StoredSubscription | null = null) {
       }
 
       stored = transaction.operation === "create"
-        ? { $id: transaction.documentId, ...transaction.document }
-        : { ...stored!, ...transaction.document };
+        ? {
+            $id: transaction.documentId,
+            $createdAt: "2026-08-07T12:00:00.000Z",
+            $updatedAt: "2026-08-07T12:00:00.000Z",
+            $permissions: [],
+            $databaseId: "opendraft",
+            $collectionId: "subscriptions",
+            ...transaction.document,
+          }
+        : {
+            ...stored!,
+            ...transaction.document,
+            $updatedAt: "2026-08-07T12:05:00.000Z",
+          };
       version += 1;
       transactions.delete(transactionId);
     },
@@ -314,6 +339,131 @@ test("a provider transition after commit triggers one bounded transactional reco
   assert.equal(providerFetches, 4);
   assert.equal(transactional.counts.create, 2);
   assert.equal(transactional.counts.commit, 2);
+});
+
+test("charged-before-activation sync receives the actual committed Appwrite document", async () => {
+  const reconcile = (webhookPayment as typeof webhookPayment & {
+    reconcileSubscriptionWebhook?: ReconcileSubscriptionWebhook;
+  }).reconcileSubscriptionWebhook;
+
+  assert.equal(typeof reconcile, "function");
+  if (!reconcile) return;
+
+  const transactional = createTransactionalMock();
+  const syncedDocuments: StoredSubscription[] = [];
+  const result = await reconcile({
+    ...options(
+      transactional.store,
+      async (id) => ({ id, status: "active", current_start: 100, current_end: 200 }),
+      "first-charge@example.com",
+    ),
+    payment: { email: "first-charge@example.com" },
+    syncSubscription: async (document) => {
+      syncedDocuments.push({ ...document });
+    },
+  });
+  const expectedCommittedDocument = {
+    $id: "sub_race",
+    $createdAt: "2026-08-07T12:00:00.000Z",
+    $updatedAt: "2026-08-07T12:00:00.000Z",
+    $permissions: [],
+    $databaseId: "opendraft",
+    $collectionId: "subscriptions",
+    userId: "anonymous",
+    userEmail: "first-charge@example.com",
+    userName: "",
+    razorpaySubscriptionId: "sub_race",
+    planId: "plan_123",
+    planType: "seedling",
+    billingCycle: "monthly",
+    amount: 99,
+    status: "active",
+    currentPeriodStart: 100,
+    currentPeriodEnd: 200,
+  };
+
+  assert.equal(result.existing, null);
+  assert.deepEqual(result.document, expectedCommittedDocument);
+  assert.deepEqual(syncedDocuments, [expectedCommittedDocument]);
+  assert.equal(transactional.counts.readCommitted, 1);
+});
+
+test("a committed-read failure escapes and redelivery syncs the already committed row", async () => {
+  const reconcile = (webhookPayment as typeof webhookPayment & {
+    reconcileSubscriptionTransaction?: ReconcileSubscriptionTransaction;
+  }).reconcileSubscriptionTransaction;
+
+  assert.equal(typeof reconcile, "function");
+  if (!reconcile) return;
+
+  const transactional = createTransactionalMock();
+  const readCommitted = transactional.store.readCommitted;
+  const committedReadError = new Error("committed read unavailable");
+  let committedReadAttempts = 0;
+  transactional.store.readCommitted = async (documentId) => {
+    committedReadAttempts += 1;
+    if (committedReadAttempts === 1) throw committedReadError;
+    return readCommitted(documentId);
+  };
+  const syncedDocuments: StoredSubscription[] = [];
+  const deliver = () => reconcile({
+    ...options(
+      transactional.store,
+      async (id) => ({ id, status: "active", current_start: 100, current_end: 200 }),
+      "retry@example.com",
+    ),
+    onReconciledDocument: async (document) => {
+      syncedDocuments.push({ ...document });
+    },
+  });
+
+  await assert.rejects(deliver(), committedReadError);
+  assert.equal(transactional.getStored()?.userEmail, "retry@example.com");
+  assert.equal(syncedDocuments.length, 0);
+  const retried = await deliver();
+
+  assert.equal(committedReadAttempts, 2);
+  assert.equal(transactional.counts.commit, 2);
+  assert.equal(retried.document.$createdAt, "2026-08-07T12:00:00.000Z");
+  assert.equal(syncedDocuments.length, 1);
+  assert.equal(syncedDocuments[0]?.$createdAt, "2026-08-07T12:00:00.000Z");
+});
+
+test("a downstream sync failure escapes and redelivery safely repeats the sync", async () => {
+  const reconcile = (webhookPayment as typeof webhookPayment & {
+    reconcileSubscriptionTransaction?: ReconcileSubscriptionTransaction;
+  }).reconcileSubscriptionTransaction;
+
+  assert.equal(typeof reconcile, "function");
+  if (!reconcile) return;
+
+  const transactional = createTransactionalMock();
+  const syncError = new Error("PostgreSQL sync unavailable");
+  const syncedDocuments: StoredSubscription[] = [];
+  let syncAttempts = 0;
+  const deliver = () => reconcile({
+    ...options(
+      transactional.store,
+      async (id) => ({ id, status: "active", current_start: 100, current_end: 200 }),
+      "retry@example.com",
+    ),
+    onReconciledDocument: async (document) => {
+      syncAttempts += 1;
+      syncedDocuments.push({ ...document });
+      if (syncAttempts === 1) throw syncError;
+    },
+  });
+
+  await assert.rejects(deliver(), syncError);
+  assert.equal(transactional.getStored()?.userEmail, "retry@example.com");
+  const retried = await deliver();
+
+  assert.equal(syncAttempts, 2);
+  assert.equal(transactional.counts.commit, 2);
+  assert.equal(transactional.counts.readCommitted, 2);
+  assert.equal(retried.document.$createdAt, "2026-08-07T12:00:00.000Z");
+  assert.equal(syncedDocuments[0]?.$createdAt, "2026-08-07T12:00:00.000Z");
+  assert.equal(syncedDocuments[1]?.$createdAt, "2026-08-07T12:00:00.000Z");
 });
 
 test("provider churn and transaction conflicts exhaust their fixed bounds as failures", async () => {
