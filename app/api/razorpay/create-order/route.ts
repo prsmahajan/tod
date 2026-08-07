@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { DonationPlan, getDonationAmount } from '@/lib/donations/public-rules';
-
-interface CreateOrderBody {
-  planType: DonationPlan;
-  customAmount?: number;
-  notes?: Record<string, string>;
-}
-
-const DONATION_PLANS: DonationPlan[] = ['seedling', 'sprout', 'tree', 'custom'];
+import { parseGuestOrderRequest } from '@/lib/razorpay/guest-checkout';
 
 export async function POST(req: NextRequest) {
   try {
-    let body: CreateOrderBody;
+    let body: unknown;
     try {
-      body = await req.json() as CreateOrderBody;
+      body = await req.json();
     } catch {
       return NextResponse.json(
         { error: 'Invalid request body' },
@@ -22,39 +14,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { planType, customAmount, notes } = body;
-
-    if (!DONATION_PLANS.includes(planType)) {
-      return NextResponse.json(
-        { error: 'Invalid donation plan' },
-        { status: 400 }
-      );
-    }
-
-    if (
-      notes !== undefined
-      && (
-        typeof notes !== 'object'
-        || notes === null
-        || Array.isArray(notes)
-        || Object.values(notes).some((value) => typeof value !== 'string')
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Invalid order notes' },
-        { status: 400 }
-      );
-    }
-
-    let amount: number;
+    let orderRequest: ReturnType<typeof parseGuestOrderRequest>;
     try {
-      amount = getDonationAmount(planType, customAmount);
+      orderRequest = parseGuestOrderRequest(body);
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Invalid donation amount' },
         { status: 400 }
       );
     }
+    const { planType, amount } = orderRequest;
 
     // Check if Razorpay credentials are configured
     const keyId = process.env.RAZORPAY_LIVE_ID;
@@ -80,8 +49,8 @@ export async function POST(req: NextRequest) {
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
       notes: {
-        ...(notes || {}),
         planType,
+        userId: 'anonymous',
       },
     };
 

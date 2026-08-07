@@ -137,13 +137,6 @@ const SupportPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planType,
-          notes: {
-            userId: user?.$id || 'anonymous',
-            userEmail: user?.email || '',
-            userName: user?.name || '',
-            displayAmount: String(amount),
-            displayCurrency: isIndia ? 'INR' : 'USD',
-          },
         }),
       });
 
@@ -165,14 +158,6 @@ const SupportPage: React.FC = () => {
           name: user?.name || '',
           email: user?.email || '',
           contact: user?.phone || '',
-        },
-        notes: {
-          planType,
-          userId: user?.$id || 'anonymous',
-          userEmail: user?.email || '',
-          userName: user?.name || '',
-          displayAmount: amount,
-          displayCurrency: isIndia ? 'INR' : 'USD',
         },
         theme: { color: '#A8A29E' },
         handler: async function (response: any) {
@@ -225,12 +210,6 @@ const SupportPage: React.FC = () => {
         body: JSON.stringify({
           planType,
           billingCycle,
-          userId: user?.$id || 'anonymous',
-          customerEmail: user?.email || '',
-          customerName: user?.name || '',
-          customerContact: user?.phone || '',
-          displayAmount: amount,
-          displayCurrency: isIndia ? 'INR' : 'USD',
         }),
       });
 
@@ -251,22 +230,10 @@ const SupportPage: React.FC = () => {
           email: user?.email || '',
           contact: user?.phone || '',
         },
-        notes: {
-          planType,
-          billingCycle,
-          userId: user?.$id || 'anonymous',
-          customerEmail: user?.email || '',
-          customerName: user?.name || '',
-          displayAmount: amount,
-          displayCurrency: isIndia ? 'INR' : 'USD',
-        },
         theme: { color: '#A8A29E' },
-        handler: async function (response: any) {
-          toast.success('Subscription checkout completed', {
-            description: 'Razorpay is confirming your recurring support. Thank you!',
-          });
-          setIsProcessing(false);
-          window.location.href = user ? '/app' : '/impact';
+        handler: async function () {
+          const subscriptionId = encodeURIComponent(subscriptionData.subscriptionId);
+          window.location.href = `/support/success?mode=subscription&subscription_id=${subscriptionId}`;
         },
         modal: {
           ondismiss: function () {
@@ -472,9 +439,16 @@ const SupportPage: React.FC = () => {
               We believe you have the right to know how your support is used. All financials are documented and shared with our community of supporters. This is about trust, not transactions.
             </p>
             {paymentMode === 'subscribe' && (
-              <p className="mt-4 text-xs text-[var(--color-text-secondary)]">
-                You can cancel your subscription anytime from your dashboard. No questions asked.
-              </p>
+              <div className="mt-4 text-xs text-[var(--color-text-secondary)]">
+                <p>You can cancel recurring support without a TOD account.</p>
+                <p className="mt-1">
+                  Email{' '}
+                  <a href="mailto:account@theopendraft.com" className="font-medium text-[var(--color-text-primary)] hover:underline">
+                    account@theopendraft.com
+                  </a>{' '}
+                  from the email used at Razorpay checkout and include the subscription ID shown after checkout.
+                </p>
+              </div>
             )}
           </div>
         </AnimatedSection>

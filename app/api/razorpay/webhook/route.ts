@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { databases, DATABASE_ID, COLLECTIONS, ID, Query } from '@/lib/appwrite/server';
-import { syncSubscriptionToPostgres, getSubscriptionByEmail } from '@/lib/subscription-sync';
-import { getPlanDetails, PlanType, BillingCycle } from '@/lib/razorpay-plans';
-
-// Verify Razorpay 
-// signature
-function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('hex');
-  return expectedSignature === signature;
-}
+import { syncSubscriptionToPostgres } from '@/lib/subscription-sync';
+import { getPlanDetails, PlanType, BillingCycle } from '@/lib/razorpay/plans';
+import { verifyWebhookSignature } from '@/lib/razorpay/verify-signature';
+import { createTransactionOnce, getGatewayPaymentAttribution } from '@/lib/razorpay/webhook-payment';
 
 export async function POST(req: NextRequest) {
   try {
@@ -100,7 +91,8 @@ export async function POST(req: NextRequest) {
 async function handlePaymentCaptured(payment: any) {
   try {
     const notes = payment.notes || {};
-    const userEmail = notes.userEmail || payment.email || '';
+    const attribution = getGatewayPaymentAttribution(payment);
+    const userEmail = attribution.userEmail;
 
     // Check multiple signals to detect if this is a subscription payment:
     // 1. payment.subscription_id is set by Razorpay for subscription payments
@@ -162,26 +154,41 @@ async function handlePaymentCaptured(payment: any) {
       return;
     }
 
-    await databases.createDocument(
-      DATABASE_ID,
-      COLLECTIONS.TRANSACTIONS,
-      ID.unique(),
-      {
-        userId: notes.userId || 'anonymous',
-        userEmail: userEmail,
-        userName: notes.userName || '',
-        amount: paymentAmount,
-        type: 'one-time',
-        status: 'success',
-        razorpayPaymentId: payment.id,
-        razorpayOrderId: payment.order_id || '',
-        planType: notes.planType || 'seedling',
-        billingCycle: notes.billingCycle || null,
-      }
+    const result = await createTransactionOnce({
+      paymentId: payment.id,
+      transactionExists: async () => {
+        const existing = await databases.listDocuments(
+          DATABASE_ID,
+          COLLECTIONS.TRANSACTIONS,
+          [Query.equal('razorpayPaymentId', payment.id)]
+        );
+        return existing.documents.length > 0;
+      },
+      createDocument: (documentId) => databases.createDocument<any>(
+        DATABASE_ID,
+        COLLECTIONS.TRANSACTIONS,
+        documentId,
+        {
+          ...attribution,
+          amount: paymentAmount,
+          type: 'one-time',
+          status: 'success',
+          razorpayPaymentId: payment.id,
+          razorpayOrderId: payment.order_id || '',
+          planType: notes.planType || 'seedling',
+          billingCycle: null,
+        }
+      ),
+    });
+    console.log(
+      result === 'created' ? 'Transaction recorded as one-time for payment:' : 'Transaction already recorded for payment:',
+      payment.id,
+      'Amount:',
+      paymentAmount,
     );
-    console.log('Transaction recorded as one-time for payment:', payment.id, 'Amount:', paymentAmount);
   } catch (error) {
     console.error('Error recording payment:', error);
+    throw error;
   }
 }
 
@@ -189,15 +196,14 @@ async function handlePaymentCaptured(payment: any) {
 async function handlePaymentFailed(payment: any) {
   try {
     const notes = payment.notes || {};
+    const attribution = getGatewayPaymentAttribution(payment);
 
     await databases.createDocument(
       DATABASE_ID,
       COLLECTIONS.TRANSACTIONS,
       ID.unique(),
       {
-        userId: notes.userId || 'anonymous',
-        userEmail: notes.userEmail || payment.email || '',
-        userName: notes.userName || '',
+        ...attribution,
         amount: payment.amount / 100,
         type: 'one-time',
         status: 'failed',
@@ -284,9 +290,9 @@ async function handleSubscriptionActivated(subscription: any) {
         COLLECTIONS.SUBSCRIPTIONS,
         ID.unique(),
         {
-          userId: notes.userId || 'anonymous',
-          userEmail: notes.customerEmail || '',
-          userName: notes.customerName || '',
+          userId: 'anonymous',
+          userEmail: '',
+          userName: '',
           razorpaySubscriptionId: subscription.id,
           planId: subscription.plan_id,
           planType: notes.planType || 'seedling',
@@ -301,16 +307,6 @@ async function handleSubscriptionActivated(subscription: any) {
     }
     console.log('Subscription activated:', subscription.id);
 
-    // Sync to PostgreSQL
-    try {
-      const appwriteSubscription = await getSubscriptionByEmail(notes.customerEmail || '');
-      if (appwriteSubscription) {
-        await syncSubscriptionToPostgres(appwriteSubscription);
-      }
-    } catch (syncError) {
-      console.error('Error syncing to PostgreSQL:', syncError);
-      // Don't fail the webhook if sync fails
-    }
   } catch (error) {
     console.error('Error handling subscription activation:', error);
   }
@@ -323,6 +319,7 @@ async function handleSubscriptionCharged(subscription: any, payment?: any) {
 
     // Record the transaction
     if (payment) {
+      const attribution = getGatewayPaymentAttribution(payment);
       // Check if this payment was already recorded (prevent duplicates)
       const existingTransaction = await databases.listDocuments(
         DATABASE_ID,
@@ -342,6 +339,7 @@ async function handleSubscriptionCharged(subscription: any, payment?: any) {
             {
               type: 'subscription',
               razorpaySubscriptionId: subscription.id,
+              ...attribution,
               planType: notes.planType || existing.planType || 'seedling',
               billingCycle: notes.billingCycle || existing.billingCycle || 'monthly',
             }
@@ -357,9 +355,7 @@ async function handleSubscriptionCharged(subscription: any, payment?: any) {
           COLLECTIONS.TRANSACTIONS,
           ID.unique(),
           {
-            userId: notes.userId || 'anonymous',
-            userEmail: notes.customerEmail || payment.email || '',
-            userName: notes.customerName || '',
+            ...attribution,
             amount: payment.amount / 100,
             type: 'subscription',
             status: 'success',
@@ -390,6 +386,7 @@ async function handleSubscriptionCharged(subscription: any, payment?: any) {
           currentPeriodStart: new Date(subscription.current_start * 1000).toISOString(),
           currentPeriodEnd: new Date(subscription.current_end * 1000).toISOString(),
           status: 'active',
+          ...(payment?.email ? { userEmail: payment.email } : {}),
         }
       );
     }

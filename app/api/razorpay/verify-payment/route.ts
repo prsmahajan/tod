@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyPaymentSignature } from '@/lib/razorpay/verify-signature';
+import { parsePaymentVerificationBody, verifyPaymentSignature } from '@/lib/razorpay/verify-signature';
 
 export async function POST(req: NextRequest) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
-
-    // Validate required fields
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
       return NextResponse.json(
-        { error: 'Missing payment verification parameters' },
+        { error: 'Invalid payment verification parameters' },
         { status: 400 }
       );
     }
+
+    const verification = parsePaymentVerificationBody(body);
+    if (!verification) {
+      return NextResponse.json(
+        { error: 'Invalid payment verification parameters' },
+        { status: 400 }
+      );
+    }
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verification;
 
     const keySecret = process.env.RAZORPAY_LIVE_KEY;
 

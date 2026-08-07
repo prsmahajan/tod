@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { getPlanDetails, PlanType, BillingCycle, Currency } from '@/lib/razorpay/plans';
+import { getPlanDetails } from '@/lib/razorpay/plans';
+import { parseGuestSubscriptionRequest } from '@/lib/razorpay/guest-checkout';
 
 export async function POST(req: NextRequest) {
   try {
-    const {
-      planType,
-      billingCycle,
-      currency,
-      customerEmail,
-      customerName,
-      customerContact,
-      userId,
-    } = await req.json();
-
-    // Validate inputs
-    if (!planType || !billingCycle) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
       return NextResponse.json(
-        { error: 'Plan type and billing cycle are required' },
+        { error: 'Invalid request body' },
         { status: 400 }
       );
     }
 
-    // Validate and default currency
-    const validCurrency: Currency = currency === 'USD' ? 'USD' : 'INR';
+    let request: ReturnType<typeof parseGuestSubscriptionRequest>;
+    try {
+      request = parseGuestSubscriptionRequest(body);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid subscription plan' },
+        { status: 400 }
+      );
+    }
+    const { planType, billingCycle, currency: validCurrency } = request;
 
     const keyId = process.env.RAZORPAY_LIVE_ID;
     const keySecret = process.env.RAZORPAY_LIVE_KEY;
@@ -40,17 +41,8 @@ export async function POST(req: NextRequest) {
       key_secret: keySecret,
     });
 
-    const validPlanTypes: PlanType[] = ['seedling', 'sprout', 'tree'];
-    const validBillingCycles: BillingCycle[] = ['weekly', 'monthly'];
-    if (!validPlanTypes.includes(planType) || !validBillingCycles.includes(billingCycle)) {
-      return NextResponse.json(
-        { error: 'Invalid plan selected' },
-        { status: 400 }
-      );
-    }
-
     // Get plan details with the specified currency
-    const planDetails = getPlanDetails(planType as PlanType, billingCycle as BillingCycle, validCurrency);
+    const planDetails = getPlanDetails(planType, billingCycle, validCurrency);
 
     // First, create or get the plan in Razorpay
     let planId: string;
@@ -94,10 +86,7 @@ export async function POST(req: NextRequest) {
       notes: {
         planType,
         billingCycle,
-        userId: userId || 'anonymous',
-        customerEmail: customerEmail || '',
-        customerName: customerName || '',
-        customerContact: customerContact || '',
+        userId: 'anonymous',
         // Keep persisted amounts server-owned even if a client submits display fields.
         displayAmount: planDetails.amount,
         displayCurrency: validCurrency,

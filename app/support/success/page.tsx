@@ -2,8 +2,10 @@ import Link from 'next/link';
 
 interface SupportSuccessPageProps {
   searchParams: Promise<{
+    mode?: string | string[];
     payment_id?: string | string[];
     order_id?: string | string[];
+    subscription_id?: string | string[];
   }>;
 }
 
@@ -14,32 +16,53 @@ function firstValue(value: string | string[] | undefined): string {
 
 export default async function SupportSuccessPage({ searchParams }: SupportSuccessPageProps) {
   const params = await searchParams;
+  const isSubscription = firstValue(params.mode) === 'subscription';
   const paymentId = firstValue(params.payment_id);
   const orderId = firstValue(params.order_id);
+  const subscriptionId = firstValue(params.subscription_id);
 
   return (
     <main className="container mx-auto flex min-h-[70vh] max-w-3xl items-center px-4 py-32 sm:px-6">
       <section className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-card-bg)] p-8 text-center sm:p-12">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--color-accent)]">
-          Payment verified
+          Checkout return received
         </p>
         <h1 className="mt-4 font-heading text-4xl font-extrabold text-[var(--color-text-primary)]">
           Thank you for your support.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-[var(--color-text-secondary)]">
-          Your payment details were verified. Our records are updated separately after confirmation from Razorpay.
+          Razorpay is sending final confirmation separately. This page does not serve as a payment receipt or proof of a completed transaction.
         </p>
 
         <dl className="mx-auto mt-8 max-w-xl space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 text-left">
-          <div>
-            <dt className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Payment ID</dt>
-            <dd className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">{paymentId}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Order ID</dt>
-            <dd className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">{orderId}</dd>
-          </div>
+          {isSubscription ? (
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Subscription reference</dt>
+              <dd className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">{subscriptionId}</dd>
+            </div>
+          ) : (
+            <>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Payment reference</dt>
+                <dd className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">{paymentId}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Order reference</dt>
+                <dd className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">{orderId}</dd>
+              </div>
+            </>
+          )}
         </dl>
+
+        {isSubscription && (
+          <p className="mx-auto mt-6 max-w-xl text-sm text-[var(--color-text-secondary)]">
+            To cancel without a TOD account, email{' '}
+            <a href="mailto:account@theopendraft.com" className="font-medium text-[var(--color-text-primary)] hover:underline">
+              account@theopendraft.com
+            </a>{' '}
+            from the email used at Razorpay checkout and include the subscription reference above.
+          </p>
+        )}
 
         <Link
           href="/impact"
