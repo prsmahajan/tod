@@ -1,24 +1,7 @@
 import { MetadataRoute } from 'next';
-import { prisma } from '@/lib/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theopendraft.com';
-
-  // Get all published posts
-  const posts = await prisma.post.findMany({
-    where: { status: 'PUBLISHED' },
-    select: {
-      slug: true,
-      updatedAt: true,
-    },
-  });
-
-  const postEntries: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${baseUrl}/articles/${post.slug}`,
-    lastModified: post.updatedAt,
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  }));
 
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -26,12 +9,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,
-    },
-    {
-      url: `${baseUrl}/articles`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
     },
     {
       url: `${baseUrl}/mission`,
@@ -95,5 +72,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  return [...staticPages, ...postEntries];
+  return staticPages;
 }

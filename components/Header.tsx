@@ -8,13 +8,7 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
 import Icon from "@/components/Icon";
 import { useScroll } from "@/hooks/useScroll";
 import AuthModal from "@/components/AuthModal";
-
-const NAV_LINKS = [
-  { name: "Impact", path: "/impact" },
-  { name: "Mission", path: "/mission" },
-  { name: "Support", path: "/support" },
-  { name: "Articles", path: "/articles" },
-];
+import { PUBLIC_NAV_LINKS } from "@/lib/public-navigation";
 
 function Header() {
   const router = useRouter();
@@ -185,11 +179,14 @@ function Header() {
 
   const navLinks = (
     <nav className="flex items-center space-x-2">
-      {NAV_LINKS.map((link) => (
+      {PUBLIC_NAV_LINKS.map((link) => (
         <Link
           key={link.name}
           href={link.path}
-          className="px-3 py-2 rounded-md text-base font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors duration-300"
+          className={link.primary
+            ? "px-5 py-2 text-base font-medium rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90 transition-opacity"
+            : "px-3 py-2 rounded-md text-base font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors duration-300"
+          }
         >
           {link.name}
         </Link>
@@ -296,12 +293,15 @@ function Header() {
 
         <div className={`absolute top-20 left-0 w-full bg-[var(--color-bg)] shadow-lg md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'transform translate-y-0 opacity-100' : 'transform -translate-y-4 opacity-0 pointer-events-none'}`}>
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {NAV_LINKS.map((link) => (
+            {PUBLIC_NAV_LINKS.map((link) => (
               <Link
                 key={link.name}
                 href={link.path}
                 onClick={closeMobileMenu}
-                className="block px-3 py-2 rounded-md text-base font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                className={link.primary
+                  ? "block px-5 py-2 text-base font-medium rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90 transition-opacity"
+                  : "block px-3 py-2 rounded-md text-base font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                }
               >
                 {link.name}
               </Link>

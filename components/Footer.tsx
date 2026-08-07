@@ -1,11 +1,5 @@
 import React from 'react';
-
-const NAV_LINKS = [
-  { name: "Impact", path: "/impact" },
-  { name: "Mission", path: "/mission" },
-  { name: "Support", path: "/support" },
-  { name: "Articles", path: "/articles" },
-];
+import { PUBLIC_NAV_LINKS } from '@/lib/public-navigation';
 
 const Footer: React.FC = () => {
   return (
@@ -19,9 +13,17 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="font-heading font-semibold text-[var(--color-text-secondary)]">Navigate</h4>
             <ul className="mt-2 space-y-1">
-              {NAV_LINKS.map(link => (
+              {PUBLIC_NAV_LINKS.map(link => (
                  <li key={link.name}>
-                    <a href={link.path} className="text-sm text-[var(--color-text-primary)] hover:underline">{link.name}</a>
+                    <a
+                      href={link.path}
+                      className={link.primary
+                        ? "inline-block px-4 py-2 rounded-full text-sm font-medium bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90 transition-opacity"
+                        : "text-sm text-[var(--color-text-primary)] hover:underline"
+                      }
+                    >
+                      {link.name}
+                    </a>
                 </li>
               ))}
             </ul>
