@@ -17,7 +17,9 @@ export function AccountMenuTrigger({
   expanded,
   initial,
   menuId,
+  onEscape,
   onToggle,
+  triggerRef,
 }: {
   accountName: string;
   avatarUrl?: string;
@@ -25,14 +27,25 @@ export function AccountMenuTrigger({
   expanded: boolean;
   initial: string;
   menuId: string;
+  onEscape: () => void;
   onToggle: () => void;
+  triggerRef: React.Ref<HTMLButtonElement>;
 }) {
   const action = expanded ? "Close" : "Open";
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "Escape" || !expanded) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    onEscape();
+  };
 
   return (
     <button
+      ref={triggerRef}
       type="button"
       onClick={onToggle}
+      onKeyDown={handleKeyDown}
       className="flex items-center gap-2 focus:outline-none cursor-pointer"
       aria-label={`${action} account options for ${accountName}`}
       aria-haspopup="dialog"

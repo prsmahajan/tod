@@ -16,17 +16,22 @@ import {
 import { useInertRegion } from "@/lib/accessibility/inert-region";
 import { PUBLIC_NAV_LINKS } from "@/lib/public-navigation";
 
+type AccountMenuVariant = 'full' | 'compact';
+
 function Header() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const isLoaded = !loading;
   const isSignedIn = !!user;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [openAccountMenu, setOpenAccountMenu] = useState<AccountMenuVariant | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [isAdminUser, setIsAdminUser] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const fullAccountMenuRef = useRef<HTMLDivElement>(null);
+  const compactAccountMenuRef = useRef<HTMLDivElement>(null);
+  const fullAccountTriggerRef = useRef<HTMLButtonElement>(null);
+  const compactAccountTriggerRef = useRef<HTMLButtonElement>(null);
   const scrolled = useScroll(50);
   const unscrolledHeaderRef = useInertRegion<HTMLDivElement>(scrolled);
   const scrolledHeaderRef = useInertRegion<HTMLDivElement>(!scrolled);
@@ -73,67 +78,84 @@ function Header() {
     }
   };
 
-  const closeAccountPopover = useCallback((restoreFocus = false) => {
-    const activeTrigger = document.querySelector<HTMLButtonElement>(
-      'button[aria-controls^="account-popover-"][aria-expanded="true"]',
-    );
+  const closeAccountPopover = useCallback((variant: AccountMenuVariant, restoreFocus = false) => {
+    const triggerRef = variant === 'compact' ? compactAccountTriggerRef : fullAccountTriggerRef;
 
-    setIsUserMenuOpen(false);
-    if (restoreFocus && activeTrigger) {
-      window.requestAnimationFrame(() => activeTrigger.focus());
+    setOpenAccountMenu((current) => current === variant ? null : current);
+    if (restoreFocus) {
+      window.queueMicrotask(() => triggerRef.current?.focus());
     }
   }, []);
 
-  // Close user menu when clicking outside
+  // Close the exact account popover when clicking outside it.
   useEffect(() => {
-    if (!isUserMenuOpen) return;
+    if (!openAccountMenu) return;
+
+    const activeMenuRef = openAccountMenu === 'compact'
+      ? compactAccountMenuRef
+      : fullAccountMenuRef;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
+      if (activeMenuRef.current && !activeMenuRef.current.contains(event.target as Node)) {
+        setOpenAccountMenu(null);
       }
-    };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      closeAccountPopover(true);
     };
 
     // Small delay to prevent immediate close
     const timer = setTimeout(() => {
       document.addEventListener('click', handleClickOutside);
-      document.addEventListener('keydown', handleEscape);
     }, 10);
 
     return () => {
       clearTimeout(timer);
       document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
     };
-  }, [closeAccountPopover, isUserMenuOpen]);
+  }, [openAccountMenu]);
 
-  // User dropdown component
-  const UserMenu = ({ compact = false }: { compact?: boolean }) => {
+  // A scroll-state swap closes the old popover and focuses the newly visible trigger.
+  useEffect(() => {
+    if (!openAccountMenu) return;
+
+    const visibleVariant: AccountMenuVariant = scrolled ? 'compact' : 'full';
+    if (openAccountMenu === visibleVariant) return;
+
+    const visibleTriggerRef = visibleVariant === 'compact'
+      ? compactAccountTriggerRef
+      : fullAccountTriggerRef;
+    setOpenAccountMenu(null);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => visibleTriggerRef.current?.focus());
+    });
+  }, [openAccountMenu, scrolled]);
+
+  // Render each stable account-popover instance without remounting it on header state changes.
+  const renderUserMenu = (variant: AccountMenuVariant) => {
+    const compact = variant === 'compact';
+    const isOpen = openAccountMenu === variant;
+    const accountMenuRef = compact ? compactAccountMenuRef : fullAccountMenuRef;
+    const accountTriggerRef = compact ? compactAccountTriggerRef : fullAccountTriggerRef;
     const accountName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'your account';
     const initial = user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
     const menuId = compact ? 'account-popover-compact' : 'account-popover-full';
 
     return (
-      <div className="relative" ref={userMenuRef}>
+      <div className="relative" ref={accountMenuRef}>
         <AccountMenuTrigger
           accountName={accountName}
           avatarUrl={user?.prefs?.avatar}
           compact={compact}
-          expanded={isUserMenuOpen}
+          expanded={isOpen}
           initial={initial}
           menuId={menuId}
-          onToggle={() => setIsUserMenuOpen(!isUserMenuOpen)}
+          onEscape={() => closeAccountPopover(variant, true)}
+          onToggle={() => isOpen ? closeAccountPopover(variant) : setOpenAccountMenu(variant)}
+          triggerRef={accountTriggerRef}
         />
-        {isUserMenuOpen && (
+        {isOpen && (
           <AccountPopover
             id={menuId}
             label={`Account options for ${accountName}`}
-            onRequestClose={() => closeAccountPopover(true)}
+            onRequestClose={() => closeAccountPopover(variant, true)}
           >
             <div className="px-4 py-3 border-b border-[var(--color-border)]">
               <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
@@ -146,7 +168,7 @@ function Header() {
             {isAdminUser && (
               <button
                 onClick={() => {
-                  setIsUserMenuOpen(false);
+                  setOpenAccountMenu(null);
                   router.push('/admin');
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm text-[var(--color-text-primary)] font-medium hover:bg-[var(--color-border)] cursor-pointer flex items-center gap-3 transition-colors"
@@ -160,7 +182,7 @@ function Header() {
             )}
             <button
               onClick={() => {
-                setIsUserMenuOpen(false);
+                setOpenAccountMenu(null);
                 router.push('/app');
               }}
               className="w-full text-left px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)] cursor-pointer flex items-center gap-3 transition-colors"
@@ -172,7 +194,7 @@ function Header() {
             </button>
             <button
               onClick={() => {
-                setIsUserMenuOpen(false);
+                setOpenAccountMenu(null);
                 router.push('/app/subscription');
               }}
               className="w-full text-left px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)] cursor-pointer flex items-center gap-3 transition-colors"
@@ -185,7 +207,7 @@ function Header() {
             <div className="border-t border-[var(--color-border)] mt-2 pt-2">
               <button
                 onClick={() => {
-                  setIsUserMenuOpen(false);
+                  setOpenAccountMenu(null);
                   handleLogout();
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 cursor-pointer flex items-center gap-3 transition-colors"
@@ -251,7 +273,7 @@ function Header() {
               {navLinks}
               <div className="flex items-center space-x-2">
                 {isLoaded && isSignedIn ? (
-                  <UserMenu />
+                  renderUserMenu('full')
                 ) : (
                   <>
                     <button
@@ -285,7 +307,7 @@ function Header() {
               {navLinks}
               <div className="flex items-center space-x-2">
                 {isLoaded && isSignedIn ? (
-                  <UserMenu compact />
+                  renderUserMenu('compact')
                 ) : (
                   <button
                     onClick={() => openAuthModal('signup')}

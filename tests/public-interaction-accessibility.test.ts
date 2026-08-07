@@ -61,7 +61,9 @@ test("compact header controls name their actions and expose dialog state", () =>
     expanded: false,
     initial: "A",
     menuId: "account-menu-compact",
+    onEscape: () => {},
     onToggle: () => {},
+    triggerRef: React.createRef<HTMLButtonElement>(),
   }));
   const openAccount = renderToStaticMarkup(React.createElement(AccountMenuTrigger, {
     accountName: "Asha",
@@ -69,7 +71,9 @@ test("compact header controls name their actions and expose dialog state", () =>
     expanded: true,
     initial: "A",
     menuId: "account-menu-compact",
+    onEscape: () => {},
     onToggle: () => {},
+    triggerRef: React.createRef<HTMLButtonElement>(),
   }));
 
   assert.match(home, /href="\/"/);
@@ -119,6 +123,64 @@ test("account popover is a labelled non-modal dialog that closes with Escape", (
     stopPropagation() {},
   });
   assert.equal(closeCount, 1);
+});
+
+test("each expanded account trigger owns its Escape close path and exact ref", () => {
+  const { AccountMenuTrigger } = HeaderControls;
+  const fullTriggerRef = React.createRef<HTMLButtonElement>();
+  const compactTriggerRef = React.createRef<HTMLButtonElement>();
+  let fullCloseCount = 0;
+  let compactCloseCount = 0;
+  const createTrigger = (
+    compact: boolean,
+    triggerRef: React.RefObject<HTMLButtonElement | null>,
+    onEscape: () => void,
+  ) => AccountMenuTrigger({
+    accountName: "Asha",
+    compact,
+    expanded: true,
+    initial: "A",
+    menuId: compact ? "account-popover-compact" : "account-popover-full",
+    onEscape,
+    onToggle: () => {},
+    triggerRef,
+  } as React.ComponentProps<typeof AccountMenuTrigger> & {
+    onEscape: () => void;
+    triggerRef: React.RefObject<HTMLButtonElement | null>;
+  });
+  const fullTrigger = createTrigger(false, fullTriggerRef, () => {
+    fullCloseCount += 1;
+  });
+  const compactTrigger = createTrigger(true, compactTriggerRef, () => {
+    compactCloseCount += 1;
+  });
+
+  assert.equal(
+    (fullTrigger as unknown as { ref: React.RefObject<HTMLButtonElement | null> }).ref,
+    fullTriggerRef,
+  );
+  assert.equal(
+    (compactTrigger as unknown as { ref: React.RefObject<HTMLButtonElement | null> }).ref,
+    compactTriggerRef,
+  );
+  assert.equal(typeof fullTrigger.props.onKeyDown, "function");
+  assert.equal(typeof compactTrigger.props.onKeyDown, "function");
+
+  fullTrigger.props.onKeyDown({
+    key: "Escape",
+    preventDefault() {},
+    stopPropagation() {},
+  });
+  assert.equal(fullCloseCount, 1);
+  assert.equal(compactCloseCount, 0);
+
+  compactTrigger.props.onKeyDown({
+    key: "Escape",
+    preventDefault() {},
+    stopPropagation() {},
+  });
+  assert.equal(fullCloseCount, 1);
+  assert.equal(compactCloseCount, 1);
 });
 
 test("donation mode and billing selections are exposed without relying on color", () => {
