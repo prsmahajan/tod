@@ -6,9 +6,10 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useTypeText } from "@/hooks/useTypeText";
 import CommunityStats from "@/components/CommunityStats";
+import { PUBLIC_HOME_ACTIONS } from "@/lib/public-navigation";
 
 export default function HomePage() {
-  const animatedText = useTypeText(["Technology", "Compassion", "Community", "Action"], 1500, 100);
+  const animatedText = useTypeText(["Compassion", "Community", "Action"], 1500, 100);
 
   return (
     <>
@@ -23,19 +24,21 @@ export default function HomePage() {
               Feed Animals
             </h2>
             <p className="mt-6 text-lg md:text-xl text-[var(--color-text-secondary)] leading-relaxed">
-              A platform where technology education meets animal welfare. Every article you read, every subscription you make, directly contributes to feeding stray animals across India.
+              A community-led initiative that turns support into reliable meals and care for stray animals across India.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/impact">
-                <button className="px-8 py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-full font-medium hover:opacity-90 transition-opacity cursor-pointer">
-                  See Our Impact
-                </button>
-              </Link>
-              <Link href="/articles">
-                <button className="px-8 py-3 bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-full font-medium hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)] transition-colors cursor-pointer">
-                  Read Articles
-                </button>
-              </Link>
+              {PUBLIC_HOME_ACTIONS.map((action) => (
+                <Link key={action.name} href={action.path}>
+                  <button
+                    className={action.primary
+                      ? "px-8 py-3 bg-[var(--color-text-primary)] text-[var(--color-bg)] rounded-full font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                      : "px-8 py-3 bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-full font-medium hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)] transition-colors cursor-pointer"
+                    }
+                  >
+                    {action.name}
+                  </button>
+                </Link>
+              ))}
             </div>
           </header>
         </AnimatedSection>
@@ -66,9 +69,9 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-[var(--color-accent)] rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-[var(--color-bg)]">1</span>
                 </div>
-                <h3 className="font-heading text-xl font-bold mb-2 text-[var(--color-text-primary)]">Read & Learn</h3>
+                <h3 className="font-heading text-xl font-bold mb-2 text-[var(--color-text-primary)]">See the Need</h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Browse our collection of technology articles explained in simple, clear language. No jargon, just knowledge.
+                  Follow feeding updates and see how your support reaches animals who need food and care.
                 </p>
               </div>
 
@@ -104,10 +107,10 @@ export default function HomePage() {
                   Why We Exist
                 </h2>
                 <p className="text-[var(--color-text-secondary)] leading-relaxed mb-4">
-                  Technology should be accessible to everyone, not hidden behind complex terminology. At the same time, millions of stray animals across India struggle daily for food and basic care.
+                  Millions of stray animals across India struggle daily for food and basic care. We believe that reliable, local support can change that.
                 </p>
                 <p className="text-[var(--color-text-secondary)] leading-relaxed mb-4">
-                  We believe these two problems can solve each other. By making tech education simple and approachable, we create a sustainable way to fund animal welfare—one article, one meal at a time.
+                  By bringing supporters, volunteers, and transparent updates together, we create a sustainable way to fund animal welfare—one meal at a time.
                 </p>
                 <Link href="/mission">
                   <button className="px-6 py-3 bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg font-medium hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)] transition-colors cursor-pointer">
@@ -163,7 +166,7 @@ export default function HomePage() {
               Ready to Make a Difference?
             </h2>
             <p className="text-lg text-[var(--color-text-secondary)] mb-8">
-              Join our community of learners and animal lovers. Start reading, start helping.
+              Join our community of animal lovers. Start helping today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/waitlist">

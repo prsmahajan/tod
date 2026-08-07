@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { NewsletterForm } from "./newsletter-form"
 import { Heart } from "lucide-react"
+import { PUBLIC_NAV_LINKS } from "@/lib/public-navigation"
 
 export function SiteFooter() {
   return (
@@ -13,7 +14,7 @@ export function SiteFooter() {
                 The Open Draft
               </h3>
               <p className="text-slate-600 dark:text-slate-300 max-w-md">
-                Technology explained simply. Every subscription feeds stray animals across India. Learn tech, save lives.
+                A community-led initiative that helps feed and care for stray animals across India.
               </p>
             </div>
             <Link
@@ -29,7 +30,7 @@ export function SiteFooter() {
                 Join Our Newsletter
               </h4>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Get updates on our impact and new articles
+                Get updates on our impact and feeding work
               </p>
             </div>
             <NewsletterForm />
@@ -42,12 +43,18 @@ export function SiteFooter() {
               © 2025 The Open Draft. Built with <Heart className="w-4 h-4 text-red-500 inline" fill="currentColor" /> for animals.
             </p>
             <nav className="flex gap-6 text-sm">
-              <Link href="/mission" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
-                Our Mission
-              </Link>
-              <Link href="/articles" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
-                Articles
-              </Link>
+              {PUBLIC_NAV_LINKS.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.path}
+                  className={link.primary
+                    ? "font-medium text-slate-900 dark:text-slate-50 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                  }
+                >
+                  {link.name}
+                </Link>
+              ))}
               <Link href="mailto:account@theopendraft.com" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
                 Contact
               </Link>

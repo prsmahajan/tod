@@ -94,9 +94,6 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: './',
-    types: {
-      'application/rss+xml': '/feed.xml',
-    },
   },
   // Add your Google Search Console verification code here
   // verification: {
@@ -135,12 +132,6 @@ export default function RootLayout({
     >
       <head>
         <GoogleAnalytics />
-        <link
-          rel="alternate"
-          type="application/rss+xml"
-          title="The Open Draft RSS Feed"
-          href="/feed.xml"
-        />
         {/* JSON-LD Structured Data for Google */}
         <script
           type="application/ld+json"
@@ -174,7 +165,7 @@ export default function RootLayout({
               "name": "The Open Draft",
               "alternateName": ["TOD", "todr.in"],
               "url": "https://theopendraft.com",
-              "description": "The Open Draft (todr.in) - Learn Tech, Feed Stray Animals in India",
+              "description": "The Open Draft (todr.in) - Supporting animal welfare in India",
               "publisher": {
                 "@type": "Organization",
                 "name": "The Open Draft",
@@ -183,11 +174,6 @@ export default function RootLayout({
                   "url": "https://theopendraft.com/images/logo-dark.png"
                 }
               },
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://theopendraft.com/articles?q={search_term_string}",
-                "query-input": "required name=search_term_string"
-              }
             })
           }}
         />
