@@ -10,6 +10,8 @@ import GoogleAnalytics from "@/components/GoogleAnalytics"
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { AuthProvider } from "@/lib/appwrite/auth"
 import { ThemedToaster } from "@/components/ui/themed-toast"
+import { ROOT_METADATA_COPY } from "@/lib/homepage/content"
+import { buildRootMetadata } from "@/lib/homepage/metadata"
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -21,86 +23,7 @@ export const viewport: Viewport = {
   ],
 }
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://theopendraft.com'),
-  title: {
-    default: "The Open Draft (TOD) - Learn Tech, Feed Stray Animals in India",
-    template: "%s | The Open Draft (TOD)"
-  },
-  description: "The Open Draft (todr.in) — a community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Visit todr.in to make a real impact today.",
-  keywords: [
-    "todr",
-    "todr.in",
-    "the open draft",
-    "theopendraft",
-    "stray animals India",
-    "feed stray dogs",
-    "feed stray cats",
-    "animal welfare India",
-    "donate for animals",
-    "help stray animals",
-    "animal charity India",
-    "technology education",
-    "learn to code",
-    "community initiative",
-    "animal rescue",
-    "pet adoption India",
-    "volunteer for animals",
-    "animal NGO India",
-    "stray dog feeding",
-    "animal shelter India"
-  ],
-  authors: [{ name: "The Open Draft Team" }],
-  creator: "The Open Draft",
-  publisher: "The Open Draft",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  openGraph: {
-    type: 'website',
-    locale: 'en_IN',
-    url: 'https://theopendraft.com',
-    siteName: 'The Open Draft',
-    title: 'The Open Draft (TOD) - Learn Tech, Feed Stray Animals',
-    description: 'The Open Draft (todr.in) — Technology education meets animal welfare. Every subscription feeds stray animals across India. Join our community.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'The Open Draft - Learn Tech, Feed Animals',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'The Open Draft (TOD) - Learn Tech, Feed Stray Animals',
-    description: 'The Open Draft (todr.in) — Technology education meets animal welfare. Every subscription feeds stray animals across India.',
-    images: ['/og-image.png'],
-    creator: '@theopendraft',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  alternates: {
-    canonical: './',
-  },
-  // Add your Google Search Console verification code here
-  // verification: {
-  //   google: 'your-actual-verification-code',
-  // },
-  category: 'nonprofit',
-}
+export const metadata: Metadata = buildRootMetadata()
 
 const inter = Inter({
   subsets: ["latin"],
@@ -143,7 +66,7 @@ export default function RootLayout({
               "alternateName": ["TOD", "todr.in", "The Open Draft"],
               "url": "https://theopendraft.com",
               "logo": "https://theopendraft.com/images/logo-dark.png",
-              "description": "A community initiative combining technology education with animal welfare. Every subscription directly feeds and cares for stray animals across India. Also available at todr.in.",
+              "description": ROOT_METADATA_COPY.description,
               "sameAs": [
                 "https://todr.in"
               ],
@@ -165,7 +88,7 @@ export default function RootLayout({
               "name": "The Open Draft",
               "alternateName": ["TOD", "todr.in"],
               "url": "https://theopendraft.com",
-              "description": "The Open Draft (todr.in) - Supporting animal welfare in India",
+              "description": ROOT_METADATA_COPY.openGraphDescription,
               "publisher": {
                 "@type": "Organization",
                 "name": "The Open Draft",
