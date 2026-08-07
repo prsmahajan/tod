@@ -11,8 +11,7 @@ export async function POST(req: NextRequest) {
       customerEmail,
       customerName,
       customerContact,
-      displayAmount,
-      displayCurrency,
+      userId,
     } = await req.json();
 
     // Validate inputs
@@ -41,15 +40,17 @@ export async function POST(req: NextRequest) {
       key_secret: keySecret,
     });
 
-    // Get plan details with the specified currency
-    const planDetails = getPlanDetails(planType as PlanType, billingCycle as BillingCycle, validCurrency);
-
-    if (!planDetails) {
+    const validPlanTypes: PlanType[] = ['seedling', 'sprout', 'tree'];
+    const validBillingCycles: BillingCycle[] = ['weekly', 'monthly'];
+    if (!validPlanTypes.includes(planType) || !validBillingCycles.includes(billingCycle)) {
       return NextResponse.json(
         { error: 'Invalid plan selected' },
         { status: 400 }
       );
     }
+
+    // Get plan details with the specified currency
+    const planDetails = getPlanDetails(planType as PlanType, billingCycle as BillingCycle, validCurrency);
 
     // First, create or get the plan in Razorpay
     let planId: string;
@@ -93,11 +94,13 @@ export async function POST(req: NextRequest) {
       notes: {
         planType,
         billingCycle,
-        customerEmail,
-        customerName,
-        // Store what the user actually sees/chooses on the frontend
-        displayAmount,
-        displayCurrency,
+        userId: userId || 'anonymous',
+        customerEmail: customerEmail || '',
+        customerName: customerName || '',
+        customerContact: customerContact || '',
+        // Keep persisted amounts server-owned even if a client submits display fields.
+        displayAmount: planDetails.amount,
+        displayCurrency: validCurrency,
       },
     };
 

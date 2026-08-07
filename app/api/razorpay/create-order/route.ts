@@ -1,14 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
+import { DonationPlan, getDonationAmount } from '@/lib/donations/public-rules';
+
+interface CreateOrderBody {
+  planType: DonationPlan;
+  customAmount?: number;
+  notes?: Record<string, string>;
+}
+
+const DONATION_PLANS: DonationPlan[] = ['seedling', 'sprout', 'tree', 'custom'];
 
 export async function POST(req: NextRequest) {
   try {
-    const { amount, currency, receipt, notes } = await req.json();
-
-    // Validate required fields
-    if (!amount || amount <= 0) {
+    let body: CreateOrderBody;
+    try {
+      body = await req.json() as CreateOrderBody;
+    } catch {
       return NextResponse.json(
-        { error: 'Invalid amount' },
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const { planType, customAmount, notes } = body;
+
+    if (!DONATION_PLANS.includes(planType)) {
+      return NextResponse.json(
+        { error: 'Invalid donation plan' },
+        { status: 400 }
+      );
+    }
+
+    if (
+      notes !== undefined
+      && (
+        typeof notes !== 'object'
+        || notes === null
+        || Array.isArray(notes)
+        || Object.values(notes).some((value) => typeof value !== 'string')
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid order notes' },
+        { status: 400 }
+      );
+    }
+
+    let amount: number;
+    try {
+      amount = getDonationAmount(planType, customAmount);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid donation amount' },
         { status: 400 }
       );
     }
@@ -34,9 +77,12 @@ export async function POST(req: NextRequest) {
     // Create order options
     const options = {
       amount: amount * 100, // Razorpay expects amount in paise (1 INR = 100 paise)
-      currency: currency || 'INR',
-      receipt: receipt || `receipt_${Date.now()}`,
-      notes: notes || {},
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`,
+      notes: {
+        ...(notes || {}),
+        planType,
+      },
     };
 
     // Create order

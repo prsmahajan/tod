@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { verifyPaymentSignature } from '@/lib/razorpay/verify-signature';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,24 +23,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create signature for verification
-    const body = razorpay_order_id + '|' + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', keySecret)
-      .update(body.toString())
-      .digest('hex');
-
-    // Compare signatures
-    const isAuthentic = expectedSignature === razorpay_signature;
+    const isAuthentic = verifyPaymentSignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      keySecret,
+    );
 
     if (isAuthentic) {
-      // Payment is verified successfully
-      // Here you can:
-      // 1. Update database with payment details
-      // 2. Send confirmation email
-      // 3. Grant access to premium features
-      // 4. Log the transaction
-
+      // Transaction recording remains authoritative in the Razorpay webhook.
       return NextResponse.json({
         success: true,
         message: 'Payment verified successfully',

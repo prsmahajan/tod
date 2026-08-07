@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import AnimatedSection from '@/components/AnimatedSection';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/lib/appwrite/auth';
@@ -75,7 +74,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
 };
 
 const SupportPage: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('one-time');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -130,14 +129,6 @@ const SupportPage: React.FC = () => {
 
   // Handle one-time payment
   const handleOneTimePayment = async (amount: number, planType: PlanType) => {
-    if (!user) {
-      toast.error('Please sign in to make a donation.');
-      return;
-    }
-
-    // Convert display amount back to INR for Razorpay (Razorpay only supports INR)
-    const inrAmount = baseAmounts[planType];
-
     setIsProcessing(true);
 
     try {
@@ -145,15 +136,12 @@ const SupportPage: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: inrAmount,
-          currency: 'INR',
-          receipt: `receipt_${Date.now()}`,
+          planType,
           notes: {
-            planType,
-            userId: user.$id,
-            userEmail: user.email,
-            userName: user.name,
-            displayAmount: amount,
+            userId: user?.$id || 'anonymous',
+            userEmail: user?.email || '',
+            userName: user?.name || '',
+            displayAmount: String(amount),
             displayCurrency: isIndia ? 'INR' : 'USD',
           },
         }),
@@ -174,15 +162,15 @@ const SupportPage: React.FC = () => {
         description: `One-time Support - ${currencySymbol}${amount}`,
         order_id: orderData.orderId,
         prefill: {
-          name: user.name || '',
-          email: user.email || '',
-          contact: user.phone || '',
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
         },
         notes: {
           planType,
-          userId: user.$id,
-          userEmail: user.email,
-          userName: user.name,
+          userId: user?.$id || 'anonymous',
+          userEmail: user?.email || '',
+          userName: user?.name || '',
           displayAmount: amount,
           displayCurrency: isIndia ? 'INR' : 'USD',
         },
@@ -202,11 +190,14 @@ const SupportPage: React.FC = () => {
             if (!verifyResponse.ok) throw new Error('Payment verification failed');
 
             const verifyData = await verifyResponse.json();
-            toast.success(`Thank you! Your donation of ${currencySymbol}${amount} was successful.`, { description: `Payment ID: ${verifyData.paymentId}` });
+            const paymentId = encodeURIComponent(verifyData.paymentId);
+            const orderId = encodeURIComponent(verifyData.orderId);
+            window.location.href = `/support/success?payment_id=${paymentId}&order_id=${orderId}`;
+            return;
           } catch (error) {
             toast.error('Payment verification failed. Please contact support.');
+            setIsProcessing(false);
           }
-          setIsProcessing(false);
         },
         modal: {
           ondismiss: function () {
@@ -225,14 +216,6 @@ const SupportPage: React.FC = () => {
 
   // Handle subscription payment
   const handleSubscription = async (amount: number, planType: PlanType) => {
-    if (!user) {
-      toast.error('Please sign in to subscribe.');
-      return;
-    }
-
-    // Convert display amount back to INR for Razorpay
-    const inrAmount = baseAmounts[planType];
-
     setIsProcessing(true);
 
     try {
@@ -242,9 +225,10 @@ const SupportPage: React.FC = () => {
         body: JSON.stringify({
           planType,
           billingCycle,
-          customerEmail: user.email || '',
-          customerName: user.name || '',
-          customerContact: user.phone || '',
+          userId: user?.$id || 'anonymous',
+          customerEmail: user?.email || '',
+          customerName: user?.name || '',
+          customerContact: user?.phone || '',
           displayAmount: amount,
           displayCurrency: isIndia ? 'INR' : 'USD',
         }),
@@ -263,25 +247,26 @@ const SupportPage: React.FC = () => {
         name: 'The Open Draft',
         description: `${planType.charAt(0).toUpperCase() + planType.slice(1)} ${billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)} Subscription - ${currencySymbol}${amount}/${billingCycle === 'weekly' ? 'week' : 'month'}`,
         prefill: {
-          name: user.name || '',
-          email: user.email || '',
-          contact: user.phone || '',
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
         },
         notes: {
           planType,
           billingCycle,
-          userId: user.$id,
-          customerEmail: user.email || '',
-          customerName: user.name || '',
+          userId: user?.$id || 'anonymous',
+          customerEmail: user?.email || '',
+          customerName: user?.name || '',
           displayAmount: amount,
           displayCurrency: isIndia ? 'INR' : 'USD',
         },
         theme: { color: '#A8A29E' },
         handler: async function (response: any) {
-          toast.success(`Subscription activated!`, { description: `Your ${billingCycle} support of ${currencySymbol}${amount} is now active. Thank you!` });
+          toast.success('Subscription checkout completed', {
+            description: 'Razorpay is confirming your recurring support. Thank you!',
+          });
           setIsProcessing(false);
-          // Redirect to dashboard
-          window.location.href = '/app';
+          window.location.href = user ? '/app' : '/impact';
         },
         modal: {
           ondismiss: function () {
@@ -494,27 +479,6 @@ const SupportPage: React.FC = () => {
           </div>
         </AnimatedSection>
 
-        {loading && (
-          <AnimatedSection>
-            <div className="mt-8 text-center">
-              <p className="text-sm text-[var(--color-text-secondary)]">Loading...</p>
-            </div>
-          </AnimatedSection>
-        )}
-
-        {!loading && !user && isIndia && (
-          <AnimatedSection>
-            <div className="mt-8 text-center bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-6 max-w-2xl mx-auto">
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Please{' '}
-                <Link href="/login?redirect=/support" className="text-[var(--color-text-primary)] font-medium hover:underline">
-                  sign in
-                </Link>{' '}
-                to make a donation or subscribe. This helps us keep track of contributions and send you updates.
-              </p>
-            </div>
-          </AnimatedSection>
-        )}
       </div>
       <Footer />
     </>
