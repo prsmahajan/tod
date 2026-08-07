@@ -2,9 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  toPublicImpactMetrics,
-} from "@/lib/impact/public-metrics";
-import {
   toHomepageImpactSummary,
   type HomepageStatsInput,
 } from "@/lib/homepage/impact-summary";
@@ -22,11 +19,11 @@ interface CommunityStatsDisplayProps {
 }
 
 function StatsSkeleton({ className, variant }: { className: string; variant: "full" | "compact" }) {
-  const itemCount = variant === "compact" ? 2 : 4;
+  const itemCount = 2;
 
   return (
     <div aria-label="Loading community impact" className={`animate-pulse ${className}`}>
-      <div className={variant === "compact" ? "grid grid-cols-1 gap-8 sm:grid-cols-2" : "grid grid-cols-2 gap-4 md:grid-cols-4"}>
+      <div className={variant === "compact" ? "grid grid-cols-1 gap-8 sm:grid-cols-2" : "grid grid-cols-1 gap-4 sm:grid-cols-2"}>
         {Array.from({ length: itemCount }, (_, index) => index + 1).map((item) => (
           <div key={item} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6">
             <div className="mb-3 h-4 w-20 rounded bg-[var(--color-border)]" />
@@ -54,7 +51,6 @@ export function CommunityStatsDisplay({
     );
   }
 
-  const metrics = toPublicImpactMetrics(stats);
   const homepageSummary = toHomepageImpactSummary(stats);
 
   if (variant === "compact") {
@@ -70,17 +66,10 @@ export function CommunityStatsDisplay({
     );
   }
 
-  const metricCards = [
-    { label: "Confirmed Raised", value: homepageSummary[0].value },
-    { label: "Recorded Supporters", value: metrics.supporters },
-    { label: "Active Supporters", value: metrics.activeSupporters },
-    { label: "Estimated Meals Funded", value: metrics.estimatedMealsFunded },
-  ];
-
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {metricCards.map((metric) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {homepageSummary.map((metric) => (
           <div
             key={metric.label}
             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 transition-colors hover:border-[var(--color-text-secondary)]"

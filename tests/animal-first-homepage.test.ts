@@ -50,7 +50,7 @@ test("homepage has no technology funnel, waitlist, invented allocation, or decor
   }
 });
 
-test("homepage impact summary omits subscription-derived supporter counts", async () => {
+test("homepage impact summary exposes only confirmed raised and estimated meals", async () => {
   let module: typeof import("../lib/homepage/impact-summary");
   try {
     module = await import("../lib/homepage/impact-summary");
@@ -60,8 +60,6 @@ test("homepage impact summary omits subscription-derived supporter counts", asyn
 
   assert.deepEqual(module.toHomepageImpactSummary({
     totalRevenue: 1500,
-    totalSupporters: 99,
-    activeSubscriptions: 12,
     animalsHelped: 30,
     display: { totalRevenue: "₹1.5K" },
   }), [

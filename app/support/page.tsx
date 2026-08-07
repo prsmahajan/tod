@@ -26,6 +26,7 @@ declare global {
 type PaymentMode = 'one-time' | 'subscribe';
 type BillingCycle = 'weekly' | 'monthly';
 type PlanType = 'seedling' | 'sprout' | 'tree';
+type DonationPlan = PlanType | 'custom';
 
 interface SupportCardProps {
   amount: number;
@@ -77,7 +78,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
             displayedAmount: displayAmount,
             planType,
           });
-          onSupport(selection.amount, selection.planType);
+          onSupport(selection.amount, planType);
         }}
         disabled={isProcessing}
         className={`mt-6 w-full px-6 py-3 font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${popular ? 'bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90' : 'bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)]'}`}
@@ -97,6 +98,8 @@ const SupportPage: React.FC = () => {
   const [isIndia, setIsIndia] = useState(true);
   const [currencySymbol, setCurrencySymbol] = useState('₹');
   const [locationDetected, setLocationDetected] = useState(false);
+  const [customAmount, setCustomAmount] = useState('');
+  const [customAmountError, setCustomAmountError] = useState('');
   
   const kofiUsername = process.env.NEXT_PUBLIC_KOFI_USERNAME || 'theopendraft';
 
@@ -143,7 +146,7 @@ const SupportPage: React.FC = () => {
   };
 
   // Handle one-time payment
-  const handleOneTimePayment = async (amount: number, planType: PlanType) => {
+  const handleOneTimePayment = async (amount: number, planType: DonationPlan) => {
     setIsProcessing(true);
     let failureCode: CheckoutFailureCode = 'order_create_failed';
     let analyticsSelection: CheckoutSelection = { amount, planType };
@@ -154,6 +157,7 @@ const SupportPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planType,
+          ...(planType === 'custom' ? { customAmount: amount } : {}),
         }),
       });
 
@@ -196,10 +200,8 @@ const SupportPage: React.FC = () => {
 
             const verifyData = await verifyResponse.json();
             if (verifyData.success !== true) throw new Error('Payment verification failed');
-            trackPublicEvent('checkout_succeeded', serverSelection);
             const paymentId = encodeURIComponent(verifyData.paymentId);
-            const orderId = encodeURIComponent(verifyData.orderId);
-            window.location.href = `/support/success?payment_id=${paymentId}&order_id=${orderId}`;
+            window.location.href = `/support/success?payment_id=${paymentId}`;
             return;
           } catch (error) {
             trackPublicEvent('checkout_failed', {
@@ -347,6 +349,27 @@ const SupportPage: React.FC = () => {
     }
   };
 
+  const handleCustomSupport = () => {
+    const amount = Number(customAmount);
+    if (!Number.isSafeInteger(amount) || amount < 50 || amount > 100000) {
+      setCustomAmountError('Enter a whole rupee amount from ₹50 to ₹1,00,000.');
+      return;
+    }
+
+    setCustomAmountError('');
+    trackPublicEvent('amount_selected', { planType: 'custom', amount });
+    if (!razorpayLoaded) {
+      trackPublicEvent('checkout_failed', {
+        planType: 'custom',
+        amount,
+        errorCode: 'gateway_unavailable',
+      });
+      toast.warning('Payment gateway is loading. Please try again.');
+      return;
+    }
+    void handleOneTimePayment(amount, 'custom');
+  };
+
   return (
     <>
       <Script
@@ -481,6 +504,58 @@ const SupportPage: React.FC = () => {
             />
           </div>
         </AnimatedSection>
+
+        {isIndia && paymentMode === 'one-time' && (
+          <AnimatedSection>
+            <div className="mx-auto mt-10 max-w-md rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 sm:p-8">
+              <label
+                htmlFor="custom-amount"
+                className="block text-sm font-medium text-[var(--color-text-primary)]"
+              >
+                Choose a custom amount
+              </label>
+              <p id="custom-amount-help" className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                Enter a whole rupee amount from ₹50 to ₹1,00,000.
+              </p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <div className="min-w-0 flex-1">
+                  <input
+                    id="custom-amount"
+                    type="number"
+                    inputMode="numeric"
+                    min={50}
+                    max={100000}
+                    step={1}
+                    value={customAmount}
+                    onChange={(event) => {
+                      setCustomAmount(event.target.value);
+                      if (customAmountError) setCustomAmountError('');
+                    }}
+                    aria-invalid={customAmountError ? true : undefined}
+                    aria-describedby="custom-amount-help custom-amount-error"
+                    className="min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]"
+                    placeholder="250"
+                  />
+                  <p
+                    id="custom-amount-error"
+                    role={customAmountError ? 'alert' : undefined}
+                    className="mt-2 min-h-5 text-sm text-[var(--destructive)]"
+                  >
+                    {customAmountError}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCustomSupport}
+                  disabled={isProcessing}
+                  className="min-h-11 whitespace-nowrap rounded-lg bg-[var(--color-text-primary)] px-6 py-3 font-medium text-[var(--color-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isProcessing ? 'Processing...' : 'Donate amount'}
+                </button>
+              </div>
+            </div>
+          </AnimatedSection>
+        )}
 
         <AnimatedSection>
           <div className="mt-16 text-center max-w-2xl mx-auto">

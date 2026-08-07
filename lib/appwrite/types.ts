@@ -13,7 +13,7 @@ export interface Transaction {
   razorpayPaymentId: string;
   razorpayOrderId: string;
   razorpaySubscriptionId?: string;
-  planType: 'seedling' | 'sprout' | 'tree';
+  planType: 'seedling' | 'sprout' | 'tree' | 'custom';
   billingCycle?: 'weekly' | 'monthly';
 }
 

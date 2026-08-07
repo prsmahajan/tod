@@ -11,7 +11,7 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: 'weekly',
     planType: 'seedling' as const,
-    description: 'Feed 1 stray animal weekly',
+    description: 'Weekly recurring support for stray animal feeding',
   },
   sprout_weekly: {
     name: 'Sprout Weekly',
@@ -19,7 +19,7 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: 'weekly',
     planType: 'sprout' as const,
-    description: 'Feed 5 stray animals weekly',
+    description: 'Weekly recurring support for stray animal feeding',
   },
   tree_weekly: {
     name: 'Tree Weekly',
@@ -27,7 +27,7 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: 'weekly',
     planType: 'tree' as const,
-    description: 'Feed 10 stray animals weekly',
+    description: 'Weekly recurring support for stray animal feeding',
   },
   // Monthly Plans
   seedling_monthly: {
@@ -36,7 +36,7 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: 'monthly',
     planType: 'seedling' as const,
-    description: 'Feed 1 stray animal monthly',
+    description: 'Monthly recurring support for stray animal feeding',
   },
   sprout_monthly: {
     name: 'Sprout Monthly',
@@ -44,7 +44,7 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: 'monthly',
     planType: 'sprout' as const,
-    description: 'Feed 5 stray animals monthly',
+    description: 'Monthly recurring support for stray animal feeding',
   },
   tree_monthly: {
     name: 'Tree Monthly',
@@ -52,7 +52,7 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: 'monthly',
     planType: 'tree' as const,
-    description: 'Feed 10 stray animals monthly',
+    description: 'Monthly recurring support for stray animal feeding',
   },
 } as const;
 

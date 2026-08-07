@@ -50,3 +50,13 @@ test("invalid server checkout metadata is rejected", () => {
     analytics: { planType: "seedling", amount: -99 },
   }), null);
 });
+
+test("custom checkout metadata round-trips only a validated amount", () => {
+  const analytics = createServerCheckoutSelection("custom", 250);
+
+  assert.deepEqual(parseServerCheckoutSelection({ analytics }), {
+    amount: 250,
+    planType: "custom",
+  });
+  assert.equal(createServerCheckoutSelection("custom", 49), null);
+});

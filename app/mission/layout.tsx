@@ -1,8 +1,8 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Our Mission - Why I Started This | The Open Draft",
-  description: "A personal story from Pune about feeding stray animals. Every ₹10 subscription helps feed hungry dogs, cats, and cows. Join the waitlist to be part of this mission.",
+  title: "Our Story - Ten Months of Stray Animal Feeding",
+  description: "The confirmed story behind ten months of personally funded stray animal feeding, plus what TOD publishes today and what is still being prepared.",
 }
 
 export default function MissionLayout({
@@ -12,4 +12,3 @@ export default function MissionLayout({
 }) {
   return children
 }
-

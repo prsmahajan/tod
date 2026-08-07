@@ -12,7 +12,7 @@ export default function AnimalFirstHero() {
           Help Feed Stray Animals
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-[1.625] md:text-xl text-[var(--color-text-secondary)]">
-          For ten months, this work has been funded personally. TOD now makes every contribution and verified feeding update visible so more animals can receive consistent meals.
+          For ten months, this work has been funded personally. TOD now publishes confirmed contribution totals and verified feeding updates so more people can support the work with clear expectations.
         </p>
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
           <Link

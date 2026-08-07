@@ -1,72 +1,83 @@
 "use client";
 
-import React from 'react';
-import AnimatedSection from '@/components/AnimatedSection';
-import Footer from '@/components/Footer';
+import Link from "next/link";
+import AnimatedSection from "@/components/AnimatedSection";
+import Footer from "@/components/Footer";
 
-const MissionPage: React.FC = () => {
+export default function MissionPage() {
   return (
     <>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-24">
-        <AnimatedSection>
-          <header className="text-center max-w-3xl mx-auto">
-            <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">Our Mission</h1>
-            <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
-              Simple, direct action for animals in need. We exist to bridge the gap between human compassion and street-level reality.
-            </p>
-          </header>
-        </AnimatedSection>
+      <div className="container mx-auto px-4 pb-16 pt-32 sm:px-6 lg:px-8">
+        <header className="mx-auto max-w-3xl">
+          <h1 className="font-heading text-4xl font-extrabold leading-10 tracking-[-0.02em] text-[var(--color-text-primary)] md:text-6xl md:leading-[60px]">
+            Ten months of personally funded feeding
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)] md:text-xl">
+            The founder personally funded stray animal feeding for ten months. TOD now gives other people a simple way to contribute and see genuine feeding updates as they are published.
+          </p>
+        </header>
 
-        <div className="mt-20 max-w-4xl mx-auto space-y-12">
+        <div className="mx-auto mt-20 max-w-4xl space-y-20">
           <AnimatedSection>
-            <div>
-              <h2 className="font-heading text-3xl font-bold text-[var(--color-text-primary)]">Why We Exist</h2>
-              <p className="mt-4 text-[var(--color-text-secondary)] leading-relaxed">
-                Stray animals are often invisible. They face hunger, illness, and cruelty with no one to turn to. While large organizations do important work, there's a gap in immediate, localized care. The Open Draft was started to fill that gap. We are not an NGO; we are a network of individuals who believe that small, collective actions can create a safety net for the most vulnerable animals among us. Our purpose is to make compassion practical.
+            <section>
+              <h2 className="font-heading text-3xl font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                Why TOD exists
+              </h2>
+              <p className="mt-4 max-w-2xl leading-relaxed text-[var(--color-text-secondary)]">
+                This initiative began with direct, personal feeding work. The first public release stays focused on that work: accepting contributions for feeding and publishing approved, dated records when genuine evidence is ready.
               </p>
-            </div>
+            </section>
           </AnimatedSection>
 
           <AnimatedSection>
-            <div>
-              <h2 className="font-heading text-3xl font-bold text-[var(--color-text-primary)]">How It Works</h2>
-              <p className="mt-4 text-[var(--color-text-secondary)] leading-relaxed">
-                Our model is built on transparency and community. Here's the process:
-              </p>
-              <ul className="mt-6 space-y-4 list-decimal list-inside text-[var(--color-text-secondary)]">
-                <li>
-                  <strong className="text-[var(--color-text-primary)]">Identify Needs: </strong>
-                  Community members report areas with stray animals in need of food, water, or medical attention.
-                </li>
-                <li>
-                  <strong className="text-[var(--color-text-primary)]">Pool Resources: </strong>
-                  Supporters contribute funds or supplies. Every contribution, no matter how small, is tracked and allocated to a specific, verified need.
-                </li>
-                <li>
-                  <strong className="text-[var(--color-text-primary)]">Local Action: </strong>
-                  Volunteers on the ground use the pooled resources to provide food, build shelters, or arrange for veterinary care.
-                </li>
-                <li>
-                  <strong className="text-[var(--color-text-primary)]">Report Back: </strong>
-                  Updates and photos are shared directly on our platform, showing supporters the exact impact of their contribution. No ambiguity, just clear results.
-                </li>
-              </ul>
-            </div>
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 sm:p-8">
+              <h2 className="font-heading text-3xl font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                What is available today
+              </h2>
+              <div className="mt-6 grid gap-6 md:grid-cols-2">
+                <div>
+                  <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Confirmed contributions</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    Public totals include recorded successful payments. Estimated meal capacity is labelled as an estimate, not completed impact.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Approved feeding updates</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    Genuine dated photographs and the available factual details are published after approval. Missing records stay honestly empty.
+                  </p>
+                </div>
+              </div>
+            </section>
           </AnimatedSection>
 
           <AnimatedSection>
-            <div>
-              <h2 className="font-heading text-3xl font-bold text-[var(--color-text-primary)]">How You Can Support</h2>
-              <p className="mt-4 text-[var(--color-text-secondary)] leading-relaxed">
-                Support comes in many forms. You can contribute financially through our <a href="/support" className="text-[var(--color-accent)] hover:text-[var(--color-text-primary)] font-medium underline transition-colors">Support page</a>, volunteer your time if you're in an active area, or simply help by spreading the word. The goal is to build a self-sustaining community where everyone can play a part in a way that feels right for them.
+            <section>
+              <h2 className="font-heading text-3xl font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                Current limitation
+              </h2>
+              <p className="mt-4 max-w-2xl leading-relaxed text-[var(--color-text-secondary)]">
+                Verified expense reconciliation is being prepared. Until those records are ready, TOD does not claim a complete public expense ledger or connect a specific contribution to a specific feeding outcome.
               </p>
-            </div>
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <Link
+                  href="/impact"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-text-primary)] px-8 py-3 font-medium text-[var(--color-bg)] hover:opacity-90"
+                >
+                  See Feeding Updates
+                </Link>
+                <Link
+                  href="/support"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] px-8 py-3 font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)]"
+                >
+                  Donate
+                </Link>
+              </div>
+            </section>
           </AnimatedSection>
         </div>
       </div>
       <Footer />
     </>
   );
-};
-
-export default MissionPage;
+}

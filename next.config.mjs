@@ -75,6 +75,12 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  async redirects() {
+    return [
+      { source: '/waitlist', destination: '/', permanent: false },
+      { source: '/waitlist-dashboard', destination: '/', permanent: false },
+    ];
+  },
 }
 
 export default nextConfig

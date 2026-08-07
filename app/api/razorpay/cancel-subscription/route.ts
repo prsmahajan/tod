@@ -1,70 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
-import { databases, DATABASE_ID, COLLECTIONS, Query } from '@/lib/appwrite/server';
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const { subscriptionId, userId, cancelAtCycleEnd = true } = await req.json();
+const CANCELLATION_CONTACT = "account@theopendraft.com";
 
-    if (!subscriptionId) {
-      return NextResponse.json(
-        { error: 'Subscription ID is required' },
-        { status: 400 }
-      );
-    }
-
-    const keyId = process.env.RAZORPAY_LIVE_ID;
-    const keySecret = process.env.RAZORPAY_LIVE_KEY;
-
-    if (!keyId || !keySecret) {
-      return NextResponse.json(
-        { error: 'Payment gateway not configured' },
-        { status: 500 }
-      );
-    }
-
-    const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    });
-
-    // Cancel the subscription in Razorpay
-    const subscription = await razorpay.subscriptions.cancel(subscriptionId, cancelAtCycleEnd);
-
-    // Update subscription status in Appwrite
-    try {
-      const existingSubscriptions = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS.SUBSCRIPTIONS,
-        [Query.equal('razorpaySubscriptionId', subscriptionId)]
-      );
-
-      if (existingSubscriptions.documents.length > 0) {
-        await databases.updateDocument(
-          DATABASE_ID,
-          COLLECTIONS.SUBSCRIPTIONS,
-          existingSubscriptions.documents[0].$id,
-          {
-            status: 'cancelled',
-          }
-        );
-      }
-    } catch (dbError) {
-      console.error('Error updating subscription in database:', dbError);
-      // Don't fail the request if DB update fails
-    }
-
-    return NextResponse.json({
-      success: true,
-      subscriptionId: subscription.id,
-      status: subscription.status,
-      cancelledAt: cancelAtCycleEnd ? 'end_of_cycle' : 'immediately',
-    });
-  } catch (error: any) {
-    console.error('Error cancelling subscription:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to cancel subscription' },
-      { status: 500 }
-    );
-  }
+/**
+ * Public cancellation is intentionally disabled for this release.
+ * A Razorpay subscription ID is a reference, not proof of ownership.
+ * The existing admin-owned cancellation route remains available to staff.
+ */
+export async function POST(_request: Request) {
+  return NextResponse.json(
+    {
+      error: `For account security, recurring support cannot be cancelled from this public link. Email ${CANCELLATION_CONTACT} from the address used at checkout and include the subscription reference.`,
+    },
+    { status: 403 },
+  );
 }

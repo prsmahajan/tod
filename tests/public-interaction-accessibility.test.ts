@@ -191,3 +191,14 @@ test("donation mode and billing selections are exposed without relying on color"
   assert.match(source, /aria-pressed=\{billingCycle === 'weekly'\}/);
   assert.match(source, /aria-pressed=\{billingCycle === 'monthly'\}/);
 });
+
+test("custom donation input has a persistent label, limits, and linked help and error text", () => {
+  const source = readSource("../app/support/page.tsx");
+
+  assert.match(source, /<label[^>]*htmlFor="custom-amount"/);
+  assert.match(source, /id="custom-amount"/);
+  assert.match(source, /min=\{50\}/);
+  assert.match(source, /max=\{100000\}/);
+  assert.match(source, /aria-describedby="custom-amount-help custom-amount-error"/);
+  assert.match(source, /id="custom-amount-error"/);
+});

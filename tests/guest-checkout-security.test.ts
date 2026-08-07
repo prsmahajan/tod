@@ -37,3 +37,31 @@ test("guest subscription requests discard caller-supplied attribution", () => {
     currency: "INR",
   });
 });
+
+test("Razorpay subscriptions reject non-INR currency at the server boundary", () => {
+  assert.throws(() => parseGuestSubscriptionRequest({
+    planType: "sprout",
+    billingCycle: "monthly",
+    currency: "USD",
+  }), /INR/);
+});
+
+test("custom one-time amounts stay inside the server-owned limits", () => {
+  assert.deepEqual(parseGuestOrderRequest({
+    planType: "custom",
+    customAmount: 250,
+    amount: 1,
+  }), {
+    planType: "custom",
+    amount: 250,
+  });
+
+  assert.throws(
+    () => parseGuestOrderRequest({ planType: "custom", customAmount: 49 }),
+    /between/,
+  );
+  assert.throws(
+    () => parseGuestOrderRequest({ planType: "custom", customAmount: 250.5 }),
+    /whole/,
+  );
+});

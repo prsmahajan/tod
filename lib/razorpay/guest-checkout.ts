@@ -45,9 +45,13 @@ export function parseGuestSubscriptionRequest(value: unknown): GuestSubscription
     throw new Error('Invalid subscription plan');
   }
 
+  if (body.currency !== undefined && body.currency !== 'INR') {
+    throw new Error('Razorpay recurring support is available in INR only');
+  }
+
   return {
     planType: body.planType as PlanType,
     billingCycle: body.billingCycle as BillingCycle,
-    currency: body.currency === 'USD' ? 'USD' : 'INR',
+    currency: 'INR',
   };
 }

@@ -11,7 +11,7 @@ interface SupportCardSelectionInput {
   planType: FunnelPlanType;
 }
 
-const planTypes = new Set<string>(["seedling", "sprout", "tree"]);
+const planTypes = new Set<string>(["seedling", "sprout", "tree", "custom"]);
 
 function isPlanType(value: unknown): value is FunnelPlanType {
   return typeof value === "string" && planTypes.has(value);
@@ -33,6 +33,7 @@ export function createServerCheckoutSelection(
   amount: unknown,
 ): CheckoutSelection | null {
   if (!isPlanType(planType) || !isAmount(amount)) return null;
+  if (planType === "custom" && (amount as number) < 50) return null;
   return { planType, amount };
 }
 

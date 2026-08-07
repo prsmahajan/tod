@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Support - Subscribe & Feed Stray Animals",
-  description: "Choose a subscription plan and directly fund feeding stray animals across India. Starting from just ₹29/week. Every rupee tracked transparently.",
+  title: "Support Stray Animal Feeding",
+  description: "Make a one-time contribution or choose recurring support. Confirmed contributions and approved feeding updates are published while expense reconciliation is being prepared.",
   openGraph: {
     title: "Support | The Open Draft",
-    description: "Subscribe and directly feed stray animals across India. Plans starting from ₹29/week.",
+    description: "Contribute without creating an account and see approved stray animal feeding updates.",
     url: "https://theopendraft.com/support",
   },
 };

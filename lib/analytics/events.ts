@@ -9,7 +9,7 @@ export const PUBLIC_FUNNEL_EVENTS = [
 ] as const;
 
 export type PublicFunnelEvent = (typeof PUBLIC_FUNNEL_EVENTS)[number];
-export type FunnelPlanType = "seedling" | "sprout" | "tree";
+export type FunnelPlanType = "seedling" | "sprout" | "tree" | "custom";
 export type CheckoutFailureCode =
   | "gateway_unavailable"
   | "order_create_failed"
@@ -43,7 +43,7 @@ declare global {
 }
 
 const eventNames = new Set<string>(PUBLIC_FUNNEL_EVENTS);
-const planTypes = new Set<string>(["seedling", "sprout", "tree"]);
+const planTypes = new Set<string>(["seedling", "sprout", "tree", "custom"]);
 const failureCodes = new Set<string>([
   "gateway_unavailable",
   "order_create_failed",

@@ -102,6 +102,19 @@ test("uses only controlled checkout failure codes", () => {
   ]]);
 });
 
+test("custom one-time selections use the same privacy-safe analytics contract", () => {
+  const calls: unknown[][] = [];
+  installWindow((...args) => calls.push(args));
+
+  trackPublicEvent("amount_selected", { planType: "custom", amount: 250 });
+  trackPublicEvent("checkout_started", { planType: "custom", amount: 250 });
+
+  assert.deepEqual(calls, [
+    ["event", "amount_selected", { planType: "custom", amount: 250 }],
+    ["event", "checkout_started", { planType: "custom", amount: 250 }],
+  ]);
+});
+
 test("does nothing when analytics is unavailable or throws", () => {
   installWindow();
   assert.doesNotThrow(() => trackPublicEvent("evidence_viewed"));
