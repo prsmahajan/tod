@@ -3,34 +3,24 @@
 import React, { useEffect, useState } from "react";
 import {
   toPublicImpactMetrics,
-  type RawPublicStats,
 } from "@/lib/impact/public-metrics";
-
-interface StatsResponse extends RawPublicStats {
-  display?: {
-    totalRevenue?: string;
-  };
-}
+import {
+  toHomepageImpactSummary,
+  type HomepageStatsInput,
+} from "@/lib/homepage/impact-summary";
 
 interface CommunityStatsProps {
   variant?: "full" | "compact";
   className?: string;
 }
 
-function formatRaisedAmount(amount: number, providedDisplay?: string): string {
-  if (providedDisplay) return providedDisplay;
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+function StatsSkeleton({ className, variant }: { className: string; variant: "full" | "compact" }) {
+  const itemCount = variant === "compact" ? 2 : 4;
 
-function StatsSkeleton({ className }: { className: string }) {
   return (
     <div aria-label="Loading community impact" className={`animate-pulse ${className}`}>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {[1, 2, 3, 4].map((item) => (
+      <div className={variant === "compact" ? "grid grid-cols-1 gap-8 sm:grid-cols-2" : "grid grid-cols-2 gap-4 md:grid-cols-4"}>
+        {Array.from({ length: itemCount }, (_, index) => index + 1).map((item) => (
           <div key={item} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6">
             <div className="mb-3 h-4 w-20 rounded bg-[var(--color-border)]" />
             <div className="h-8 w-16 rounded bg-[var(--color-border)]" />
@@ -42,7 +32,7 @@ function StatsSkeleton({ className }: { className: string }) {
 }
 
 export default function CommunityStats({ variant = "full", className = "" }: CommunityStatsProps) {
-  const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [stats, setStats] = useState<HomepageStatsInput | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,7 +42,7 @@ export default function CommunityStats({ variant = "full", className = "" }: Com
       try {
         const response = await fetch("/api/public/stats", { signal: controller.signal });
         if (!response.ok) return;
-        const data = await response.json() as StatsResponse;
+        const data = await response.json() as HomepageStatsInput;
         setStats(data);
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -67,7 +57,7 @@ export default function CommunityStats({ variant = "full", className = "" }: Com
     return () => controller.abort();
   }, []);
 
-  if (loading) return <StatsSkeleton className={className} />;
+  if (loading) return <StatsSkeleton className={className} variant={variant} />;
 
   if (!stats) {
     return (
@@ -78,31 +68,23 @@ export default function CommunityStats({ variant = "full", className = "" }: Com
   }
 
   const metrics = toPublicImpactMetrics(stats);
-  const raised = formatRaisedAmount(metrics.raisedInr, stats.display?.totalRevenue);
+  const homepageSummary = toHomepageImpactSummary(stats);
 
   if (variant === "compact") {
     return (
-      <div className={`flex flex-wrap items-center justify-center gap-8 md:gap-12 ${className}`}>
-        <div className="text-center">
-          <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">{metrics.supporters}</p>
-          <p className="mt-1 text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Recorded Supporters</p>
-        </div>
-        <div aria-hidden="true" className="hidden h-10 w-px bg-[var(--color-border)] md:block" />
-        <div className="text-center">
-          <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">{raised}</p>
-          <p className="mt-1 text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Confirmed Raised</p>
-        </div>
-        <div aria-hidden="true" className="hidden h-10 w-px bg-[var(--color-border)] md:block" />
-        <div className="text-center">
-          <p className="text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">{metrics.estimatedMealsFunded}</p>
-          <p className="mt-1 max-w-32 text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">Estimated Meals Funded</p>
-        </div>
+      <div className={`grid grid-cols-1 gap-8 sm:grid-cols-2 ${className}`}>
+        {homepageSummary.map((metric) => (
+          <div key={metric.label} className="text-center">
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] md:text-4xl">{metric.value}</p>
+            <p className="mt-1 text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">{metric.label}</p>
+          </div>
+        ))}
       </div>
     );
   }
 
   const metricCards = [
-    { label: "Confirmed Raised", value: raised },
+    { label: "Confirmed Raised", value: homepageSummary[0].value },
     { label: "Recorded Supporters", value: metrics.supporters },
     { label: "Active Supporters", value: metrics.activeSupporters },
     { label: "Estimated Meals Funded", value: metrics.estimatedMealsFunded },

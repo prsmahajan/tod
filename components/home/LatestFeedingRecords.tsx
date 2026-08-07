@@ -94,6 +94,14 @@ export default function LatestFeedingRecords() {
   const [records, setRecords] = useState<FeaturedFeedingRecord[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
+  const statusMessage = status === "loading"
+    ? "Loading verified feeding records."
+    : status === "error"
+      ? "Feeding records could not be loaded right now."
+      : records.length === 0
+        ? "No verified feeding records published yet."
+        : `${records.length} verified feeding ${records.length === 1 ? "record" : "records"} loaded.`;
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -117,7 +125,7 @@ export default function LatestFeedingRecords() {
   }, []);
 
   return (
-    <section>
+    <section aria-busy={status === "loading"}>
       <div className="max-w-2xl">
         <h2 className="font-heading text-3xl md:text-4xl font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)]">
           Latest Feeding Records
@@ -127,15 +135,19 @@ export default function LatestFeedingRecords() {
         </p>
       </div>
 
+      <p role="status" aria-live="polite" className="sr-only">
+        {statusMessage}
+      </p>
+
       {status === "loading" && (
-        <div aria-label="Loading feeding records" className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div aria-hidden="true" className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-3">
           {[1, 2, 3].map((item) => (
             <div key={item} className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)]">
-              <div className="aspect-[4/3] animate-pulse bg-[var(--color-border)]" />
+              <div className="aspect-[4/3] animate-pulse bg-[var(--color-border)] motion-reduce:animate-none" />
               <div className="space-y-3 p-6">
-                <div className="h-4 w-2/3 animate-pulse rounded bg-[var(--color-border)]" />
-                <div className="h-4 w-full animate-pulse rounded bg-[var(--color-border)]" />
-                <div className="h-4 w-1/2 animate-pulse rounded bg-[var(--color-border)]" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-[var(--color-border)] motion-reduce:animate-none" />
+                <div className="h-4 w-full animate-pulse rounded bg-[var(--color-border)] motion-reduce:animate-none" />
+                <div className="h-4 w-1/2 animate-pulse rounded bg-[var(--color-border)] motion-reduce:animate-none" />
               </div>
             </div>
           ))}

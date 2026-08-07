@@ -12,7 +12,7 @@ test("homepage leads with animal feeding and the approved donation journey", () 
     "Community-funded impact",
     "Latest Feeding Records",
     "From donation to feeding proof",
-    "Ten months of personal commitment",
+    "Ten months of personally funded feeding",
     "Choose a one-time contribution",
     "Transparency is part of the work",
   ];
@@ -48,6 +48,42 @@ test("homepage has no technology funnel, waitlist, invented allocation, or decor
   ]) {
     assert.equal(html.includes(forbidden), false, `found forbidden homepage content: ${forbidden}`);
   }
+});
+
+test("homepage impact summary omits subscription-derived supporter counts", async () => {
+  let module: typeof import("../lib/homepage/impact-summary");
+  try {
+    module = await import("../lib/homepage/impact-summary");
+  } catch {
+    assert.fail("the truthful homepage impact summary builder must exist");
+  }
+
+  assert.deepEqual(module.toHomepageImpactSummary({
+    totalRevenue: 1500,
+    totalSupporters: 99,
+    activeSubscriptions: 12,
+    animalsHelped: 30,
+    display: { totalRevenue: "₹1.5K" },
+  }), [
+    { label: "Confirmed Raised", value: "₹1.5K" },
+    { label: "Estimated Meals Funded", value: 30 },
+  ]);
+});
+
+test("founder story states only the confirmed ten-month funding fact", () => {
+  const html = renderToStaticMarkup(React.createElement(HomePage));
+
+  assert.match(html, /The founder personally funded stray animal feeding for ten months\./);
+  assert.equal(html.includes("before asking the public to help"), false);
+});
+
+test("donation card prices use the body typography role", async () => {
+  const module = await import("../components/home/DonationChoices");
+  const html = renderToStaticMarkup(React.createElement(module.default));
+
+  assert.match(html, /class="[^"]*font-body[^"]*"[^>]*>₹99</);
+  assert.match(html, /class="[^"]*font-body[^"]*"[^>]*>₹499</);
+  assert.match(html, /class="[^"]*font-body[^"]*"[^>]*>₹999</);
 });
 
 test("root metadata describes animal feeding without technology marketing", async () => {
@@ -151,4 +187,14 @@ test("featured record normalization rejects malformed API data", async () => {
       { id: "x", imageUrl: "x", description: "x", userName: "", feedDate: "2026-08-01" },
     ],
   }), []);
+});
+
+test("featured-record loading state is announced and respects reduced motion", async () => {
+  const module = await import("../components/home/LatestFeedingRecords");
+  const html = renderToStaticMarkup(React.createElement(module.default));
+
+  assert.match(html, /role="status"/);
+  assert.match(html, /aria-live="polite"/);
+  assert.match(html, /Loading verified feeding records\./);
+  assert.match(html, /motion-reduce:animate-none/);
 });

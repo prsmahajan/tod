@@ -23,7 +23,7 @@ export default function DonationChoices() {
             <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-secondary)]">
               {choice.name}
             </p>
-            <p className="mt-2 font-heading text-4xl font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)]">
+            <p className="mt-2 font-body text-4xl font-bold text-[var(--color-text-primary)]">
               ₹{choice.amount}
             </p>
             <p className="mt-4 flex-1 text-sm leading-6 text-[var(--color-text-secondary)]">
