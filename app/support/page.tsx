@@ -7,6 +7,10 @@ import { useAuth } from '@/lib/appwrite/auth';
 import Script from 'next/script';
 import { toast } from 'sonner';
 import { detectUserLocationClient } from '@/lib/geolocation';
+import {
+  type CheckoutFailureCode,
+  trackPublicEvent,
+} from '@/lib/analytics/events';
 
 declare global {
   interface Window {
@@ -130,6 +134,7 @@ const SupportPage: React.FC = () => {
   // Handle one-time payment
   const handleOneTimePayment = async (amount: number, planType: PlanType) => {
     setIsProcessing(true);
+    let failureCode: CheckoutFailureCode = 'order_create_failed';
 
     try {
       const orderResponse = await fetch('/api/razorpay/create-order', {
@@ -175,25 +180,36 @@ const SupportPage: React.FC = () => {
             if (!verifyResponse.ok) throw new Error('Payment verification failed');
 
             const verifyData = await verifyResponse.json();
+            if (verifyData.success !== true) throw new Error('Payment verification failed');
+            trackPublicEvent('checkout_succeeded', { planType, amount });
             const paymentId = encodeURIComponent(verifyData.paymentId);
             const orderId = encodeURIComponent(verifyData.orderId);
             window.location.href = `/support/success?payment_id=${paymentId}&order_id=${orderId}`;
             return;
           } catch (error) {
+            trackPublicEvent('checkout_failed', {
+              planType,
+              amount,
+              errorCode: 'verification_failed',
+            });
             toast.error('Payment verification failed. Please contact support.');
             setIsProcessing(false);
           }
         },
         modal: {
           ondismiss: function () {
+            trackPublicEvent('checkout_dismissed', { planType, amount });
             setIsProcessing(false);
           },
         },
       };
 
+      failureCode = 'checkout_open_failed';
+      trackPublicEvent('checkout_started', { planType, amount });
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error: any) {
+      trackPublicEvent('checkout_failed', { planType, amount, errorCode: failureCode });
       toast.error(error.message || 'Failed to initiate payment.');
       setIsProcessing(false);
     }
@@ -202,6 +218,7 @@ const SupportPage: React.FC = () => {
   // Handle subscription payment
   const handleSubscription = async (amount: number, planType: PlanType) => {
     setIsProcessing(true);
+    let failureCode: CheckoutFailureCode = 'subscription_create_failed';
 
     try {
       const subscriptionResponse = await fetch('/api/razorpay/create-subscription', {
@@ -237,14 +254,18 @@ const SupportPage: React.FC = () => {
         },
         modal: {
           ondismiss: function () {
+            trackPublicEvent('checkout_dismissed', { planType, amount });
             setIsProcessing(false);
           },
         },
       };
 
+      failureCode = 'checkout_open_failed';
+      trackPublicEvent('checkout_started', { planType, amount });
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error: any) {
+      trackPublicEvent('checkout_failed', { planType, amount, errorCode: failureCode });
       toast.error(error.message || 'Failed to create subscription.');
       setIsProcessing(false);
     }
@@ -282,6 +303,8 @@ const SupportPage: React.FC = () => {
   };
 
   const handleSupport = (amount: number, planType: PlanType) => {
+    trackPublicEvent('amount_selected', { planType, amount });
+
     // For international users (USD), use Ko-fi
     if (!isIndia) {
       handleKofiPayment(amount, planType);
@@ -290,6 +313,11 @@ const SupportPage: React.FC = () => {
 
     // For Indian users (INR), use Razorpay
     if (!razorpayLoaded) {
+      trackPublicEvent('checkout_failed', {
+        planType,
+        amount,
+        errorCode: 'gateway_unavailable',
+      });
       toast.warning('Payment gateway is loading. Please try again.');
       return;
     }

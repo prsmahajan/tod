@@ -22,9 +22,16 @@ export default function GoogleAnalytics() {
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${gaId}');
+            window.gtag = function(){window.dataLayer.push(arguments);};
+            window.gtag('js', new Date());
+            window.gtag('config', '${gaId}', {
+              anonymize_ip: true,
+              allow_google_signals: false,
+              allow_ad_personalization_signals: false,
+              send_page_view: false,
+              page_location: window.location.origin + window.location.pathname,
+              page_referrer: ''
+            });
           `,
         }}
       />

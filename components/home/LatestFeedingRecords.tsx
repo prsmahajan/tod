@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { trackPublicEvent } from "@/lib/analytics/events";
 import { normalizeFeedDate } from "@/lib/public-data/feed-date";
 
 export interface FeaturedFeedingRecord {
@@ -94,6 +95,8 @@ function RecordsMessage({ children }: { children: React.ReactNode }) {
 export default function LatestFeedingRecords() {
   const [records, setRecords] = useState<FeaturedFeedingRecord[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const sectionRef = useRef<HTMLElement>(null);
+  const hasTrackedEvidenceView = useRef(false);
 
   const statusMessage = status === "loading"
     ? "Loading verified feeding records."
@@ -125,8 +128,26 @@ export default function LatestFeedingRecords() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (hasTrackedEvidenceView.current || !entries.some((entry) => entry.isIntersecting)) {
+        return;
+      }
+
+      hasTrackedEvidenceView.current = true;
+      trackPublicEvent("evidence_viewed");
+      observer.disconnect();
+    }, { threshold: 0.2 });
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section aria-busy={status === "loading"}>
+    <section ref={sectionRef} aria-busy={status === "loading"}>
       <div className="max-w-2xl">
         <h2 className="font-heading text-3xl md:text-4xl font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)]">
           Latest Feeding Records

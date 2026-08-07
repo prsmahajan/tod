@@ -1,6 +1,9 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { DONATION_CHOICES } from "@/lib/homepage/content";
+import { trackPublicEvent } from "@/lib/analytics/events";
 
 export default function DonationChoices() {
   return (
@@ -31,6 +34,7 @@ export default function DonationChoices() {
             </p>
             <Link
               href={choice.href}
+              onClick={() => trackPublicEvent("donate_clicked", { placement: "final" })}
               className="mt-6 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-border)] px-6 py-3 font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)] active:translate-y-px"
             >
               Donate ₹{choice.amount}

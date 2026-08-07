@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { trackPublicEvent } from "@/lib/analytics/events";
 
 export default function AnimalFirstHero() {
   return (
@@ -14,6 +17,7 @@ export default function AnimalFirstHero() {
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
           <Link
             href="/support"
+            onClick={() => trackPublicEvent("donate_clicked", { placement: "hero" })}
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-[var(--color-text-primary)] px-8 py-3 font-medium text-[var(--color-bg)] hover:opacity-90 active:translate-y-px"
           >
             Donate ₹99

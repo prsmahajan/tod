@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
-import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import Chatbot from "@/components/Chatbot";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 
@@ -19,7 +18,6 @@ export function PublicLayoutWrapper() {
   return (
     <>
       <Header />
-      <ExitIntentPopup />
       <Chatbot />
       <ThemeSwitcher isFixed={true} />
     </>
