@@ -373,6 +373,225 @@ test("subscription conflict re-read and update failures remain retryable", async
   }), updateFailure);
 });
 
+test("an older active snapshot cannot regress a terminal create-conflict winner", async () => {
+  const persistSubscriptionRecord = (webhookPayment as typeof webhookPayment & {
+    persistSubscriptionRecord?: (options: any) => Promise<string>;
+  }).persistSubscriptionRecord;
+
+  assert.equal(typeof persistSubscriptionRecord, "function");
+  if (!persistSubscriptionRecord) return;
+
+  for (const terminalStatus of ["completed", "cancelled", "expired"]) {
+    let stored: Record<string, unknown> = {
+      $id: `sub_${terminalStatus}`,
+      userId: "anonymous",
+      userEmail: "charged@example.com",
+      userName: "Charged Donor",
+      status: terminalStatus,
+    };
+    let updates = 0;
+
+    const result = await persistSubscriptionRecord({
+      providerSubscriptionId: `sub_${terminalStatus}`,
+      existingDocumentId: null,
+      document: {
+        userId: "anonymous",
+        userEmail: "",
+        userName: "",
+        status: "active",
+      },
+      createDocument: async () => {
+        throw { code: 409, type: "document_already_exists" };
+      },
+      findExistingDocument: async () => ({ ...stored }),
+      updateDocument: async (_id: string, document: Record<string, unknown>) => {
+        updates += 1;
+        stored = { ...stored, ...document };
+      },
+    });
+
+    assert.equal(result, "existing");
+    assert.equal(updates, 0);
+    assert.equal(stored.status, terminalStatus);
+  }
+});
+
+test("a bounded final provider read converges reverse create races to completed, paused, or cancelled", async () => {
+  const reconcileAuthoritativeSubscription = (webhookPayment as typeof webhookPayment & {
+    reconcileAuthoritativeSubscription?: (
+      webhookEntity: Record<string, unknown>,
+      fetchSubscription: (id: string) => Promise<Record<string, unknown>>,
+      persistSubscription: (subscription: Record<string, unknown>) => Promise<unknown>,
+    ) => Promise<Record<string, unknown>>;
+  }).reconcileAuthoritativeSubscription;
+  const persistSubscriptionRecord = (webhookPayment as typeof webhookPayment & {
+    persistSubscriptionRecord?: (options: any) => Promise<string>;
+  }).persistSubscriptionRecord;
+
+  assert.equal(typeof reconcileAuthoritativeSubscription, "function");
+  assert.equal(typeof persistSubscriptionRecord, "function");
+  if (!reconcileAuthoritativeSubscription || !persistSubscriptionRecord) return;
+
+  for (const finalStatus of ["completed", "paused", "cancelled"]) {
+    const subscriptionId = `sub_reverse_${finalStatus}`;
+    let stored: Record<string, unknown> = {
+      $id: subscriptionId,
+      userId: "anonymous",
+      userEmail: "charged@example.com",
+      userName: "",
+      status: finalStatus,
+    };
+    let providerFetches = 0;
+    let storageReads = 0;
+
+    const authoritative = await reconcileAuthoritativeSubscription(
+      { id: subscriptionId, status: "active" },
+      async (id) => {
+        providerFetches += 1;
+        return {
+          id,
+          status: providerFetches === 1 ? "active" : finalStatus,
+        };
+      },
+      async (subscription) => {
+        const existing = storageReads === 0 ? null : { ...stored };
+        storageReads += 1;
+        await persistSubscriptionRecord({
+          providerSubscriptionId: subscriptionId,
+          existingDocumentId: typeof existing?.$id === "string" ? existing.$id : null,
+          existingDocument: existing,
+          document: {
+            userId: "anonymous",
+            userEmail: "",
+            userName: "",
+            status: subscription.status,
+          },
+          createDocument: async () => {
+            throw { code: 409, type: "document_already_exists" };
+          },
+          findExistingDocument: async () => ({ ...stored }),
+          updateDocument: async (_id: string, document: Record<string, unknown>) => {
+            stored = { ...stored, ...document };
+          },
+        });
+      },
+    );
+
+    assert.equal(providerFetches, 2);
+    assert.equal(storageReads, 2);
+    assert.equal(authoritative.status, finalStatus);
+    assert.equal(stored.status, finalStatus);
+    assert.equal(stored.userEmail, "charged@example.com");
+  }
+});
+
+test("the final authoritative read and write remain bounded retryable failures", async () => {
+  const reconcileAuthoritativeSubscription = (webhookPayment as typeof webhookPayment & {
+    reconcileAuthoritativeSubscription?: (
+      webhookEntity: Record<string, unknown>,
+      fetchSubscription: (id: string) => Promise<Record<string, unknown>>,
+      persistSubscription: (subscription: Record<string, unknown>) => Promise<unknown>,
+    ) => Promise<Record<string, unknown>>;
+  }).reconcileAuthoritativeSubscription;
+
+  assert.equal(typeof reconcileAuthoritativeSubscription, "function");
+  if (!reconcileAuthoritativeSubscription) return;
+
+  const readFailure = new Error("final provider read unavailable");
+  let readAttempts = 0;
+  let writesBeforeReadFailure = 0;
+  await assert.rejects(reconcileAuthoritativeSubscription(
+    { id: "sub_read_failure" },
+    async (id) => {
+      readAttempts += 1;
+      if (readAttempts === 2) throw readFailure;
+      return { id, status: "active" };
+    },
+    async () => {
+      writesBeforeReadFailure += 1;
+    },
+  ), readFailure);
+  assert.equal(readAttempts, 2);
+  assert.equal(writesBeforeReadFailure, 1);
+
+  const writeFailure = new Error("final subscription write unavailable");
+  let writeFetches = 0;
+  let writeAttempts = 0;
+  await assert.rejects(reconcileAuthoritativeSubscription(
+    { id: "sub_write_failure" },
+    async (id) => {
+      writeFetches += 1;
+      return { id, status: "active" };
+    },
+    async () => {
+      writeAttempts += 1;
+      if (writeAttempts === 2) throw writeFailure;
+    },
+  ), writeFailure);
+  assert.equal(writeFetches, 2);
+  assert.equal(writeAttempts, 2);
+});
+
+test("a stale lifecycle write cannot replace a concurrently charged email", async () => {
+  const persistSubscriptionRecord = (webhookPayment as typeof webhookPayment & {
+    persistSubscriptionRecord?: (options: any) => Promise<string>;
+  }).persistSubscriptionRecord;
+  const subscriptionEventAttribution = getGatewayPaymentAttribution as (
+    payment?: { email?: unknown; [key: string]: unknown },
+  ) => { userId: "anonymous"; userEmail: string; userName: "" };
+
+  assert.equal(typeof persistSubscriptionRecord, "function");
+  if (!persistSubscriptionRecord) return;
+
+  let stored: Record<string, unknown> = {
+    $id: "sub_identity_race",
+    userId: "anonymous",
+    userEmail: "older@example.com",
+    userName: "Existing Donor",
+    status: "active",
+  };
+  const staleLifecycleView = { ...stored };
+  let releaseChargedWrite!: () => void;
+  const chargedWritten = new Promise<void>((resolve) => {
+    releaseChargedWrite = resolve;
+  });
+
+  const lifecycleWrite = persistSubscriptionRecord({
+    providerSubscriptionId: "sub_identity_race",
+    existingDocumentId: "sub_identity_race",
+    existingDocument: staleLifecycleView,
+    document: {
+      ...subscriptionEventAttribution(),
+      status: "active",
+    },
+    createDocument: async () => assert.fail("existing lifecycle records must update"),
+    updateDocument: async (_id: string, document: Record<string, unknown>) => {
+      await chargedWritten;
+      stored = { ...stored, ...document };
+    },
+  });
+
+  const chargedWrite = persistSubscriptionRecord({
+    providerSubscriptionId: "sub_identity_race",
+    existingDocumentId: "sub_identity_race",
+    existingDocument: staleLifecycleView,
+    document: {
+      ...subscriptionEventAttribution({ email: "newer@example.com" }),
+      status: "active",
+    },
+    createDocument: async () => assert.fail("existing charged records must update"),
+    updateDocument: async (_id: string, document: Record<string, unknown>) => {
+      stored = { ...stored, ...document };
+      releaseChargedWrite();
+    },
+  });
+
+  await Promise.all([lifecycleWrite, chargedWrite]);
+
+  assert.equal(stored.userEmail, "newer@example.com");
+  assert.equal(stored.userName, "Existing Donor");
+});
+
 test("authoritative subscription fetch prevents delayed lifecycle events from regressing current state", async () => {
   const resolveAuthoritativeSubscription = (webhookPayment as typeof webhookPayment & {
     resolveAuthoritativeSubscription?: (

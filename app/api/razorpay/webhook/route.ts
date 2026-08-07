@@ -9,8 +9,8 @@ import {
   getGatewayPaymentAttribution,
   isInrWebhookEntity,
   persistSubscriptionRecord,
+  reconcileAuthoritativeSubscription,
   reconcilePaymentTransaction,
-  resolveAuthoritativeSubscription,
   subscriptionStatusFromEvent,
 } from '@/lib/razorpay/webhook-payment';
 
@@ -159,14 +159,9 @@ function createRazorpayClient() {
   return new Razorpay({ key_id: keyId, key_secret: keySecret });
 }
 
-async function fetchAuthoritativeSubscription(webhookEntity: Record<string, unknown>) {
-  return resolveAuthoritativeSubscription(
-    webhookEntity,
-    async (subscriptionId) => {
-      const subscription = await createRazorpayClient().subscriptions.fetch(subscriptionId);
-      return subscription as unknown as Record<string, unknown>;
-    },
-  );
+async function fetchAuthoritativeSubscription(subscriptionId: string) {
+  const subscription = await createRazorpayClient().subscriptions.fetch(subscriptionId);
+  return subscription as unknown as Record<string, unknown>;
 }
 
 function validPlanType(value: unknown): PlanType {
@@ -207,24 +202,22 @@ async function findSubscription(subscriptionId: string): Promise<StoredDocument 
   return (response.documents[0] as StoredDocument | undefined) ?? null;
 }
 
-async function persistAuthoritativeSubscription(webhookEntity: Record<string, unknown>, payment?: any) {
-  const subscription = await fetchAuthoritativeSubscription(webhookEntity);
+async function persistSubscriptionSnapshot(subscription: Record<string, unknown>, payment?: any) {
   if (!isInrWebhookEntity(subscription)) {
     console.log('Ignoring non-INR subscription:', subscription.id);
-    return subscription;
+    return { result: 'ignored' as const, existing: null, document: null };
   }
 
   const subscriptionId = subscription.id as string;
   const existing = await findSubscription(subscriptionId);
+  const attribution = getGatewayPaymentAttribution(payment);
   const notes = (subscription.notes || {}) as Record<string, unknown>;
   const planType = validPlanType(notes.planType || existing?.planType);
   const billingCycle = validBillingCycle(notes.billingCycle || existing?.billingCycle);
   const currentPeriodStart = periodDate(subscription.current_start, existing?.currentPeriodStart);
   const currentPeriodEnd = periodDate(subscription.current_end, existing?.currentPeriodEnd);
   const document = {
-    userId: existing?.userId || 'anonymous',
-    userEmail: payment?.email || existing?.userEmail || '',
-    userName: existing?.userName || '',
+    ...attribution,
     razorpaySubscriptionId: subscriptionId,
     planId: subscription.plan_id || existing?.planId || '',
     planType,
@@ -262,15 +255,39 @@ async function persistAuthoritativeSubscription(webhookEntity: Record<string, un
     ),
   });
 
-  if (existing && document.userEmail) {
+  return { result, existing, document };
+}
+
+async function persistAuthoritativeSubscription(webhookEntity: Record<string, unknown>, payment?: any) {
+  const persistedSnapshots: Array<Awaited<ReturnType<typeof persistSubscriptionSnapshot>>> = [];
+  const subscription = await reconcileAuthoritativeSubscription(
+    webhookEntity,
+    fetchAuthoritativeSubscription,
+    async (authoritative) => {
+      persistedSnapshots.push(await persistSubscriptionSnapshot(authoritative, payment));
+    },
+  );
+
+  const finalPersistence = persistedSnapshots[persistedSnapshots.length - 1];
+  const existing = finalPersistence?.existing;
+  const document = finalPersistence?.document;
+
+  if (existing && document?.userEmail) {
     try {
-      await syncSubscriptionToPostgres({ ...existing, ...document } as any);
+      await syncSubscriptionToPostgres({
+        ...existing,
+        ...document,
+        userId: document.userId === 'anonymous' && existing.userId !== 'anonymous'
+          ? existing.userId
+          : document.userId,
+        userName: document.userName || existing.userName || '',
+      } as any);
     } catch (syncError) {
       console.error('Error syncing subscription to PostgreSQL:', syncError);
     }
   }
 
-  console.log(`Subscription ${subscriptionId} reconciled from Razorpay:`, result);
+  console.log(`Subscription ${String(subscription.id)} reconciled from Razorpay:`, finalPersistence?.result);
   return subscription;
 }
 

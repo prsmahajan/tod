@@ -40,11 +40,11 @@ export function isInrWebhookEntity(entity: RazorpayWebhookEntity): boolean {
 }
 
 export function getGatewayPaymentAttribution(
-  payment: { email?: unknown; [key: string]: unknown },
+  payment?: { email?: unknown; [key: string]: unknown },
 ): GatewayPaymentAttribution {
   return {
     userId: 'anonymous',
-    userEmail: typeof payment.email === 'string' ? payment.email : '',
+    userEmail: typeof payment?.email === 'string' ? payment.email : '',
     userName: '',
   };
 }
@@ -132,12 +132,21 @@ interface StoredSubscriptionRecord extends Record<string, unknown> {
   $id?: unknown;
 }
 
+const TERMINAL_SUBSCRIPTION_STATUSES = new Set(['completed', 'cancelled', 'expired']);
+
 function subscriptionDocumentForUpdate(
   existingDocument: StoredSubscriptionRecord | null,
   document: Record<string, unknown>,
 ): Record<string, unknown> {
   return Object.fromEntries(Object.entries(document).filter(([key, value]) => {
     if (typeof value === 'string' && value.trim().length === 0) return false;
+    if (
+      key === 'status'
+      && TERMINAL_SUBSCRIPTION_STATUSES.has(String(existingDocument?.status))
+      && !TERMINAL_SUBSCRIPTION_STATUSES.has(String(value))
+    ) {
+      return false;
+    }
     if (
       key === 'userId'
       && value === 'anonymous'
@@ -203,6 +212,19 @@ export async function resolveAuthoritativeSubscription<T extends Record<string, 
   }
 
   return authoritative;
+}
+
+export async function reconcileAuthoritativeSubscription<T extends Record<string, unknown>>(
+  webhookEntity: Record<string, unknown>,
+  fetchSubscription: (subscriptionId: string) => Promise<T>,
+  persistSubscription: (subscription: T) => Promise<unknown>,
+): Promise<T> {
+  const initial = await resolveAuthoritativeSubscription(webhookEntity, fetchSubscription);
+  await persistSubscription(initial);
+
+  const final = await resolveAuthoritativeSubscription(webhookEntity, fetchSubscription);
+  await persistSubscription(final);
+  return final;
 }
 
 const SUBSCRIPTION_EVENT_STATUS: Record<string, string> = {
