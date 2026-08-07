@@ -1,27 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  sumConfirmedInrTransactions,
-  toPublicImpactMetrics,
-} from "../lib/impact/public-metrics";
+import type React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
-test("labels derived meals as estimates", () => {
-  const metrics = toPublicImpactMetrics({
-    totalRevenue: 1500,
-    animalsHelped: 29,
-  });
+import { GET as getPublicStats } from "../app/api/public/stats/route";
+import { CommunityStatsDisplay } from "../components/CommunityStats";
 
-  assert.deepEqual(metrics, {
-    raisedInr: 1500,
-    estimatedMealsFunded: 29,
-  });
+test("public stats expose no money or meal estimate until historical currencies are verified", async () => {
+  const response = await getPublicStats();
+  const payload = await response.json();
+  const serialized = JSON.stringify(payload);
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.availability, "currency-verification-pending");
+  assert.match(payload.message, /historical payment currencies are verified/i);
+  assert.equal(serialized.includes("totalRevenue"), false);
+  assert.equal(serialized.includes("animalsHelped"), false);
+  assert.equal(serialized.includes("estimatedMeals"), false);
+  assert.equal(serialized.includes("₹0"), false);
 });
 
-test("public raised totals never add an explicitly non-INR transaction", () => {
-  assert.equal(sumConfirmedInrTransactions([
-    { status: "success", amount: 99, currency: "INR" },
-    { status: "success", amount: 25, currency: "USD" },
-    { status: "failed", amount: 499, currency: "INR" },
-    { status: "success", amount: 79 },
-  ]), 178);
+test("community stats show the verification pause without any money-derived number", () => {
+  const Display = CommunityStatsDisplay as unknown as (
+    props: { className: string },
+  ) => React.ReactElement;
+  const html = renderToStaticMarkup(Display({ className: "" }));
+
+  assert.match(html, /Contribution totals are under verification/);
+  assert.match(html, /historical payment currencies/i);
+  assert.equal(html.includes("Confirmed Raised"), false);
+  assert.equal(html.includes("Estimated Meals"), false);
+  assert.equal(/₹[\d,.]/.test(html), false);
 });

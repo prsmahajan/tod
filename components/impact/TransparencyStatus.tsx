@@ -11,7 +11,7 @@ export default function TransparencyStatus() {
           Transparency status
         </h2>
         <p className="mt-4 leading-relaxed text-[var(--color-text-secondary)]">
-          TOD currently publishes confirmed donations and featured feeding records as separate evidence.
+          TOD publishes featured feeding records and reports honestly on what financial data is ready for public use.
         </p>
       </div>
 
@@ -21,7 +21,7 @@ export default function TransparencyStatus() {
             Available now
           </h3>
           <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-            Confirmed contribution totals and approved feeding uploads can be reviewed on this page.
+            Approved feeding uploads can be reviewed on this page. Public contribution totals remain hidden while historical payment currencies are verified.
           </p>
         </div>
         <div className="border-t border-[var(--color-border)] pt-6">
@@ -29,7 +29,7 @@ export default function TransparencyStatus() {
             In preparation
           </h3>
           <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-            Verified expense reconciliation is being prepared. Donation totals will not be presented as proof of a specific feeding expense until those records are ready.
+            Verified expense reconciliation is being prepared. Financial totals will not be shown until the currency history is verified, or presented as proof of a specific feeding expense until those records are ready.
           </p>
         </div>
       </div>

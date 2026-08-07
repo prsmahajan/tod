@@ -1,3 +1,4 @@
+import Razorpay from 'razorpay';
 import { NextRequest, NextResponse } from 'next/server';
 import { databases, DATABASE_ID, COLLECTIONS, Query } from '@/lib/appwrite/server';
 import { syncSubscriptionToPostgres } from '@/lib/subscription-sync';
@@ -5,12 +6,15 @@ import { getPlanDetails, PlanType, BillingCycle } from '@/lib/razorpay/plans';
 import { verifyWebhookSignature } from '@/lib/razorpay/verify-signature';
 import {
   classifyCapturedPayment,
-  createTransactionOnce,
   getGatewayPaymentAttribution,
   isInrWebhookEntity,
-  persistSubscriptionActivation,
-  persistSubscriptionStatus,
+  persistSubscriptionRecord,
+  reconcilePaymentTransaction,
+  resolveAuthoritativeSubscription,
+  subscriptionStatusFromEvent,
 } from '@/lib/razorpay/webhook-payment';
+
+type StoredDocument = Record<string, any> & { $id: string };
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,70 +22,33 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get('x-razorpay-signature');
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    // Webhook signature verification is REQUIRED for security
     if (!webhookSecret) {
       console.error('RAZORPAY_WEBHOOK_SECRET not configured');
       return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
     }
 
     if (!signature) {
-      console.error('Missing webhook signature');
       return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
-    const isValid = verifyWebhookSignature(body, signature, webhookSecret);
-    if (!isValid) {
-      console.error('Invalid webhook signature');
+    if (!verifyWebhookSignature(body, signature, webhookSecret)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const event = JSON.parse(body);
-    const eventType = event.event;
+    const eventType = event.event as string;
     const payload = event.payload;
 
-    console.log('Received Razorpay webhook:', eventType);
-
-    switch (eventType) {
-      // One-time payment events
-      case 'payment.captured':
-        await handlePaymentCaptured(payload.payment.entity);
-        break;
-
-      case 'payment.failed':
-        await handlePaymentFailed(payload.payment.entity);
-        break;
-
-      // Subscription events
-      case 'subscription.activated':
-        await handleSubscriptionActivated(payload.subscription.entity);
-        break;
-
-      case 'subscription.charged':
-        await handleSubscriptionCharged(payload.subscription.entity, payload.payment?.entity);
-        break;
-
-      case 'subscription.pending':
-        await handleSubscriptionPending(payload.subscription.entity);
-        break;
-
-      case 'subscription.halted':
-        await handleSubscriptionHalted(payload.subscription.entity);
-        break;
-
-      case 'subscription.cancelled':
-        await handleSubscriptionCancelled(payload.subscription.entity);
-        break;
-
-      case 'subscription.paused':
-        await handleSubscriptionPaused(payload.subscription.entity);
-        break;
-
-      case 'subscription.resumed':
-        await handleSubscriptionResumed(payload.subscription.entity);
-        break;
-
-      default:
-        console.log('Unhandled event type:', eventType);
+    if (eventType === 'payment.captured') {
+      await handlePaymentCaptured(payload.payment.entity);
+    } else if (eventType === 'payment.failed') {
+      await handlePaymentFailed(payload.payment.entity);
+    } else if (eventType === 'subscription.charged') {
+      await handleSubscriptionCharged(payload.subscription.entity, payload.payment?.entity);
+    } else if (subscriptionStatusFromEvent(eventType)) {
+      await handleSubscriptionLifecycle(payload.subscription.entity);
+    } else {
+      console.log('Unhandled Razorpay event type:', eventType);
     }
 
     return NextResponse.json({ received: true });
@@ -89,303 +56,221 @@ export async function POST(req: NextRequest) {
     console.error('Webhook error:', error);
     return NextResponse.json(
       { error: error.message || 'Webhook processing failed' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-// Handle one-time payment captured
+async function findTransaction(paymentId: string): Promise<StoredDocument | null> {
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    COLLECTIONS.TRANSACTIONS,
+    [Query.equal('razorpayPaymentId', paymentId), Query.limit(1)],
+  );
+  return (response.documents[0] as StoredDocument | undefined) ?? null;
+}
+
+async function persistTransaction(
+  payment: any,
+  status: 'success' | 'failed',
+  forcedSubscriptionId?: string,
+) {
+  const existing = await findTransaction(payment.id);
+  const classification = classifyCapturedPayment(payment);
+  const linkedSubscriptionId = forcedSubscriptionId
+    || (typeof payment.subscription_id === 'string' ? payment.subscription_id : undefined)
+    || (existing?.type === 'subscription' ? existing.razorpaySubscriptionId : undefined);
+  const type = linkedSubscriptionId || existing?.type === 'subscription'
+    ? 'subscription'
+    : 'one-time';
+  const notes = payment.notes || {};
+  const attribution = getGatewayPaymentAttribution(payment);
+  const document = {
+    userId: existing?.userId || attribution.userId,
+    userEmail: attribution.userEmail || existing?.userEmail || '',
+    userName: existing?.userName || attribution.userName,
+    amount: payment.amount / 100,
+    type,
+    status,
+    razorpayPaymentId: payment.id,
+    razorpayOrderId: payment.order_id || existing?.razorpayOrderId || '',
+    ...(linkedSubscriptionId ? { razorpaySubscriptionId: linkedSubscriptionId } : {}),
+    planType: notes.planType || existing?.planType || 'seedling',
+    billingCycle: type === 'subscription'
+      ? notes.billingCycle || existing?.billingCycle || 'monthly'
+      : null,
+  };
+
+  return reconcilePaymentTransaction({
+    paymentId: payment.id,
+    existingTransaction: existing,
+    document,
+    findExistingTransaction: () => findTransaction(payment.id),
+    createDocument: (documentId, data) => databases.createDocument<any>(
+      DATABASE_ID,
+      COLLECTIONS.TRANSACTIONS,
+      documentId,
+      data,
+    ),
+    updateDocument: (documentId, data) => databases.updateDocument<any>(
+      DATABASE_ID,
+      COLLECTIONS.TRANSACTIONS,
+      documentId,
+      data,
+    ),
+  });
+}
+
 async function handlePaymentCaptured(payment: any) {
-  if (!isInrWebhookEntity(payment)) {
-    console.log('Ignoring non-INR payment.captured event:', payment.id);
+  if (!isInrWebhookEntity(payment)) return;
+
+  const classification = classifyCapturedPayment(payment);
+  if (classification !== 'one-time') {
+    console.log('Deferring captured recurring payment to subscription.charged:', payment.id);
     return;
   }
 
-  if (classifyCapturedPayment(payment) === 'subscription') {
-    console.log('Skipping payment.captured with authoritative subscription linkage:', payment.id);
+  const existing = await findTransaction(payment.id);
+  if (existing?.type === 'subscription') {
+    console.log('Recurring transaction already reconciled:', payment.id);
     return;
   }
 
-  const notes = payment.notes || {};
-  const attribution = getGatewayPaymentAttribution(payment);
-  const paymentAmount = payment.amount / 100;
-
-  const result = await createTransactionOnce({
-    paymentId: payment.id,
-    transactionExists: async () => {
-      const existing = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        [Query.equal('razorpayPaymentId', payment.id)]
-      );
-      return existing.documents.length > 0;
-    },
-    createDocument: (documentId) => databases.createDocument<any>(
-      DATABASE_ID,
-      COLLECTIONS.TRANSACTIONS,
-      documentId,
-      {
-        ...attribution,
-        amount: paymentAmount,
-        type: 'one-time',
-        status: 'success',
-        razorpayPaymentId: payment.id,
-        razorpayOrderId: payment.order_id || '',
-        planType: notes.planType || 'seedling',
-        billingCycle: null,
-      }
-    ),
-  });
-  console.log(
-    result === 'created' ? 'Transaction recorded as one-time for payment:' : 'Transaction already recorded for payment:',
-    payment.id,
-    'Amount:',
-    paymentAmount,
-  );
+  await persistTransaction(payment, 'success');
 }
 
-// Handle payment failed
 async function handlePaymentFailed(payment: any) {
-  if (!isInrWebhookEntity(payment)) {
-    console.log('Ignoring non-INR payment.failed event:', payment.id);
+  if (!isInrWebhookEntity(payment)) return;
+
+  if (classifyCapturedPayment(payment) === 'defer') {
+    console.log('Deferring invoice-linked payment failure:', payment.id);
     return;
   }
 
-  const notes = payment.notes || {};
-  const attribution = getGatewayPaymentAttribution(payment);
-  await createTransactionOnce({
-    paymentId: payment.id,
-    transactionExists: async () => {
-      const existing = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        [Query.equal('razorpayPaymentId', payment.id)],
-      );
-      return existing.documents.length > 0;
+  await persistTransaction(payment, 'failed');
+}
+
+function createRazorpayClient() {
+  const keyId = process.env.RAZORPAY_LIVE_ID;
+  const keySecret = process.env.RAZORPAY_LIVE_KEY;
+  if (!keyId || !keySecret) {
+    throw new Error('Razorpay subscription lookup is not configured');
+  }
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
+
+async function fetchAuthoritativeSubscription(webhookEntity: Record<string, unknown>) {
+  return resolveAuthoritativeSubscription(
+    webhookEntity,
+    async (subscriptionId) => {
+      const subscription = await createRazorpayClient().subscriptions.fetch(subscriptionId);
+      return subscription as unknown as Record<string, unknown>;
     },
-    createDocument: (documentId) => databases.createDocument<any>(
-      DATABASE_ID,
-      COLLECTIONS.TRANSACTIONS,
-      documentId,
-      {
-        ...attribution,
-        amount: payment.amount / 100,
-        type: classifyCapturedPayment(payment),
-        status: 'failed',
-        razorpayPaymentId: payment.id,
-        razorpayOrderId: payment.order_id || '',
-        ...(payment.subscription_id ? { razorpaySubscriptionId: payment.subscription_id } : {}),
-        planType: notes.planType || 'seedling',
-        billingCycle: notes.billingCycle || null,
-      },
-    ),
-  });
+  );
 }
 
-// Handle subscription activated
-async function handleSubscriptionActivated(subscription: any) {
+function validPlanType(value: unknown): PlanType {
+  return value === 'seedling' || value === 'sprout' || value === 'tree'
+    ? value
+    : 'seedling';
+}
+
+function validBillingCycle(value: unknown): BillingCycle {
+  return value === 'weekly' || value === 'monthly' ? value : 'monthly';
+}
+
+function periodDate(value: unknown, fallback?: unknown): string | undefined {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return new Date(value * 1000).toISOString();
+  }
+  return typeof fallback === 'string' && fallback.length > 0 ? fallback : undefined;
+}
+
+function subscriptionAmount(
+  subscription: Record<string, any>,
+  existing: StoredDocument | null,
+): number {
+  const displayAmount = Number(subscription.notes?.displayAmount);
+  if (Number.isFinite(displayAmount) && displayAmount > 0) return displayAmount;
+
+  const planType = validPlanType(subscription.notes?.planType || existing?.planType);
+  const billingCycle = validBillingCycle(subscription.notes?.billingCycle || existing?.billingCycle);
+  return getPlanDetails(planType, billingCycle, 'INR').amount;
+}
+
+async function findSubscription(subscriptionId: string): Promise<StoredDocument | null> {
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    COLLECTIONS.SUBSCRIPTIONS,
+    [Query.equal('razorpaySubscriptionId', subscriptionId), Query.limit(1)],
+  );
+  return (response.documents[0] as StoredDocument | undefined) ?? null;
+}
+
+async function persistAuthoritativeSubscription(webhookEntity: Record<string, unknown>, payment?: any) {
+  const subscription = await fetchAuthoritativeSubscription(webhookEntity);
   if (!isInrWebhookEntity(subscription)) {
-    console.log('Ignoring non-INR subscription activation:', subscription.id);
-    return;
+    console.log('Ignoring non-INR subscription:', subscription.id);
+    return subscription;
   }
 
-  const notes = subscription.notes || {};
+  const subscriptionId = subscription.id as string;
+  const existing = await findSubscription(subscriptionId);
+  const notes = (subscription.notes || {}) as Record<string, unknown>;
+  const planType = validPlanType(notes.planType || existing?.planType);
+  const billingCycle = validBillingCycle(notes.billingCycle || existing?.billingCycle);
+  const currentPeriodStart = periodDate(subscription.current_start, existing?.currentPeriodStart);
+  const currentPeriodEnd = periodDate(subscription.current_end, existing?.currentPeriodEnd);
+  const document = {
+    userId: existing?.userId || 'anonymous',
+    userEmail: payment?.email || existing?.userEmail || '',
+    userName: existing?.userName || '',
+    razorpaySubscriptionId: subscriptionId,
+    planId: subscription.plan_id || existing?.planId || '',
+    planType,
+    billingCycle,
+    amount: subscriptionAmount(subscription, existing),
+    status: typeof subscription.status === 'string' ? subscription.status : 'pending',
+    ...(currentPeriodStart ? { currentPeriodStart } : {}),
+    ...(currentPeriodEnd ? { currentPeriodEnd } : {}),
+  };
 
-  // Prefer the server-owned display amount in the provider notes, then derive
-  // the INR amount from the local plan configuration.
-  let computedAmount: number | null = null;
-
-  if (notes.displayAmount !== undefined && notes.displayAmount !== null) {
-    const parsed = Number(notes.displayAmount);
-    if (!isNaN(parsed) && parsed > 0) {
-      computedAmount = parsed;
-    }
-  }
-
-  if (!computedAmount) {
-    try {
-      const planType = (notes.planType || 'seedling') as PlanType;
-      const billingCycle = (notes.billingCycle || 'monthly') as BillingCycle;
-      const planDetails = getPlanDetails(planType, billingCycle, 'INR');
-      computedAmount = planDetails.amount;
-    } catch (e) {
-      console.warn('Could not derive plan amount from config for subscription', subscription.id, e);
-    }
-  }
-
-  if (!computedAmount) {
-    const planType = notes.planType || 'seedling';
-    const billingCycle = notes.billingCycle || 'monthly';
-    const isWeekly = billingCycle === 'weekly';
-    if (planType === 'seedling') computedAmount = isWeekly ? 29 : 79;
-    else if (planType === 'sprout') computedAmount = isWeekly ? 99 : 499;
-    else if (planType === 'tree') computedAmount = isWeekly ? 199 : 999;
-  }
-
-  console.log('Computed subscription amount:', computedAmount, 'from notes:', notes);
-
-  const existing = await databases.listDocuments(
-    DATABASE_ID,
-    COLLECTIONS.SUBSCRIPTIONS,
-    [Query.equal('razorpaySubscriptionId', subscription.id)]
-  );
-
-  const current = existing.documents[0] as any | undefined;
-  await persistSubscriptionActivation({
-    providerSubscriptionId: subscription.id,
-    existingDocumentId: current?.$id ?? null,
-    updateDocument: (documentId) => databases.updateDocument<any>(
+  const result = await persistSubscriptionRecord({
+    providerSubscriptionId: subscriptionId,
+    existingDocumentId: existing?.$id ?? null,
+    document,
+    createDocument: (documentId, data) => databases.createDocument<any>(
       DATABASE_ID,
       COLLECTIONS.SUBSCRIPTIONS,
       documentId,
-      {
-        status: 'active',
-        currentPeriodStart: new Date(subscription.current_start * 1000).toISOString(),
-        currentPeriodEnd: new Date(subscription.current_end * 1000).toISOString(),
-        amount: computedAmount ?? current?.amount ?? 0,
-      },
+      data,
     ),
-    createDocument: (documentId) => databases.createDocument<any>(
+    updateDocument: (documentId, data) => databases.updateDocument<any>(
       DATABASE_ID,
       COLLECTIONS.SUBSCRIPTIONS,
       documentId,
-      {
-        userId: 'anonymous',
-        userEmail: '',
-        userName: '',
-        razorpaySubscriptionId: subscription.id,
-        planId: subscription.plan_id,
-        planType: notes.planType || 'seedling',
-        billingCycle: notes.billingCycle || 'monthly',
-        amount: computedAmount ?? 0,
-        status: 'active',
-        currentPeriodStart: new Date(subscription.current_start * 1000).toISOString(),
-        currentPeriodEnd: new Date(subscription.current_end * 1000).toISOString(),
-      },
-    ),
-  });
-  console.log('Subscription activated:', subscription.id);
-}
-
-// Handle subscription charged (recurring payment)
-async function handleSubscriptionCharged(subscription: any, payment?: any) {
-  if (!isInrWebhookEntity(subscription) || (payment && !isInrWebhookEntity(payment))) {
-    console.log('Ignoring non-INR subscription charge:', subscription.id);
-    return;
-  }
-
-  const notes = subscription.notes || {};
-
-  if (payment) {
-    const attribution = getGatewayPaymentAttribution(payment);
-    const result = await createTransactionOnce({
-      paymentId: payment.id,
-      transactionExists: async () => {
-        const existing = await databases.listDocuments(
-          DATABASE_ID,
-          COLLECTIONS.TRANSACTIONS,
-          [Query.equal('razorpayPaymentId', payment.id)],
-        );
-        return existing.documents.length > 0;
-      },
-      createDocument: (documentId) => databases.createDocument<any>(
-        DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        documentId,
-        {
-          ...attribution,
-          amount: payment.amount / 100,
-          type: 'subscription',
-          status: 'success',
-          razorpayPaymentId: payment.id,
-          razorpayOrderId: payment.order_id || '',
-          razorpaySubscriptionId: subscription.id,
-          planType: notes.planType || 'seedling',
-          billingCycle: notes.billingCycle || 'monthly',
-        }
-      ),
-    });
-    console.log(
-      result === 'created' ? 'Subscription transaction recorded for payment:' : 'Subscription transaction already recorded:',
-      payment.id,
-    );
-  }
-
-  const existing = await databases.listDocuments(
-    DATABASE_ID,
-    COLLECTIONS.SUBSCRIPTIONS,
-    [Query.equal('razorpaySubscriptionId', subscription.id)]
-  );
-
-  if (existing.documents.length > 0) {
-    await databases.updateDocument(
-      DATABASE_ID,
-      COLLECTIONS.SUBSCRIPTIONS,
-      existing.documents[0].$id,
-      {
-        currentPeriodStart: new Date(subscription.current_start * 1000).toISOString(),
-        currentPeriodEnd: new Date(subscription.current_end * 1000).toISOString(),
-        status: 'active',
-        ...(payment?.email ? { userEmail: payment.email } : {}),
-      }
-    );
-  }
-  console.log('Subscription charged:', subscription.id);
-}
-
-// Handle subscription pending
-async function handleSubscriptionPending(subscription: any) {
-  await updateSubscriptionStatus(subscription.id, 'pending');
-}
-
-// Handle subscription halted (payment failed multiple times)
-async function handleSubscriptionHalted(subscription: any) {
-  await updateSubscriptionStatus(subscription.id, 'halted');
-}
-
-// Handle subscription cancelled
-async function handleSubscriptionCancelled(subscription: any) {
-  await updateSubscriptionStatus(subscription.id, 'cancelled');
-}
-
-// Handle subscription paused
-async function handleSubscriptionPaused(subscription: any) {
-  await updateSubscriptionStatus(subscription.id, 'paused');
-}
-
-// Handle subscription resumed
-async function handleSubscriptionResumed(subscription: any) {
-  await updateSubscriptionStatus(subscription.id, 'active');
-}
-
-// Helper to update subscription status
-async function updateSubscriptionStatus(subscriptionId: string, status: string) {
-  const existing = await databases.listDocuments(
-    DATABASE_ID,
-    COLLECTIONS.SUBSCRIPTIONS,
-    [Query.equal('razorpaySubscriptionId', subscriptionId)]
-  );
-
-  const existingDocument = existing.documents[0];
-  const persisted = await persistSubscriptionStatus({
-    existingDocumentId: existingDocument?.$id ?? null,
-    updateDocument: (documentId) => databases.updateDocument<any>(
-      DATABASE_ID,
-      COLLECTIONS.SUBSCRIPTIONS,
-      documentId,
-      { status },
+      data,
     ),
   });
 
-  if (persisted && existingDocument) {
-    // Appwrite is authoritative for the public status. The legacy PostgreSQL
-    // mirror remains best-effort after that persistence succeeds.
+  if (existing && document.userEmail) {
     try {
-      const appwriteSub = existing.documents[0] as any;
-      await syncSubscriptionToPostgres(appwriteSub);
+      await syncSubscriptionToPostgres({ ...existing, ...document } as any);
     } catch (syncError) {
-      console.error('Error syncing status update to PostgreSQL:', syncError);
+      console.error('Error syncing subscription to PostgreSQL:', syncError);
     }
   }
-  console.log(`Subscription ${subscriptionId} status updated to: ${status}`);
+
+  console.log(`Subscription ${subscriptionId} reconciled from Razorpay:`, result);
+  return subscription;
+}
+
+async function handleSubscriptionLifecycle(subscription: Record<string, unknown>) {
+  await persistAuthoritativeSubscription(subscription);
+}
+
+async function handleSubscriptionCharged(subscription: Record<string, unknown>, payment?: any) {
+  const authoritative = await persistAuthoritativeSubscription(subscription, payment);
+  if (!payment || !isInrWebhookEntity(payment) || !isInrWebhookEntity(authoritative)) return;
+  await persistTransaction(payment, 'success', authoritative.id as string);
 }

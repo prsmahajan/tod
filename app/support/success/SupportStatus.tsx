@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { trackPublicEvent, type FunnelPlanType } from "@/lib/analytics/events";
 import type {
   PublicSupportMode,
   PublicSupportStatus,
@@ -27,6 +28,23 @@ function formatInr(amount: number): string {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+export function serverConfirmedAnalyticsSelection(
+  status: Record<string, unknown>,
+): { planType: FunnelPlanType; amount: number } | null {
+  const planType = status.planType;
+  const amount = status.amountInr;
+  if (
+    status.state !== "confirmed"
+    || (planType !== "seedling" && planType !== "sprout" && planType !== "tree" && planType !== "custom")
+    || !Number.isSafeInteger(amount)
+    || (amount as number) <= 0
+  ) {
+    return null;
+  }
+
+  return { planType, amount: amount as number };
 }
 
 export function SupportStatusDisplay({ mode, status }: SupportStatusDisplayProps) {
@@ -95,6 +113,20 @@ export function SupportStatusDisplay({ mode, status }: SupportStatusDisplayProps
     );
   }
 
+  if (status.state === "pending") {
+    return (
+      <div role="status" aria-live="polite">
+        <p className="text-sm font-medium text-[var(--color-text-secondary)]">Confirmation pending</p>
+        <h1 className="mt-4 font-heading text-4xl font-extrabold text-[var(--color-text-primary)]">
+          Razorpay has not finished confirming this contribution.
+        </h1>
+        <p className="mx-auto mt-4 max-w-xl text-[var(--color-text-secondary)]">
+          We are still checking the stored payment record. Keep this page open for a few more moments.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div role="status" aria-live="polite">
       <p className="text-sm font-medium text-[var(--color-text-secondary)]">Confirmation unavailable</p>
@@ -112,6 +144,14 @@ export default function SupportStatus({ mode, reference }: SupportStatusProps) {
   const [status, setStatus] = useState<PublicSupportStatus | { state: "checking" }>(
     reference ? { state: "checking" } : { state: "unknown" },
   );
+  const successTracked = useRef(false);
+
+  useEffect(() => {
+    const selection = serverConfirmedAnalyticsSelection(status as unknown as Record<string, unknown>);
+    if (!selection || successTracked.current) return;
+    successTracked.current = true;
+    trackPublicEvent("checkout_succeeded", selection);
+  }, [status]);
 
   useEffect(() => {
     if (!reference) return;

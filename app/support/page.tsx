@@ -382,7 +382,7 @@ const SupportPage: React.FC = () => {
           <header className="text-center max-w-3xl mx-auto">
             <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">Support Stray Animal Feeding</h1>
             <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
-              Choose a one-time contribution or recurring support. A TOD account is not required. Confirmed contribution totals and approved feeding records are published separately while expense reconciliation is being prepared.
+              Choose a one-time contribution or recurring support. A TOD account is not required. Approved feeding records remain public while contribution totals are paused for historical currency verification.
             </p>
             {locationDetected && (
               <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
@@ -449,7 +449,7 @@ const SupportPage: React.FC = () => {
                   onClick={() => setBillingCycle('weekly')}
                   disabled={isProcessing}
                   aria-pressed={billingCycle === 'weekly'}
-                  className={`w-1/2 py-2 text-xs font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${billingCycle === 'weekly' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+                  className={`min-h-11 w-1/2 py-2 text-xs font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${billingCycle === 'weekly' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   Weekly
                 </button>
@@ -457,7 +457,7 @@ const SupportPage: React.FC = () => {
                   onClick={() => setBillingCycle('monthly')}
                   disabled={isProcessing}
                   aria-pressed={billingCycle === 'monthly'}
-                  className={`w-1/2 py-2 text-xs font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${billingCycle === 'monthly' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+                  className={`min-h-11 w-1/2 py-2 text-xs font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${billingCycle === 'monthly' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   Monthly
                 </button>
@@ -561,7 +561,7 @@ const SupportPage: React.FC = () => {
           <div className="mt-16 text-center max-w-2xl mx-auto">
             <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">What is published today</h3>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              TOD publishes confirmed contribution totals and approved feeding records. Verified expense reconciliation is being prepared and will not be presented as complete before the records are ready.
+              TOD publishes approved feeding records. Public contribution totals are paused while historical payment currencies are verified. Verified expense reconciliation is being prepared and will not be presented as complete before the records are ready.
             </p>
             <a
               href="/impact#transparency"

@@ -31,13 +31,14 @@ test("confirmed status and amount come only from the stored webhook transaction"
     findPayment: async () => ({
       status: "success",
       amount: 499,
+      planType: "sprout",
       userEmail: "private@example.com",
       userName: "Private Person",
     }),
     findSubscription: async () => null,
   });
 
-  assert.deepEqual(result, { state: "confirmed", amountInr: 499 });
+  assert.deepEqual(result, { state: "confirmed", amountInr: 499, planType: "sprout" });
   assert.equal(JSON.stringify(result).includes("private@example.com"), false);
 });
 
@@ -67,8 +68,8 @@ test("subscription confirmation uses the stored provider linkage", async () => {
     mode: "subscription",
     reference: "sub_123",
     findPayment: async () => null,
-    findSubscription: async () => ({ status: "active", amount: 79 }),
+    findSubscription: async () => ({ status: "active", amount: 79, planType: "seedling" }),
   });
 
-  assert.deepEqual(result, { state: "confirmed", amountInr: 79 });
+  assert.deepEqual(result, { state: "confirmed", amountInr: 79, planType: "seedling" });
 });

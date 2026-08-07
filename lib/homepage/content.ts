@@ -32,7 +32,7 @@ export const DONATION_TO_PROOF_STEPS = [
   },
   {
     title: "Payment is confirmed",
-    description: "Only successful payment records are included in the public amount raised.",
+    description: "Only provider-confirmed payment records are treated as completed contributions.",
   },
   {
     title: "Food is purchased and served",

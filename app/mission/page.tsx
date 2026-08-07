@@ -36,9 +36,9 @@ export default function MissionPage() {
               </h2>
               <div className="mt-6 grid gap-6 md:grid-cols-2">
                 <div>
-                  <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Confirmed contributions</h3>
+                  <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Public reporting status</h3>
                   <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                    Public totals include recorded successful payments. Estimated meal capacity is labelled as an estimate, not completed impact.
+                    Public amount and meal estimates are paused while historical payment currencies are verified. No zero or mixed-currency total is shown in their place.
                   </p>
                 </div>
                 <div>

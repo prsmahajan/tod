@@ -29,7 +29,7 @@ export interface Subscription {
   planType: 'seedling' | 'sprout' | 'tree';
   billingCycle: 'weekly' | 'monthly';
   amount: number;
-  status: 'created' | 'authenticated' | 'active' | 'paused' | 'cancelled' | 'halted' | 'expired';
+  status: 'created' | 'authenticated' | 'active' | 'pending' | 'payment_pending' | 'paused' | 'cancelled' | 'halted' | 'completed' | 'expired';
   currentPeriodStart?: string;
   currentPeriodEnd?: string;
   nextChargeAt?: string;

@@ -34,18 +34,20 @@ test("Razorpay recurring plan descriptions make no guaranteed animal outcome", (
   assert.equal(/animals? (weekly|monthly)/.test(plans), false);
 });
 
-test("public waitlist and dashboard are archived behind homepage redirects", async () => {
+test("stale public acquisition and dashboard pages are archived behind homepage redirects", async () => {
   const config = (await import("../next.config.mjs")).default as {
     redirects?: () => Promise<Array<{ source: string; destination: string }>>;
   };
   assert.equal(typeof config.redirects, "function");
   const redirects = await config.redirects?.();
 
+  const archivedPaths = ["/waitlist", "/waitlist-dashboard", "/dashboard", "/community"];
   assert.deepEqual(
-    redirects?.filter((item) => item.source.startsWith("/waitlist")),
-    [
-      { source: "/waitlist", destination: "/", permanent: false },
-      { source: "/waitlist-dashboard", destination: "/", permanent: false },
-    ],
+    redirects?.filter((item) => archivedPaths.includes(item.source)),
+    archivedPaths.map((source) => ({ source, destination: "/", permanent: false })),
   );
+
+  const sitemap = await (await import("../app/sitemap")).default();
+  assert.equal(sitemap.some((item) => item.url.endsWith("/community")), false);
+  assert.equal(sitemap.some((item) => item.url.endsWith("/dashboard")), false);
 });

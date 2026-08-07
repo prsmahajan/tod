@@ -1,19 +1,22 @@
 export type PublicSupportMode = "payment" | "subscription";
 export type PublicSupportState = "confirmed" | "pending" | "failed" | "unknown";
+export type PublicSupportPlanType = "seedling" | "sprout" | "tree" | "custom";
 
 export type PublicSupportStatus =
-  | { state: "confirmed"; amountInr: number }
+  | { state: "confirmed"; amountInr: number; planType?: PublicSupportPlanType }
   | { state: "pending" | "failed" | "unknown" };
 
 interface StoredPaymentStatus {
   status?: unknown;
   amount?: unknown;
+  planType?: unknown;
   [key: string]: unknown;
 }
 
 interface StoredSubscriptionStatus {
   status?: unknown;
   amount?: unknown;
+  planType?: unknown;
   [key: string]: unknown;
 }
 
@@ -38,6 +41,21 @@ function storedAmount(value: unknown): number | null {
     : null;
 }
 
+function storedPlanType(value: unknown): PublicSupportPlanType | undefined {
+  return value === "seedling" || value === "sprout" || value === "tree" || value === "custom"
+    ? value
+    : undefined;
+}
+
+function confirmedStatus(amountInr: number, planType: unknown): PublicSupportStatus {
+  const verifiedPlanType = storedPlanType(planType);
+  return {
+    state: "confirmed",
+    amountInr,
+    ...(verifiedPlanType ? { planType: verifiedPlanType } : {}),
+  };
+}
+
 export async function resolvePublicSupportStatus({
   mode,
   reference,
@@ -55,7 +73,7 @@ export async function resolvePublicSupportStatus({
     const amountInr = storedAmount(payment.amount);
     return amountInr === null
       ? { state: "pending" }
-      : { state: "confirmed", amountInr };
+      : confirmedStatus(amountInr, payment.planType);
   }
 
   const subscription = await findSubscription(reference);
@@ -68,5 +86,5 @@ export async function resolvePublicSupportStatus({
   const amountInr = storedAmount(subscription.amount);
   return amountInr === null
     ? { state: "pending" }
-    : { state: "confirmed", amountInr };
+    : confirmedStatus(amountInr, subscription.planType);
 }

@@ -21,7 +21,8 @@ test("support page makes only evidence-backed animal feeding claims", () => {
   }
 
   assert.match(source, /A TOD account is not required/);
-  assert.match(source, /confirmed contribution totals and approved feeding records/i);
+  assert.match(source, /approved feeding records remain public while contribution totals are paused/i);
+  assert.match(source, /historical payment currencies are verified/i);
   assert.match(source, /expense reconciliation is being prepared/i);
   assert.match(source, /href="\/impact#transparency"/);
 });

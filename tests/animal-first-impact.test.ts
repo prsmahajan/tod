@@ -159,8 +159,10 @@ test("transparency section states what is published and what is still being prep
   const html = renderToStaticMarkup(React.createElement(module.default));
 
   assert.match(html, /id="transparency"/);
-  assert.match(html, /confirmed donations/i);
   assert.match(html, /featured feeding records/i);
+  assert.match(html, /historical payment currencies are verified/i);
+  assert.equal(html.includes("Confirmed Raised"), false);
+  assert.equal(html.includes("Estimated Meals"), false);
   assert.match(html, /Verified expense reconciliation is being prepared\./);
   assert.equal(html.toLowerCase().includes("every rupee"), false);
   assert.equal(html.toLowerCase().includes("real-time"), false);
@@ -171,7 +173,7 @@ test("impact metadata promises verified updates without real-time expense tracki
 
   assert.equal(
     module.metadata.description,
-    "Verified feeding updates and confirmed community support for stray animals.",
+    "Verified feeding updates and the current public reporting status for stray animal support.",
   );
 
   const serialized = JSON.stringify(module.metadata).toLowerCase();

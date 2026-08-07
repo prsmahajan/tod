@@ -8,6 +8,7 @@ import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
 import type { Subscription } from '@/lib/appwrite/types';
 import { toast } from 'sonner';
+import SubscriptionCancellationContact from '@/components/account/SubscriptionCancellationContact';
 
 type PlanType = 'seedling' | 'sprout' | 'tree';
 type BillingCycle = 'weekly' | 'monthly';
@@ -22,8 +23,6 @@ export default function SubscriptionPage() {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [processingUpgrade, setProcessingUpgrade] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -55,42 +54,6 @@ export default function SubscriptionPage() {
 
     fetchSubscription();
   }, [user?.email]);
-
-  const performCancelSubscription = async () => {
-    if (!subscription) return;
-
-    setCancelling(true);
-    setShowCancelModal(false);
-
-    try {
-      const response = await fetch('/api/razorpay/cancel-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriptionId: subscription.razorpaySubscriptionId,
-          userId: user?.$id,
-          cancelAtCycleEnd: true,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to cancel subscription');
-      }
-
-      setSubscription({
-        ...subscription,
-        status: 'cancelled',
-      });
-
-      toast.success('Subscription cancelled successfully.', { 
-        description: 'You will have access until the end of your current billing period.' 
-      });
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to cancel subscription. Please try again.');
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   const handleUpgradeClick = async (planType: PlanType, billingCycle: BillingCycle, amount: number) => {
     if (!subscription || !user) return;
@@ -338,7 +301,7 @@ export default function SubscriptionPage() {
               {subscription.currentPeriodEnd && (
                 <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
                   <p className="text-sm text-[var(--color-text-secondary)]">
-                    {subscription.status === 'active' ? 'Next billing date:' : 'Access until:'}{' '}
+                    {subscription.status === 'active' ? 'Next billing date:' : 'Current period ends:'}{' '}
                     <span className="text-[var(--color-text-primary)] font-medium">
                       {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-IN', {
                         day: 'numeric',
@@ -352,21 +315,15 @@ export default function SubscriptionPage() {
 
               {/* Actions */}
               {subscription.status === 'active' && (
-                <div className="mt-6 pt-4 border-t border-[var(--color-border)] flex gap-4">
+                <div className="mt-6 space-y-4 border-t border-[var(--color-border)] pt-4">
                   <button
                     type="button"
                     onClick={() => setShowUpgradeModal(true)}
-                    className="flex-1 py-2 text-center border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] transition-colors cursor-pointer"
+                    className="min-h-11 w-full rounded-lg border border-[var(--color-border)] px-4 py-3 text-center text-sm text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg)] cursor-pointer"
                   >
                     Upgrade Plan
                   </button>
-                  <button
-                    onClick={() => setShowCancelModal(true)}
-                    disabled={cancelling}
-                    className="flex-1 py-2 text-center border border-red-500/30 rounded-lg text-sm text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
-                  </button>
+                  <SubscriptionCancellationContact subscriptionId={subscription.razorpaySubscriptionId} />
                 </div>
               )}
 
@@ -442,7 +399,7 @@ export default function SubscriptionPage() {
             </Link>
 
             <p className="mt-4 text-xs text-[var(--color-text-secondary)]">
-              GPay / UPI Autopay supported • Cancel anytime
+              GPay / UPI Autopay supported. Cancellation requests are verified by email.
             </p>
           </div>
         )}
@@ -459,7 +416,7 @@ export default function SubscriptionPage() {
               </svg>
             </summary>
             <div className="px-4 pb-4 text-sm text-[var(--color-text-secondary)]">
-              Your subscription automatically charges your UPI/card at the chosen frequency (weekly or monthly). The amount goes directly towards feeding and caring for stray animals.
+              Razorpay charges your selected UPI or card at the chosen weekly or monthly frequency. The subscription status and reference appear here after confirmation.
             </div>
           </details>
 
@@ -471,7 +428,7 @@ export default function SubscriptionPage() {
               </svg>
             </summary>
             <div className="px-4 pb-4 text-sm text-[var(--color-text-secondary)]">
-              Yes, you can cancel your subscription at any time from this page. Your access continues until the end of the current billing period.
+              Email account@theopendraft.com from the address used at Razorpay checkout and include the subscription ID shown on this page. The request is processed after ownership is verified.
             </div>
           </details>
 
@@ -488,45 +445,6 @@ export default function SubscriptionPage() {
           </details>
         </div>
       </div>
-
-      {/* Cancel Subscription Modal */}
-      {subscription && showCancelModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">
-              Cancel Subscription
-            </h2>
-            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-              Are you sure you want to cancel your{' '}
-              <span className="font-medium text-[var(--color-text-primary)]">
-                {getPlanLabel(subscription.planType as PlanType)}{' '}
-                {subscription.billingCycle === 'weekly' ? 'Weekly' : 'Monthly'}
-              </span>{' '}
-              subscription?
-            </p>
-            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
-              Your access will continue until the end of your current billing period. After that, autopay will stop and your plan will be inactive.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 text-sm rounded-lg border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-card-bg)] cursor-pointer"
-              >
-                Keep Subscription
-              </button>
-              <button
-                type="button"
-                onClick={performCancelSubscription}
-                disabled={cancelling}
-                className="px-4 py-2 text-sm rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Upgrade Plan Modal */}
       {subscription && showUpgradeModal && (
@@ -552,11 +470,10 @@ export default function SubscriptionPage() {
             ) : (
               <>
                 <p className="text-sm text-[var(--color-text-secondary)] mb-6">
-                  Choose a higher plan to increase your impact. You can also switch billing cycles.
+                  Choose a higher recurring plan. You can also switch billing cycles.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {upgradeOptions.map((option) => {
-                    const impact = option.planType === 'seedling' ? 1 : option.planType === 'sprout' ? 2 : 5;
                     return (
                       <button
                         key={`${option.planType}-${option.billingCycle}`}
@@ -573,9 +490,7 @@ export default function SubscriptionPage() {
                             <p className="font-heading text-2xl font-bold text-[var(--color-text-primary)]">
                               ₹{option.amount}/{option.billingCycle === 'weekly' ? 'wk' : 'mo'}
                             </p>
-                            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
-                              ~{impact} animal{impact > 1 ? 's' : ''} per cycle
-                            </p>
+                            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">Recurring support</p>
                           </div>
                           <svg className="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

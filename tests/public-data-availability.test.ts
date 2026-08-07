@@ -76,7 +76,7 @@ test("an available empty public response remains a successful 200", async () => 
   assert.deepEqual(await response.json(), { photos: [] });
 });
 
-test("community stats renders unavailable without confirmed zero values", async () => {
+test("community stats renders the currency-verification pause without zero values", async () => {
   let module: typeof import("../components/CommunityStats");
   try {
     module = await import("../components/CommunityStats");
@@ -86,13 +86,11 @@ test("community stats renders unavailable without confirmed zero values", async 
 
   assert.equal(typeof module.CommunityStatsDisplay, "function");
   const html = renderToStaticMarkup(React.createElement(module.CommunityStatsDisplay, {
-    loading: false,
-    stats: null,
-    variant: "full",
     className: "",
   }));
 
-  assert.match(html, /Impact totals are unavailable right now\./);
+  assert.match(html, /Contribution totals are under verification/);
   assert.equal(html.includes("Confirmed Raised"), false);
+  assert.equal(html.includes("Estimated Meals"), false);
   assert.equal(html.includes("₹0"), false);
 });

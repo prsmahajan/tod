@@ -22,7 +22,7 @@ export default function HomePage() {
                   Community-funded impact
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  Public totals include confirmed contributions. Meal capacity is clearly labelled as an estimate.
+                  Public amount and meal estimates are paused while historical payment currencies are verified.
                 </p>
               </div>
               <CommunityStats variant="compact" className="mt-8" />
@@ -78,7 +78,7 @@ export default function HomePage() {
                 Transparency is part of the work
               </h2>
               <p className="mt-4 leading-relaxed text-[var(--color-text-secondary)]">
-                TOD currently publishes confirmed contribution totals and approved feeding uploads. Verified expense reconciliation is being prepared and will not be presented as complete before the records are ready.
+                TOD publishes approved feeding uploads as genuine evidence. Public contribution totals are paused while historical payment currencies are verified, and expense reconciliation will not be presented as complete before the records are ready.
               </p>
               <Link
                 href="/impact#transparency"

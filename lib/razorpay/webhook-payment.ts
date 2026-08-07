@@ -6,6 +6,7 @@ export interface GatewayPaymentAttribution {
 
 interface RazorpayWebhookEntity {
   subscription_id?: unknown;
+  invoice_id?: unknown;
   currency?: unknown;
   notes?: unknown;
   [key: string]: unknown;
@@ -13,10 +14,16 @@ interface RazorpayWebhookEntity {
 
 export function classifyCapturedPayment(
   payment: RazorpayWebhookEntity,
-): 'one-time' | 'subscription' {
-  return typeof payment.subscription_id === 'string' && payment.subscription_id.length > 0
-    ? 'subscription'
-    : 'one-time';
+): 'one-time' | 'subscription' | 'defer' {
+  if (typeof payment.subscription_id === 'string' && payment.subscription_id.length > 0) {
+    return 'subscription';
+  }
+
+  if (typeof payment.invoice_id === 'string' && payment.invoice_id.length > 0) {
+    return 'defer';
+  }
+
+  return 'one-time';
 }
 
 export function isInrWebhookEntity(entity: RazorpayWebhookEntity): boolean {
@@ -82,14 +89,19 @@ export async function persistSubscriptionActivation({
   existingDocumentId,
   createDocument,
   updateDocument,
-}: PersistSubscriptionActivationOptions): Promise<'created' | 'updated'> {
+}: PersistSubscriptionActivationOptions): Promise<'created' | 'updated' | 'existing'> {
   if (existingDocumentId) {
     await updateDocument(existingDocumentId);
     return 'updated';
   }
 
-  await createDocument(providerSubscriptionId);
-  return 'created';
+  try {
+    await createDocument(providerSubscriptionId);
+    return 'created';
+  } catch (error) {
+    if (isDocumentConflict(error)) return 'existing';
+    throw error;
+  }
 }
 
 interface PersistSubscriptionStatusOptions {
@@ -104,4 +116,140 @@ export async function persistSubscriptionStatus({
   if (!existingDocumentId) return false;
   await updateDocument(existingDocumentId);
   return true;
+}
+
+interface PersistSubscriptionRecordOptions {
+  providerSubscriptionId: string;
+  existingDocumentId: string | null;
+  document: Record<string, unknown>;
+  createDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
+  updateDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
+}
+
+export async function persistSubscriptionRecord({
+  providerSubscriptionId,
+  existingDocumentId,
+  document,
+  createDocument,
+  updateDocument,
+}: PersistSubscriptionRecordOptions): Promise<'created' | 'updated' | 'existing'> {
+  if (existingDocumentId) {
+    await updateDocument(existingDocumentId, document);
+    return 'updated';
+  }
+
+  try {
+    await createDocument(providerSubscriptionId, document);
+    return 'created';
+  } catch (error) {
+    if (isDocumentConflict(error)) return 'existing';
+    throw error;
+  }
+}
+
+export async function resolveAuthoritativeSubscription<T extends Record<string, unknown>>(
+  webhookEntity: Record<string, unknown>,
+  fetchSubscription: (subscriptionId: string) => Promise<T>,
+): Promise<T> {
+  const subscriptionId = webhookEntity.id;
+  if (typeof subscriptionId !== 'string' || subscriptionId.length === 0) {
+    throw new Error('Missing Razorpay subscription ID');
+  }
+
+  const authoritative = await fetchSubscription(subscriptionId);
+  if (authoritative.id !== subscriptionId) {
+    throw new Error('Razorpay subscription lookup returned a mismatched ID');
+  }
+
+  return authoritative;
+}
+
+const SUBSCRIPTION_EVENT_STATUS: Record<string, string> = {
+  'subscription.activated': 'active',
+  'subscription.charged': 'active',
+  'subscription.pending': 'pending',
+  'subscription.halted': 'halted',
+  'subscription.cancelled': 'cancelled',
+  'subscription.paused': 'paused',
+  'subscription.resumed': 'active',
+  'subscription.completed': 'completed',
+};
+
+export function subscriptionStatusFromEvent(eventType: string): string | null {
+  return SUBSCRIPTION_EVENT_STATUS[eventType] ?? null;
+}
+
+interface StoredTransactionRecord extends Record<string, unknown> {
+  $id?: unknown;
+}
+
+interface ReconcilePaymentTransactionOptions {
+  paymentId: string;
+  existingTransaction: StoredTransactionRecord | null;
+  document: Record<string, unknown>;
+  findExistingTransaction?: () => Promise<StoredTransactionRecord | null>;
+  createDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
+  updateDocument: (documentId: string, document: Record<string, unknown>) => Promise<unknown>;
+}
+
+function transactionDocumentForPersistence(
+  existingTransaction: StoredTransactionRecord | null,
+  document: Record<string, unknown>,
+): Record<string, unknown> {
+  if (existingTransaction?.status === 'success' && document.status === 'failed') {
+    return { ...document, status: 'success' };
+  }
+  return document;
+}
+
+function transactionMatches(
+  existingTransaction: StoredTransactionRecord,
+  document: Record<string, unknown>,
+): boolean {
+  return Object.entries(document).every(([key, value]) => existingTransaction[key] === value);
+}
+
+export async function reconcilePaymentTransaction({
+  paymentId,
+  existingTransaction,
+  document,
+  findExistingTransaction,
+  createDocument,
+  updateDocument,
+}: ReconcilePaymentTransactionOptions): Promise<'created' | 'updated' | 'existing'> {
+  const persistedDocument = transactionDocumentForPersistence(existingTransaction, document);
+
+  if (existingTransaction) {
+    if (transactionMatches(existingTransaction, persistedDocument)) return 'existing';
+
+    const documentId = typeof existingTransaction.$id === 'string'
+      ? existingTransaction.$id
+      : paymentId;
+    await updateDocument(documentId, persistedDocument);
+    return 'updated';
+  }
+
+  try {
+    await createDocument(paymentId, persistedDocument);
+    return 'created';
+  } catch (error) {
+    if (!isDocumentConflict(error)) throw error;
+
+    const concurrentTransaction = findExistingTransaction
+      ? await findExistingTransaction()
+      : null;
+    const reconciledDocument = transactionDocumentForPersistence(
+      concurrentTransaction,
+      document,
+    );
+    if (concurrentTransaction && transactionMatches(concurrentTransaction, reconciledDocument)) {
+      return 'existing';
+    }
+
+    const documentId = typeof concurrentTransaction?.$id === 'string'
+      ? concurrentTransaction.$id
+      : paymentId;
+    await updateDocument(documentId, reconciledDocument);
+    return 'updated';
+  }
 }

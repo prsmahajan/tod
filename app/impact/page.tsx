@@ -58,17 +58,17 @@ export default function ImpactPage() {
               Feeding Records and Support
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)] md:text-xl">
-              See confirmed community support and approved feeding updates in one clear place.
+              See approved feeding updates and the current status of public financial reporting in one clear place.
             </p>
           </header>
 
           <section className="mt-20">
             <div className="max-w-2xl">
               <h2 className="font-heading text-3xl font-extrabold tracking-[-0.02em] text-[var(--color-text-primary)] md:text-4xl">
-                Confirmed community support
+                Public reporting status
               </h2>
               <p className="mt-4 leading-relaxed text-[var(--color-text-secondary)]">
-                Contribution totals are confirmed. Meal capacity remains clearly labelled as an estimate.
+                Contribution totals are under verification while historical payment currencies are checked.
               </p>
             </div>
             <CommunityStats className="mt-10" />

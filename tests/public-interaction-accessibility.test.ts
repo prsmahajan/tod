@@ -190,6 +190,14 @@ test("donation mode and billing selections are exposed without relying on color"
   assert.match(source, /aria-pressed=\{paymentMode === 'subscribe'\}/);
   assert.match(source, /aria-pressed=\{billingCycle === 'weekly'\}/);
   assert.match(source, /aria-pressed=\{billingCycle === 'monthly'\}/);
+  assert.match(
+    source,
+    /aria-pressed=\{billingCycle === 'weekly'\}[\s\S]{0,220}min-h-11/,
+  );
+  assert.match(
+    source,
+    /aria-pressed=\{billingCycle === 'monthly'\}[\s\S]{0,220}min-h-11/,
+  );
 });
 
 test("custom donation input has a persistent label, limits, and linked help and error text", () => {

@@ -13,6 +13,7 @@ export interface AppwriteSubscription {
   $id: string;
   userId: string;
   userEmail: string;
+  userName: string;
   razorpaySubscriptionId: string;
   planType: string;
   billingCycle: string;
@@ -54,6 +55,7 @@ export async function syncSubscriptionToPostgres(
       'paused': 'PAUSED',
       'halted': 'PAST_DUE',
       'pending': 'PAST_DUE',
+      'completed': 'EXPIRED',
       'expired': 'EXPIRED',
     };
 

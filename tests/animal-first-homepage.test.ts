@@ -50,22 +50,15 @@ test("homepage has no technology funnel, waitlist, invented allocation, or decor
   }
 });
 
-test("homepage impact summary exposes only confirmed raised and estimated meals", async () => {
-  let module: typeof import("../lib/homepage/impact-summary");
-  try {
-    module = await import("../lib/homepage/impact-summary");
-  } catch {
-    assert.fail("the truthful homepage impact summary builder must exist");
-  }
+test("homepage pauses money-derived metrics while keeping genuine feeding evidence", () => {
+  const html = renderToStaticMarkup(React.createElement(HomePage));
 
-  assert.deepEqual(module.toHomepageImpactSummary({
-    totalRevenue: 1500,
-    animalsHelped: 30,
-    display: { totalRevenue: "₹1.5K" },
-  }), [
-    { label: "Confirmed Raised", value: "₹1.5K" },
-    { label: "Estimated Meals Funded", value: 30 },
-  ]);
+  assert.match(html, /Contribution totals are under verification/);
+  assert.match(html, /historical payment currencies/i);
+  assert.match(html, /Latest Feeding Records/);
+  assert.equal(html.includes("Confirmed Raised"), false);
+  assert.equal(html.includes("Estimated Meals Funded"), false);
+  assert.equal(html.includes("public amount raised"), false);
 });
 
 test("founder story states only the confirmed ten-month funding fact", () => {
