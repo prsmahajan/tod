@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon';
+import { getInertAttribute } from '@/lib/accessibility/inert-region';
 
 interface Message {
   id: string;
@@ -193,8 +194,7 @@ const Chatbot: React.FC = () => {
 
       <div
         id="tod-chatbot-panel"
-        aria-hidden={!isOpen}
-        inert={!isOpen ? true : undefined}
+        {...getInertAttribute(!isOpen)}
         className={`fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100%-2rem)] max-w-sm h-[60vh] md:h-[60vh] bg-[var(--color-card-bg)] rounded-lg shadow-2xl border border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
       >
         <header className="p-4 border-b border-[var(--color-border)]">

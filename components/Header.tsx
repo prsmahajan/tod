@@ -8,6 +8,11 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
 import Icon from "@/components/Icon";
 import { useScroll } from "@/hooks/useScroll";
 import AuthModal from "@/components/AuthModal";
+import {
+  AccountMenuTrigger,
+  CompactHomeLink,
+} from "@/components/header/AccessibleHeaderControls";
+import { getInertAttribute } from "@/lib/accessibility/inert-region";
 import { PUBLIC_NAV_LINKS } from "@/lib/public-navigation";
 
 function Header() {
@@ -86,31 +91,28 @@ function Header() {
   }, [isUserMenuOpen]);
 
   // User dropdown component
-  const UserMenu = ({ compact = false }: { compact?: boolean }) => (
+  const UserMenu = ({ compact = false }: { compact?: boolean }) => {
+    const accountName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'your account';
+    const initial = user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+    const menuId = compact ? 'account-menu-compact' : 'account-menu-full';
+
+    return (
     <div className="relative" ref={userMenuRef}>
-      <button
-        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-        className="flex items-center gap-2 focus:outline-none cursor-pointer"
-      >
-        <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] flex items-center justify-center font-medium text-sm overflow-hidden border-2 border-[var(--color-border)]`}>
-          {user?.prefs?.avatar ? (
-            <img
-              src={user.prefs.avatar}
-              alt={user.name || 'Profile'}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'
-          )}
-        </div>
-        {!compact && (
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
-            {user?.name?.split(' ')[0] || user?.email?.split('@')[0]}
-          </span>
-        )}
-      </button>
+      <AccountMenuTrigger
+        accountName={accountName}
+        avatarUrl={user?.prefs?.avatar}
+        compact={compact}
+        expanded={isUserMenuOpen}
+        initial={initial}
+        menuId={menuId}
+        onToggle={() => setIsUserMenuOpen(!isUserMenuOpen)}
+      />
       {isUserMenuOpen && (
-        <div className="absolute right-0 mt-2 w-52 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl shadow-xl py-2 z-50 backdrop-blur-xl">
+        <div
+          id={menuId}
+          role="menu"
+          className="absolute right-0 mt-2 w-52 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl shadow-xl py-2 z-50 backdrop-blur-xl"
+        >
           <div className="px-4 py-3 border-b border-[var(--color-border)]">
             <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
               {user?.name || 'User'}
@@ -175,7 +177,8 @@ function Header() {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const navLinks = (
     <nav className="flex items-center space-x-2">
@@ -211,8 +214,7 @@ function Header() {
           >
             {/* Unscrolled Layout */}
             <div
-              aria-hidden={scrolled}
-              inert={scrolled ? true : undefined}
+              {...getInertAttribute(scrolled)}
               className={`
                 flex w-full items-center justify-between
                 transition-opacity duration-300
@@ -248,17 +250,14 @@ function Header() {
 
             {/* Scrolled "Pill" Layout */}
             <div
-              aria-hidden={!scrolled}
-              inert={!scrolled ? true : undefined}
+              {...getInertAttribute(!scrolled)}
               className={`
                 absolute inset-0 flex items-center justify-between px-4 space-x-6
                 transition-opacity duration-300
                 ${scrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'}
               `}
             >
-              <Link href="/">
-                <Icon name="logo" className="h-8 w-8 text-[var(--color-text-primary)]" />
-              </Link>
+              <CompactHomeLink />
               {navLinks}
               <div className="flex items-center space-x-2">
                 {isLoaded && isSignedIn ? (
@@ -299,8 +298,7 @@ function Header() {
 
         <div
           id="mobile-navigation"
-          aria-hidden={!isMenuOpen}
-          inert={!isMenuOpen ? true : undefined}
+          {...getInertAttribute(!isMenuOpen)}
           className={`absolute top-20 left-0 w-full bg-[var(--color-bg)] shadow-lg md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'transform translate-y-0 opacity-100' : 'transform -translate-y-4 opacity-0 pointer-events-none'}`}
         >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">

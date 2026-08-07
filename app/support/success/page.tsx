@@ -29,13 +29,15 @@ export default async function SupportSuccessPage({ searchParams }: SupportSucces
     <main className="container mx-auto flex min-h-[70vh] max-w-3xl items-center px-4 py-32 sm:px-6">
       <section className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-card-bg)] p-8 text-center sm:p-12">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--color-accent)]">
-          Checkout return received
+          {hasConfirmationReferences ? 'Checkout return received' : 'Confirmation status unavailable'}
         </p>
         <h1 className="mt-4 font-heading text-4xl font-extrabold text-[var(--color-text-primary)]">
-          Thank you for your support.
+          {hasConfirmationReferences ? 'Thank you for your support.' : 'Check your contribution status.'}
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-[var(--color-text-secondary)]">
-          Razorpay is sending final confirmation separately. This page does not serve as a payment receipt or proof of a completed transaction.
+          {hasConfirmationReferences
+            ? 'Razorpay is sending final confirmation separately. This page does not serve as a payment receipt or proof of a completed transaction.'
+            : 'If you completed checkout, the return link did not include the references needed to show its status here. This page does not serve as a payment receipt or proof of a completed transaction.'}
         </p>
 
         <dl className="mx-auto mt-8 max-w-xl space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 text-left">
@@ -63,7 +65,7 @@ export default async function SupportSuccessPage({ searchParams }: SupportSucces
             role="status"
             className="mx-auto mt-6 max-w-xl rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4 text-sm text-[var(--color-text-secondary)]"
           >
-            Confirmation details are missing from this return. Please contact{' '}
+            Confirmation details are missing from this page. Please contact{' '}
             <a href="mailto:account@theopendraft.com" className="font-medium text-[var(--color-text-primary)] hover:underline">
               account@theopendraft.com
             </a>{' '}
