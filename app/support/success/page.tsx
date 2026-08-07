@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 
 interface SupportSuccessPageProps {
@@ -20,6 +21,9 @@ export default async function SupportSuccessPage({ searchParams }: SupportSucces
   const paymentId = firstValue(params.payment_id);
   const orderId = firstValue(params.order_id);
   const subscriptionId = firstValue(params.subscription_id);
+  const hasConfirmationReferences = isSubscription
+    ? subscriptionId !== 'Not provided'
+    : paymentId !== 'Not provided' && orderId !== 'Not provided';
 
   return (
     <main className="container mx-auto flex min-h-[70vh] max-w-3xl items-center px-4 py-32 sm:px-6">
@@ -53,6 +57,19 @@ export default async function SupportSuccessPage({ searchParams }: SupportSucces
             </>
           )}
         </dl>
+
+        {!hasConfirmationReferences && (
+          <p
+            role="status"
+            className="mx-auto mt-6 max-w-xl rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4 text-sm text-[var(--color-text-secondary)]"
+          >
+            Confirmation details are missing from this return. Please contact{' '}
+            <a href="mailto:account@theopendraft.com" className="font-medium text-[var(--color-text-primary)] hover:underline">
+              account@theopendraft.com
+            </a>{' '}
+            so we can help check your contribution.
+          </p>
+        )}
 
         {isSubscription && (
           <p className="mx-auto mt-6 max-w-xl text-sm text-[var(--color-text-secondary)]">

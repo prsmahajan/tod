@@ -11,6 +11,7 @@ import FeedingRecordsDisplay, {
   type RecordsStatus,
 } from "@/components/impact/FeedingRecordsDisplay";
 import TransparencyStatus from "@/components/impact/TransparencyStatus";
+import { shouldRestoreTransparencyAnchor } from "@/lib/impact/transparency-anchor";
 
 export default function ImpactPage() {
   const [records, setRecords] = useState<FeaturedPhoto[]>([]);
@@ -37,6 +38,16 @@ export default function ImpactPage() {
     loadRecords();
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!shouldRestoreTransparencyAnchor(window.location.hash, status)) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("transparency")?.scrollIntoView({ block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [status]);
 
   return (
     <>

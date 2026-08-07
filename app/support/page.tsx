@@ -62,7 +62,6 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
 
   return (
     <div className={`border rounded-lg p-8 text-center transition-all duration-300 relative ${popular ? 'border-[var(--color-accent)] scale-105 bg-[var(--color-card-bg)]' : 'border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-card-bg)] hover:border-[var(--color-text-secondary)]'}`}>
-      {popular && <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-[var(--color-accent)] text-[var(--color-bg)] px-3 py-1 text-xs font-bold rounded-full uppercase">Most Popular</div>}
       <p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-2">{planLabels[planType]}</p>
       <p className={`font-heading text-5xl font-extrabold text-[var(--color-text-primary)] transition-opacity duration-300 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
         {currencySymbol}{displayAmount}
@@ -83,7 +82,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ amount, planType, description
         disabled={isProcessing}
         className={`mt-6 w-full px-6 py-3 font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${popular ? 'bg-[var(--color-text-primary)] text-[var(--color-bg)] hover:opacity-90' : 'bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg)]'}`}
       >
-        {isProcessing ? 'Processing...' : isInternational ? 'Donate via Ko-fi' : paymentMode === 'subscribe' ? 'Subscribe' : 'Support Now'}
+        {isProcessing ? 'Processing...' : isInternational ? 'Donate via Ko-fi' : paymentMode === 'subscribe' ? 'Start recurring support' : 'Donate'}
       </button>
     </div>
   );
@@ -358,9 +357,9 @@ const SupportPage: React.FC = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32">
         <AnimatedSection>
           <header className="text-center max-w-3xl mx-auto">
-            <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">Support the Initiative</h1>
+            <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)]">Support Stray Animal Feeding</h1>
             <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
-              Your support is optional but deeply appreciated. Every contribution goes directly to providing food, shelter, and care. We keep things transparent, so you always know where your help is going.
+              Choose a one-time contribution or recurring support. A TOD account is not required. Confirmed contribution totals and approved feeding records are published separately while expense reconciliation is being prepared.
             </p>
             {locationDetected && (
               <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
@@ -382,6 +381,7 @@ const SupportPage: React.FC = () => {
                 <button
                   onClick={() => setPaymentMode('one-time')}
                   disabled={isProcessing}
+                  aria-pressed={paymentMode === 'one-time'}
                   className={`w-1/2 py-3 text-sm font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${paymentMode === 'one-time' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   One-time Donation
@@ -389,6 +389,7 @@ const SupportPage: React.FC = () => {
                 <button
                   onClick={() => setPaymentMode('subscribe')}
                   disabled={isProcessing}
+                  aria-pressed={paymentMode === 'subscribe'}
                   className={`w-1/2 py-3 text-sm font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${paymentMode === 'subscribe' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   Subscribe (Auto-pay)
@@ -424,6 +425,7 @@ const SupportPage: React.FC = () => {
                 <button
                   onClick={() => setBillingCycle('weekly')}
                   disabled={isProcessing}
+                  aria-pressed={billingCycle === 'weekly'}
                   className={`w-1/2 py-2 text-xs font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${billingCycle === 'weekly' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   Weekly
@@ -431,6 +433,7 @@ const SupportPage: React.FC = () => {
                 <button
                   onClick={() => setBillingCycle('monthly')}
                   disabled={isProcessing}
+                  aria-pressed={billingCycle === 'monthly'}
                   className={`w-1/2 py-2 text-xs font-medium rounded-full transition-colors duration-500 z-10 cursor-pointer disabled:cursor-not-allowed ${billingCycle === 'monthly' ? 'text-[var(--color-bg)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   Monthly
@@ -448,7 +451,7 @@ const SupportPage: React.FC = () => {
             <SupportCard
               amount={currentAmounts.seedling}
               planType="seedling"
-              description="Feeds one animal for a week. A small act with a big impact."
+              description="A small contribution toward ongoing stray animal feeding."
               onSupport={handleSupport}
               isProcessing={isProcessing}
               paymentMode={isIndia ? paymentMode : 'one-time'}
@@ -458,7 +461,7 @@ const SupportPage: React.FC = () => {
             <SupportCard
               amount={currentAmounts.sprout}
               planType="sprout"
-              description="Provides a week of food and basic medical supplies."
+              description="A larger contribution toward ongoing stray animal feeding."
               popular
               onSupport={handleSupport}
               isProcessing={isProcessing}
@@ -469,7 +472,7 @@ const SupportPage: React.FC = () => {
             <SupportCard
               amount={currentAmounts.tree}
               planType="tree"
-              description="Contributes to a temporary shelter or a vet visit."
+              description="Support toward keeping feeding rounds consistent."
               onSupport={handleSupport}
               isProcessing={isProcessing}
               paymentMode={isIndia ? paymentMode : 'one-time'}
@@ -481,10 +484,16 @@ const SupportPage: React.FC = () => {
 
         <AnimatedSection>
           <div className="mt-16 text-center max-w-2xl mx-auto">
-            <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Full Transparency</h3>
+            <h3 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">What is published today</h3>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              We believe you have the right to know how your support is used. All financials are documented and shared with our community of supporters. This is about trust, not transactions.
+              TOD publishes confirmed contribution totals and approved feeding records. Verified expense reconciliation is being prepared and will not be presented as complete before the records are ready.
             </p>
+            <a
+              href="/impact#transparency"
+              className="mt-3 inline-flex text-sm font-medium text-[var(--color-text-primary)] underline underline-offset-4"
+            >
+              View transparency status
+            </a>
             {paymentMode === 'subscribe' && (
               <div className="mt-4 text-xs text-[var(--color-text-secondary)]">
                 <p>You can cancel recurring support without a TOD account.</p>

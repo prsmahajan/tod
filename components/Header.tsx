@@ -211,10 +211,12 @@ function Header() {
           >
             {/* Unscrolled Layout */}
             <div
+              aria-hidden={scrolled}
+              inert={scrolled ? true : undefined}
               className={`
                 flex w-full items-center justify-between
                 transition-opacity duration-300
-                ${scrolled ? 'opacity-0' : 'opacity-100'}
+                ${scrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}
               `}
             >
               <Link href="/" className="flex items-center space-x-3">
@@ -246,6 +248,8 @@ function Header() {
 
             {/* Scrolled "Pill" Layout */}
             <div
+              aria-hidden={!scrolled}
+              inert={!scrolled ? true : undefined}
               className={`
                 absolute inset-0 flex items-center justify-between px-4 space-x-6
                 transition-opacity duration-300
@@ -284,14 +288,21 @@ function Header() {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-md text-[var(--color-text-primary)]"
-              aria-label="Open menu"
+              aria-controls="mobile-navigation"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             >
               <Icon name={isMenuOpen ? 'close' : 'menu'} className="h-7 w-7" />
             </button>
           </div>
         </div>
 
-        <div className={`absolute top-20 left-0 w-full bg-[var(--color-bg)] shadow-lg md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'transform translate-y-0 opacity-100' : 'transform -translate-y-4 opacity-0 pointer-events-none'}`}>
+        <div
+          id="mobile-navigation"
+          aria-hidden={!isMenuOpen}
+          inert={!isMenuOpen ? true : undefined}
+          className={`absolute top-20 left-0 w-full bg-[var(--color-bg)] shadow-lg md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'transform translate-y-0 opacity-100' : 'transform -translate-y-4 opacity-0 pointer-events-none'}`}
+        >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {PUBLIC_NAV_LINKS.map((link) => (
               <Link

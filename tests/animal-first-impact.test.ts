@@ -3,6 +3,15 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+test("transparency anchor is restored after async evidence settles", async () => {
+  const module = await import("../lib/impact/transparency-anchor");
+
+  assert.equal(module.shouldRestoreTransparencyAnchor("#transparency", "loading"), false);
+  assert.equal(module.shouldRestoreTransparencyAnchor("#transparency", "error"), true);
+  assert.equal(module.shouldRestoreTransparencyAnchor("#transparency", "ready"), true);
+  assert.equal(module.shouldRestoreTransparencyAnchor("", "ready"), false);
+});
+
 test("impact page contains only the animal evidence journey", async () => {
   const module = await import("../app/impact/page");
   const html = renderToStaticMarkup(React.createElement(module.default));
