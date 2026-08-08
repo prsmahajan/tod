@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { databases, DATABASE_ID, COLLECTIONS, Query, users } from "@/lib/appwrite/server";
 import { getSubscriptionByEmail } from "@/lib/subscription-sync";
+import { AdminAuthError, requireAdminRequest } from "@/lib/admin/admin-api-auth";
+import {
+  buildOneTimePaymentPage,
+  ONE_TIME_SCAN_LIMIT,
+  ONE_TIME_SCAN_PAGE_SIZE,
+  type TransactionDocument,
+} from "@/lib/admin/one-time-payments";
 import Razorpay from "razorpay";
 
 async function calculateTotalRevenue(): Promise<number> {
@@ -99,13 +106,45 @@ async function calculateMrr(): Promise<number> {
 // GET /api/admin/subscriptions - Get all subscriptions with stats
 export async function GET(req: NextRequest) {
   try {
-    // TODO: Add proper Appwrite authentication check here
-    // For now, relying on AdminAuthWrapper client-side protection
+    await requireAdminRequest(req);
 
     const { searchParams } = new URL(req.url);
+    const supportType = searchParams.get("supportType") === "one-time" ? "one-time" : "recurring";
     const filter = searchParams.get("filter") || "all";
-    const search = searchParams.get("search") || "";
-    const page = parseInt(searchParams.get("page") || "1");
+    const search = (searchParams.get("search") || "").slice(0, 200);
+    const requestedPage = Number.parseInt(searchParams.get("page") || "1", 10);
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
+    if (supportType === "one-time") {
+      const documents: TransactionDocument[] = [];
+      let cursor: string | undefined;
+      let truncated = false;
+
+      while (documents.length < ONE_TIME_SCAN_LIMIT) {
+        const remaining = ONE_TIME_SCAN_LIMIT - documents.length;
+        const pageSize = Math.min(ONE_TIME_SCAN_PAGE_SIZE, remaining);
+        const queries = [
+          Query.equal("type", "one-time"),
+          Query.orderDesc("$createdAt"),
+          Query.limit(pageSize),
+        ];
+        if (cursor) queries.push(Query.cursorAfter(cursor));
+
+        const result = await databases.listDocuments(
+          DATABASE_ID,
+          COLLECTIONS.TRANSACTIONS,
+          queries,
+        );
+        documents.push(...(result.documents as unknown as TransactionDocument[]));
+        if (result.documents.length < pageSize) break;
+        cursor = result.documents[result.documents.length - 1]?.$id;
+        if (!cursor) break;
+        if (documents.length >= ONE_TIME_SCAN_LIMIT) truncated = result.total > documents.length;
+      }
+
+      return NextResponse.json(buildOneTimePaymentPage(documents, { search, page, truncated }));
+    }
+
     const limit = 20;
     const skip = (page - 1) * limit;
 
@@ -374,9 +413,12 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Subscriptions fetch error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch subscriptions" },
+      { error: "Failed to fetch support records" },
       { status: 500 }
     );
   }

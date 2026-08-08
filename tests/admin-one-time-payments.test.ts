@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import {
   buildOneTimePaymentPage,
   normalizeOneTimePayment,
@@ -58,4 +59,13 @@ test("pagination is fixed at 20 and reports the scan ceiling", () => {
   assert.equal(ONE_TIME_PAGE_SIZE, 20);
   assert.equal(result.payments.length, 1);
   assert.deepEqual(result.pagination, { page: 2, limit: 20, total: 21, totalPages: 2, truncated: true });
+});
+
+test("admin subscriptions route authenticates before selecting either data branch", async () => {
+  const source = await readFile(new URL("../app/api/admin/subscriptions/route.ts", import.meta.url), "utf8");
+  const authPosition = source.indexOf("await requireAdminRequest(req)");
+  const branchPosition = source.indexOf('supportType === "one-time"');
+  assert.ok(authPosition >= 0, "route must verify the request");
+  assert.ok(branchPosition > authPosition, "authorization must occur before donor-data branching");
+  assert.ok(!source.includes("x-user-email"), "caller-supplied email headers must not authorize this route");
 });
