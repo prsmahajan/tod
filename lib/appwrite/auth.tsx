@@ -229,5 +229,12 @@ export function useAuth() {
   return context;
 }
 
+// Create a short-lived Appwrite JWT from the active browser session so
+// server routes can verify the caller. The token is never persisted.
+export async function createAuthenticatedHeaders(): Promise<Record<string, string>> {
+  const token = await account.createJWT();
+  return { Authorization: `Bearer ${token.jwt}` };
+}
+
 // Export account for direct access if needed
 export { account, client };
