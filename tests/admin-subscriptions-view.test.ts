@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import React from "react";
+import { readFile } from "node:fs/promises";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OneTimePaymentsTable } from "../components/admin/OneTimePaymentsTable";
 
@@ -39,4 +40,16 @@ test("one-time table distinguishes failed payments and renders an honest empty s
     payments: [], page: 1, totalPages: 1, truncated: false, onPageChange: () => undefined,
   }));
   assert.match(empty, /No one-time payments found/);
+});
+
+test("subscriptions screen wires support type, authenticated requests, and page reset", async () => {
+  const source = await readFile(new URL("../app/admin/subscriptions/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /Support type/);
+  assert.match(source, /Recurring subscriptions/);
+  assert.match(source, /One-time payments/);
+  assert.match(source, /createAuthenticatedHeaders\(\)/);
+  assert.match(source, /supportType=\$\{supportType\}/);
+  assert.match(source, /setPage\(1\)/);
+  assert.match(source, /supportType === "one-time"/);
+  assert.match(source, /<OneTimePaymentsTable/);
 });

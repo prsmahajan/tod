@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { createAuthenticatedHeaders } from "@/lib/appwrite/auth";
+import { OneTimePaymentsTable } from "@/components/admin/OneTimePaymentsTable";
+import type { OneTimePayment } from "@/lib/admin/one-time-payments";
 
 interface Subscription {
   id: string;
@@ -48,6 +51,9 @@ const AT_RISK_STATUSES = ["payment_pending", "halted", "cancelled", "expired"];
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [supportType, setSupportType] = useState<"recurring" | "one-time">("recurring");
+  const [oneTimePayments, setOneTimePayments] = useState<OneTimePayment[]>([]);
+  const [resultsTruncated, setResultsTruncated] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "active" | "cancelled" | "paused">("all");
@@ -62,20 +68,31 @@ export default function SubscriptionsPage() {
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
     try {
+      const headers = await createAuthenticatedHeaders();
       const res = await fetch(
-        `/api/admin/subscriptions?filter=${filter}&search=${encodeURIComponent(searchQuery)}&page=${page}`
+        `/api/admin/subscriptions?supportType=${supportType}&filter=${filter}&search=${encodeURIComponent(searchQuery)}&page=${page}`,
+        { headers },
       );
-      if (!res.ok) throw new Error("Failed to fetch subscriptions");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to fetch support records");
+      }
       const data = await res.json();
-      setSubscriptions(data.subscriptions);
-      setStats(data.stats);
+      if (supportType === "one-time") {
+        setOneTimePayments(data.payments || []);
+        setResultsTruncated(data.pagination?.truncated === true);
+      } else {
+        setSubscriptions(data.subscriptions || []);
+        setStats(data.stats || null);
+      }
       setTotalPages(data.pagination?.totalPages || 1);
+      if (data.pagination?.page && data.pagination.page !== page) setPage(data.pagination.page);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
-  }, [filter, searchQuery, page]);
+  }, [supportType, filter, searchQuery, page]);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -276,6 +293,7 @@ export default function SubscriptionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {supportType === "recurring" && (
           <button
             onClick={handleVerifyAll}
             disabled={verifying}
@@ -291,6 +309,7 @@ export default function SubscriptionsPage() {
             )}
             {verifying ? "Verifying..." : "Verify All"}
           </button>
+          )}
           <button
             onClick={() => window.open("https://dashboard.razorpay.com/app/subscriptions", "_blank")}
             className="px-4 py-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg text-sm font-medium hover:bg-[var(--color-border)] cursor-pointer flex items-center gap-2"
@@ -304,7 +323,7 @@ export default function SubscriptionsPage() {
       </div>
 
       {/* Stats Cards */}
-      {stats && (
+      {supportType === "recurring" && stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg p-4">
             <p className="text-sm text-[var(--color-text-secondary)]">Total Subscribers</p>
@@ -335,45 +354,73 @@ export default function SubscriptionsPage() {
 
       {/* Filter and Search */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex gap-2">
-          {[
-            { key: "all", label: "All" },
-            { key: "active", label: "Active" },
-            { key: "cancelled", label: "Cancelled" },
-            { key: "paused", label: "Paused" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                setFilter(tab.key as any);
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
-                filter === tab.key
-                  ? "bg-[var(--color-text-primary)] text-[var(--color-bg)]"
-                  : "bg-[var(--color-card-bg)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Support type</span>
+          <select
+            value={supportType}
+            onChange={(event) => {
+              setSupportType(event.target.value as "recurring" | "one-time");
+              setPage(1);
+              setSelectedSubscription(null);
+            }}
+            className="px-4 py-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] focus:outline-none cursor-pointer"
+          >
+            <option value="recurring">Recurring subscriptions</option>
+            <option value="one-time">One-time payments</option>
+          </select>
+        </label>
+        {supportType === "recurring" && (
+          <div className="flex gap-2">
+            {[
+              { key: "all", label: "All" },
+              { key: "active", label: "Active" },
+              { key: "cancelled", label: "Cancelled" },
+              { key: "paused", label: "Paused" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setFilter(tab.key as any);
+                  setPage(1);
+                }}
+                className={`px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
+                  filter === tab.key
+                    ? "bg-[var(--color-text-primary)] text-[var(--color-bg)]"
+                    : "bg-[var(--color-card-bg)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex-1">
           <input
             type="text"
             placeholder="Search by name or email..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setPage(1);
+            }}
             className="w-full md:max-w-sm px-4 py-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none"
           />
         </div>
       </div>
 
-      {/* Subscriptions Table */}
+      {/* Support Records Table */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 border-2 border-[var(--color-text-primary)]/30 border-t-[var(--color-text-primary)] rounded-full animate-spin" />
         </div>
+      ) : supportType === "one-time" ? (
+        <OneTimePaymentsTable
+          payments={oneTimePayments}
+          page={page}
+          totalPages={totalPages}
+          truncated={resultsTruncated}
+          onPageChange={setPage}
+        />
       ) : subscriptions.length > 0 ? (
         <>
           <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-lg overflow-hidden">
@@ -610,7 +657,7 @@ export default function SubscriptionsPage() {
       )}
 
       {/* Subscription Detail Modal */}
-      {selectedSubscription && (
+      {supportType === "recurring" && selectedSubscription && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl max-w-lg w-full">
             <div className="p-6">
