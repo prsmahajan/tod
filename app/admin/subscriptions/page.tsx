@@ -66,8 +66,6 @@ export default function SubscriptionsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hoveredEmail, setHoveredEmail] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false);
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -110,6 +108,7 @@ export default function SubscriptionsPage() {
     try {
       const res = await fetch(`/api/admin/subscriptions/${subscriptionId}/cancel`, {
         method: "POST",
+        headers: await createAuthenticatedHeaders(),
       });
 
       if (res.ok) {
@@ -128,7 +127,7 @@ export default function SubscriptionsPage() {
     try {
       const res = await fetch(`/api/admin/subscriptions/${subscriptionId}/extend`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...(await createAuthenticatedHeaders()), "Content-Type": "application/json" },
         body: JSON.stringify({ days }),
       });
 
@@ -142,99 +141,6 @@ export default function SubscriptionsPage() {
       }
     } catch (error) {
       toast.error("Failed to extend subscription");
-    }
-  };
-
-  // Verify a single subscription against Razorpay
-  const handleVerifySubscription = async (razorpaySubscriptionId: string) => {
-    if (!razorpaySubscriptionId) {
-      toast.error("No Razorpay subscription ID");
-      return;
-    }
-
-    setVerifyingId(razorpaySubscriptionId);
-
-    try {
-      const res = await fetch("/api/razorpay/verify-subscription", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ razorpaySubscriptionId }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        if (data.statusChanged) {
-          toast.warning(`Status changed: ${data.previousStatus} → ${data.newStatus}`, {
-            description: data.newStatus === "halted" || data.newStatus === "payment_pending"
-              ? "User may have revoked their UPI mandate"
-              : undefined,
-          });
-        } else {
-          toast.success("Subscription verified - status unchanged");
-        }
-        fetchSubscriptions();
-      } else {
-        toast.error(data.error || "Failed to verify subscription");
-      }
-    } catch (error) {
-      toast.error("Failed to verify subscription");
-    } finally {
-      setVerifyingId(null);
-    }
-  };
-
-  // Verify all active subscriptions
-  const handleVerifyAll = async () => {
-    setVerifying(true);
-    toast.info("Verifying all active subscriptions...", { duration: 2000 });
-
-    try {
-      // Get all active subscriptions with Razorpay IDs
-      const activeSubs = subscriptions.filter(
-        (s) => statusKey(s.subscriptionStatus) === "active" && s.razorpaySubscriptionId
-      );
-
-      let changed = 0;
-      let errors = 0;
-
-      for (const sub of activeSubs) {
-        try {
-          const res = await fetch("/api/razorpay/verify-subscription", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ razorpaySubscriptionId: sub.razorpaySubscriptionId }),
-          });
-
-          const data = await res.json();
-          if (res.ok && data.statusChanged) {
-            changed++;
-          }
-        } catch {
-          errors++;
-        }
-
-        // Small delay to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
-
-      if (changed > 0) {
-        toast.warning(`Verification complete: ${changed} subscription(s) had status changes`, {
-          description: "Some users may have revoked their UPI mandates",
-        });
-      } else {
-        toast.success(`Verified ${activeSubs.length} subscriptions - all in sync`);
-      }
-
-      if (errors > 0) {
-        toast.error(`${errors} subscription(s) failed to verify`);
-      }
-
-      fetchSubscriptions();
-    } catch (error) {
-      toast.error("Failed to verify subscriptions");
-    } finally {
-      setVerifying(false);
     }
   };
 
@@ -297,23 +203,6 @@ export default function SubscriptionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {supportType === "recurring" && (
-          <button
-            onClick={handleVerifyAll}
-            disabled={verifying}
-            className="px-4 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-500/20 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Check all subscriptions against Razorpay to detect revoked mandates"
-          >
-            {verifying ? (
-              <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-            {verifying ? "Verifying..." : "Verify All"}
-          </button>
-          )}
           <button
             onClick={() => window.open("https://dashboard.razorpay.com/app/subscriptions", "_blank")}
             className="px-4 py-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg text-sm font-medium hover:bg-[var(--color-border)] cursor-pointer flex items-center gap-2"
@@ -580,23 +469,6 @@ export default function SubscriptionsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Verify button */}
-                            {sub.razorpaySubscriptionId && (
-                              <button
-                                onClick={() => handleVerifySubscription(sub.razorpaySubscriptionId!)}
-                                disabled={verifyingId === sub.razorpaySubscriptionId}
-                                className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                                title="Verify with Razorpay"
-                              >
-                                {verifyingId === sub.razorpaySubscriptionId ? (
-                                  <div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-                                ) : (
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                )}
-                              </button>
-                            )}
                             <button
                               onClick={() => setSelectedSubscription(sub)}
                               className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border)] rounded-lg transition-colors cursor-pointer"

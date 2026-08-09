@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { syncStatusFromPostgres } from "@/lib/subscription-sync";
+import { AdminAuthError, requireAdminRequest } from "@/lib/admin/admin-api-auth";
 
 // POST /api/admin/subscriptions/[id]/extend - Extend a subscription
 export async function POST(
@@ -8,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // TODO: Add proper Appwrite authentication check here
+    const admin = await requireAdminRequest(req);
     const { id } = await params;
     const body = await req.json();
     const { days } = body;
@@ -50,21 +51,9 @@ export async function POST(
       },
     });
 
-    // TODO: Log the action once auth is set up properly
-    // await prisma.auditLog.create({
-    //   data: {
-    //     action: "SUBSCRIPTION_EXTENDED",
-    //     entityType: "User",
-    //     entityId: id,
-    //     userId: "admin",
-    //     details: {
-    //       extendedBy: "admin",
-    //       daysAdded: days,
-    //       previousEndDate: currentEndDate,
-    //       newEndDate: newEndDate,
-    //     },
-    //   },
-    // });
+    console.log(
+      `Subscription for ${updatedUser.email} extended ${days} days by admin ${admin.email} (now ends ${newEndDate.toISOString()})`,
+    );
 
     // Sync changes to Appwrite
     try {
@@ -80,6 +69,9 @@ export async function POST(
       newEndDate,
     });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Extend subscription error:", error);
     return NextResponse.json(
       { error: "Failed to extend subscription" },

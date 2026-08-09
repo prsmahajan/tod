@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { syncStatusFromPostgres } from "@/lib/subscription-sync";
+import { AdminAuthError, requireAdminRequest } from "@/lib/admin/admin-api-auth";
 
 // POST /api/admin/subscriptions/[id]/cancel - Cancel a subscription
 export async function POST(
@@ -8,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // TODO: Add proper Appwrite authentication check here
+    const admin = await requireAdminRequest(req);
     const { id } = await params;
 
     // Get the user
@@ -61,20 +62,9 @@ export async function POST(
       },
     });
 
-    // TODO: Log the action once auth is set up properly
-    // await prisma.auditLog.create({
-    //   data: {
-    //     action: "SUBSCRIPTION_CANCELLED",
-    //     entityType: "User",
-    //     entityId: id,
-    //     userId: "admin",
-    //     details: {
-    //       cancelledBy: "admin",
-    //       subscriptionId: user.razorpaySubscriptionId,
-    //       endsAt: updatedUser.subscriptionEndsAt,
-    //     },
-    //   },
-    // });
+    console.log(
+      `Subscription for ${updatedUser.email} cancelled by admin ${admin.email} (ends ${updatedUser.subscriptionEndsAt?.toISOString()})`,
+    );
 
     // Sync changes to Appwrite
     try {
@@ -89,6 +79,9 @@ export async function POST(
       message: "Subscription cancelled successfully",
     });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Cancel subscription error:", error);
     return NextResponse.json(
       { error: "Failed to cancel subscription" },
