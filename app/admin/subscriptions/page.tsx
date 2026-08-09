@@ -47,7 +47,11 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 // Statuses that indicate the subscription is at risk
-const AT_RISK_STATUSES = ["payment_pending", "halted", "cancelled", "expired"];
+const AT_RISK_STATUSES = ["payment_pending", "past_due", "halted", "cancelled", "expired"];
+
+// PostgreSQL stores the enum in upper case ("ACTIVE"), while the status colors
+// and comparisons below are keyed in lower case.
+const statusKey = (status: string | null | undefined) => (status || "pending").toLowerCase();
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -188,7 +192,7 @@ export default function SubscriptionsPage() {
     try {
       // Get all active subscriptions with Razorpay IDs
       const activeSubs = subscriptions.filter(
-        (s) => s.subscriptionStatus === "active" && s.razorpaySubscriptionId
+        (s) => statusKey(s.subscriptionStatus) === "active" && s.razorpaySubscriptionId
       );
 
       let changed = 0;
@@ -497,7 +501,7 @@ export default function SubscriptionsPage() {
                           <div className="flex items-center gap-2">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                STATUS_COLORS[sub.subscriptionStatus || "pending"] || STATUS_COLORS.pending
+                                STATUS_COLORS[statusKey(sub.subscriptionStatus)] || STATUS_COLORS.pending
                               }`}
                             >
                               {sub.subscriptionStatus || "No Subscription"}
@@ -515,7 +519,7 @@ export default function SubscriptionsPage() {
                               </span>
                             )}
                             {/* At-risk indicator */}
-                            {!sub.autopayDisabled && AT_RISK_STATUSES.includes(sub.subscriptionStatus || "") && (
+                            {!sub.autopayDisabled && AT_RISK_STATUSES.includes(statusKey(sub.subscriptionStatus)) && (
                               <span title="Subscription at risk - mandate may be revoked">
                                 <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -530,7 +534,7 @@ export default function SubscriptionsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          {sub.subscriptionStatus === "CANCELLED" || sub.autopayDisabled ? (
+                          {statusKey(sub.subscriptionStatus) === "cancelled" || sub.autopayDisabled ? (
                             <span className="text-sm text-red-500 font-medium">
                               {sub.autopayDisabled ? 'Autopay disabled' : 'Cancelled'}
                             </span>
@@ -603,7 +607,7 @@ export default function SubscriptionsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
                             </button>
-                            {sub.subscriptionStatus === "active" && (
+                            {statusKey(sub.subscriptionStatus) === "active" && !sub.autopayDisabled && (
                               <button
                                 onClick={() => handleCancelSubscription(sub.id)}
                                 className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
@@ -692,7 +696,7 @@ export default function SubscriptionsPage() {
                 </div>
                 <span
                   className={`ml-auto px-3 py-1 rounded-full text-xs font-medium ${
-                    STATUS_COLORS[selectedSubscription.subscriptionStatus || "pending"]
+                    STATUS_COLORS[statusKey(selectedSubscription.subscriptionStatus)] || STATUS_COLORS.pending
                   }`}
                 >
                   {selectedSubscription.subscriptionStatus || "No Subscription"}
@@ -746,7 +750,7 @@ export default function SubscriptionsPage() {
               </div>
 
               {/* Actions */}
-              {selectedSubscription.subscriptionStatus === "active" && (
+              {statusKey(selectedSubscription.subscriptionStatus) === "active" && (
                 <div className="space-y-3">
                   <p className="text-sm font-medium text-[var(--color-text-primary)]">Extend Subscription</p>
                   <div className="flex gap-2">
@@ -772,7 +776,7 @@ export default function SubscriptionsPage() {
                 </div>
               )}
 
-              {selectedSubscription.subscriptionStatus === "cancelled" && (
+              {statusKey(selectedSubscription.subscriptionStatus) === "cancelled" && (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
                   <p className="text-sm text-yellow-600">
                     This subscription has been cancelled. Access will end on{" "}

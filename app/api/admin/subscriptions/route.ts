@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SubscriptionStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { reconcileSubscriptionStatus } from "@/lib/admin/subscription-status";
 import { databases, DATABASE_ID, COLLECTIONS, Query, users } from "@/lib/appwrite/server";
 import { getSubscriptionByEmail } from "@/lib/subscription-sync";
 import { AdminAuthError, requireAdminRequest } from "@/lib/admin/admin-api-auth";
@@ -335,10 +337,14 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          // Check if autopay is disabled by querying Razorpay
+          // Razorpay is authoritative for lifecycle state, so every subscription
+          // with a Razorpay id is reconciled on read - not just the ones
+          // PostgreSQL still believes are ACTIVE. Drift is written back so the
+          // status filters and stats agree on the next load.
           let autopayDisabled = false;
           let razorpayStatus = null;
-          if (sub.razorpaySubscriptionId && sub.subscriptionStatus === 'ACTIVE') {
+          let effectiveStatus: string | null = sub.subscriptionStatus;
+          if (sub.razorpaySubscriptionId) {
             try {
               const razorpay = new Razorpay({
                 key_id: process.env.RAZORPAY_LIVE_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
@@ -347,24 +353,29 @@ export async function GET(req: NextRequest) {
 
               const razorpaySub = await razorpay.subscriptions.fetch(sub.razorpaySubscriptionId);
               razorpayStatus = razorpaySub.status;
-              
-              // Check if subscription is truly cancelled or paused
-              const isCancelled = razorpaySub.status === 'cancelled' || razorpaySub.status === 'completed';
-              const isPauseInitiated = razorpaySub.pause_initiated === true;
-              const hasScheduledCancel = razorpaySub.has_scheduled_changes && 
-                                        razorpaySub.scheduled_changes?.some((change: any) => 
-                                          change.action === 'cancel'
-                                        );
-              
-              autopayDisabled = isCancelled || isPauseInitiated || hasScheduledCancel;
+
+              const reconciled = reconcileSubscriptionStatus(sub.subscriptionStatus, razorpaySub);
+              autopayDisabled = reconciled.autopayDisabled;
+              effectiveStatus = reconciled.status;
+
+              if (reconciled.changed) {
+                await prisma.user.update({
+                  where: { id: sub.id },
+                  data: { subscriptionStatus: reconciled.status as SubscriptionStatus },
+                });
+                console.log(
+                  `Subscription status drift for ${sub.email}: ${sub.subscriptionStatus} -> ${reconciled.status}`,
+                );
+              }
             } catch (razorpayError: any) {
-              console.error(`Failed to check autopay for ${sub.email}:`, razorpayError.message);
+              console.error(`Failed to reconcile subscription for ${sub.email}:`, razorpayError.message);
             }
           }
 
           return {
             ...sub,
             name: effectiveName,
+            subscriptionStatus: effectiveStatus,
             subscriptionStartedAt: effectiveStartedAt,
             latestBillingAmount,
             billingCycle,
